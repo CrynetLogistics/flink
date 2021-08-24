@@ -49,14 +49,12 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
         implements Sink<InputT, Void, Collection<RequestEntryT>, Void> {
 
     @Override
-    public Optional<Committer<Void>> createCommitter(CommitterInitContext context)
-            throws IOException {
+    public Optional<Committer<Void>> createCommitter() {
         return Optional.empty();
     }
 
     @Override
-    public Optional<GlobalCommitter<Void, Void>> createGlobalCommitter(CommitterInitContext context)
-            throws IOException {
+    public Optional<GlobalCommitter<Void, Void>> createGlobalCommitter() throws IOException {
         return Optional.empty();
     }
 
@@ -73,7 +71,7 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
     @Override
     public Optional<SimpleVersionedSerializer<Collection<RequestEntryT>>>
             getWriterStateSerializer() {
-        // FIXME: implement
+        // FIXMOI: implement
         return Optional.empty();
     }
 }

@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.List;
 import java.util.NoSuchElementException;
 
+/** AsyncSinkWriter. */
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
 
@@ -148,10 +149,11 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             }
 
             ResultFuture<RequestEntryT> requestResult =
-                    failedRequestEntries -> mailboxExecutor.execute(
-                            () -> completeRequest(failedRequestEntries),
-                            "Mark in-flight request as completed and requeue %d request entries",
-                            failedRequestEntries.size());
+                    failedRequestEntries ->
+                            mailboxExecutor.execute(
+                                    () -> completeRequest(failedRequestEntries),
+                                    "Mark in-flight request as completed and requeue %d request entries",
+                                    failedRequestEntries.size());
 
             while (inFlightRequestsCount >= MAX_IN_FLIGHT_REQUESTS) {
                 mailboxExecutor.yield();
@@ -208,7 +210,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     @Override
     public List<Collection<RequestEntryT>> snapshotState() throws IOException {
-        return Arrays.asList(bufferedRequestEntries);
+        return List.of(bufferedRequestEntries);
     }
 
     @Override
