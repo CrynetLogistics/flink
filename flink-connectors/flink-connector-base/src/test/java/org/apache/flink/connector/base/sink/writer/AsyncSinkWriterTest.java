@@ -12,6 +12,7 @@ import org.apache.flink.util.UserCodeClassLoader;
 import org.apache.flink.util.function.RunnableWithException;
 import org.apache.flink.util.function.ThrowingRunnable;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -21,24 +22,29 @@ import java.util.concurrent.Callable;
 
 public class AsyncSinkWriterTest {
 
-    List<Integer> res = new ArrayList<>();
+    private final List<Integer> res = new ArrayList<>();
+    private final SinkInitContext sinkInitContext = new SinkInitContext();
+
+    @Before
+    public void before(){
+        res.clear();
+    }
 
     @Test
     public void test() throws IOException, InterruptedException {
-        SinkInitContext sinkInitContext = new SinkInitContext();
-        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext);
-
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 100, 10);
         for(int i=0; i<101; i++){
             sink.write(String.valueOf(i), null);
         }
-
         System.out.println(res.size());
     }
 
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {
 
-        public AsyncSinkWriterImpl(Sink.InitContext context) {
-            super((elem, ctx) -> Integer.parseInt(elem), context);
+        public AsyncSinkWriterImpl(Sink.InitContext context, int maxBatchSize,
+                                   int maxInFlightRequests, int maxBufferedRequests) {
+            super((elem, ctx) -> Integer.parseInt(elem),
+                    context, maxBatchSize, maxInFlightRequests, maxBufferedRequests);
         }
 
         @Override

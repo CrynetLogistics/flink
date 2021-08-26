@@ -10,8 +10,10 @@ import java.util.stream.Collectors;
 
 public class ArrayListAsyncSinkWriter extends AsyncSinkWriter<String, Integer> {
 
-    protected ArrayListAsyncSinkWriter(Sink.InitContext context) {
-        super((element, x) -> Integer.parseInt(element), context);
+    protected ArrayListAsyncSinkWriter(Sink.InitContext context, int maxBatchSize,
+                                       int maxInFlightRequests, int maxBufferedRequests) {
+        super((element, x) -> Integer.parseInt(element),
+                context, maxBatchSize, maxInFlightRequests, maxBufferedRequests);
     }
 
     @Override

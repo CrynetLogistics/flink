@@ -24,6 +24,8 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.base.sink.writer.ResultFuture;
 
+import org.apache.flink.core.io.SimpleVersionedSerializer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.SdkBytes;
@@ -38,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 public class AmazonKinesisDataStreamSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
@@ -63,6 +66,11 @@ public class AmazonKinesisDataStreamSink<InputT> extends AsyncSinkBase<InputT, P
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(InitContext context, List<Collection<PutRecordsRequestEntry>> states) throws IOException {
         return new AmazonKinesisDataStreamWriter(context);
+    }
+
+    @Override
+    public Optional<SimpleVersionedSerializer<Collection<PutRecordsRequestEntry>>> getWriterStateSerializer() {
+        return Optional.empty();
     }
 
     public AmazonKinesisDataStreamSink(String streamName, ElementConverter<InputT, PutRecordsRequestEntry> elementConverter, KinesisAsyncClient client) {

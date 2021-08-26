@@ -18,10 +18,15 @@ import java.util.stream.Collectors;
 /** Dummy destination that records puts and generate failed request occasionally. */
 public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
 
+    private static final int MAX_BATCH_SIZE = 10;
+    private static final int MAX_IN_FLIGHT_REQUESTS = 1;
+    private static final int MAX_BUFFERED_REQUESTS = 100;
+
     @Override
     public SinkWriter<String, Void, Collection<Integer>> createWriter(
             InitContext context, List<Collection<Integer>> states) {
-        return new ArrayListAsyncSinkWriter(context);
+        return new ArrayListAsyncSinkWriter(context, MAX_BATCH_SIZE,
+                MAX_IN_FLIGHT_REQUESTS, MAX_BUFFERED_REQUESTS);
     }
 
     @Override

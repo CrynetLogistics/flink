@@ -28,15 +28,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /** AsyncSinkWriter. */
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
@@ -47,15 +43,20 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
 
-    private static final int MAX_BATCH_SIZE = 20; // just for testing purposes
-    private static final int MAX_IN_FLIGHT_REQUESTS = 1; // just for testing purposes
-    private static final int MAX_BUFFERED_REQUESTS_ENTRIES = 30; // just for testing purposes
+    private final int maxBatchSize;
+    private final int maxInFlightRequests;
+    private final int maxBufferedRequests;
 
     public AsyncSinkWriter(
-            ElementConverter<InputT, RequestEntryT> elementConverter, Sink.InitContext context) {
+            ElementConverter<InputT, RequestEntryT> elementConverter, Sink.InitContext context,
+            int maxBatchSize, int maxInFlightRequests, int maxBufferedRequests) {
         this.elementConverter = elementConverter;
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
+
+        this.maxBatchSize = maxBatchSize;
+        this.maxInFlightRequests = maxInFlightRequests;
+        this.maxBufferedRequests = maxBufferedRequests;
     }
 
     /**
@@ -120,7 +121,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     @Override
     public void write(InputT element, Context context) throws IOException, InterruptedException {
         // blocks if too many elements have been buffered
-        while (bufferedRequestEntries.size() >= MAX_BUFFERED_REQUESTS_ENTRIES) {
+        while (bufferedRequestEntries.size() >= maxBufferedRequests) {
             mailboxExecutor.yield();
         }
 
@@ -137,16 +138,16 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>The method blocks if too many async requests are in flight.
      */
     private void flushIfFull() throws InterruptedException {
-        while (bufferedRequestEntries.size() >= MAX_BATCH_SIZE) {
+        while (bufferedRequestEntries.size() >= maxBatchSize) {
             flush();
         }
     }
 
     private void flush() throws InterruptedException {
         // create a batch of request entries that should be persisted in the destination
-        ArrayList<RequestEntryT> batch = new ArrayList<>(MAX_BATCH_SIZE);
+        ArrayList<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
 
-        while (batch.size() <= MAX_BATCH_SIZE && !bufferedRequestEntries.isEmpty()) {
+        while (batch.size() <= maxBatchSize && !bufferedRequestEntries.isEmpty()) {
             try {
                 batch.add(bufferedRequestEntries.remove());
             } catch (NoSuchElementException e) {
@@ -161,7 +162,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                         "Mark in-flight request as completed and requeue %d request entries",
                         failedRequestEntries.size());
 
-        while (inFlightRequestsCount >= MAX_IN_FLIGHT_REQUESTS) {
+        while (inFlightRequestsCount >= maxInFlightRequests) {
             mailboxExecutor.yield();
         }
 
