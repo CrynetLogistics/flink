@@ -34,6 +34,9 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** AsyncSinkWriter. */
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
@@ -44,9 +47,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
 
-    private static final int MAX_BATCH_SIZE = 150; // just for testing purposes
+    private static final int MAX_BATCH_SIZE = 20; // just for testing purposes
     private static final int MAX_IN_FLIGHT_REQUESTS = 1; // just for testing purposes
-    private static final int MAX_BUFFERED_REQUESTS_ENTRIES = 1000; // just for testing purposes
+    private static final int MAX_BUFFERED_REQUESTS_ENTRIES = 30; // just for testing purposes
 
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter, Sink.InitContext context) {
@@ -97,7 +100,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * construct a new (retry) request entry from the response and add that back to the queue for
      * later retry.
      */
-    private final Deque<RequestEntryT> bufferedRequestEntries = new ArrayDeque<>();
+    private final BlockingDeque<RequestEntryT> bufferedRequestEntries = new LinkedBlockingDeque<>();
 
     /**
      * Tracks all pending async calls that have been executed since the last checkpoint. Calls that
@@ -124,7 +127,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         bufferedRequestEntries.add(elementConverter.apply(element, context));
 
         // blocks if too many async requests are in flight
-        flush();
+        flushIfFull();
     }
 
     /**
@@ -133,35 +136,37 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method blocks if too many async requests are in flight.
      */
-    private void flush() throws InterruptedException {
+    private void flushIfFull() throws InterruptedException {
         while (bufferedRequestEntries.size() >= MAX_BATCH_SIZE) {
-
-            // create a batch of request entries that should be persisted in the destination
-            ArrayList<RequestEntryT> batch = new ArrayList<>(MAX_BATCH_SIZE);
-
-            while (batch.size() <= MAX_BATCH_SIZE && !bufferedRequestEntries.isEmpty()) {
-                try {
-                    batch.add(bufferedRequestEntries.remove());
-                } catch (NoSuchElementException e) {
-                    // if there are not enough elements, just create a smaller batch
-                    break;
-                }
-            }
-
-            ResultFuture<RequestEntryT> requestResult =
-                    failedRequestEntries ->
-                            mailboxExecutor.execute(
-                                    () -> completeRequest(failedRequestEntries),
-                                    "Mark in-flight request as completed and requeue %d request entries",
-                                    failedRequestEntries.size());
-
-            while (inFlightRequestsCount >= MAX_IN_FLIGHT_REQUESTS) {
-                mailboxExecutor.yield();
-            }
-
-            inFlightRequestsCount++;
-            submitRequestEntries(batch, requestResult);
+            flush();
         }
+    }
+
+    private void flush() throws InterruptedException {
+        // create a batch of request entries that should be persisted in the destination
+        ArrayList<RequestEntryT> batch = new ArrayList<>(MAX_BATCH_SIZE);
+
+        while (batch.size() <= MAX_BATCH_SIZE && !bufferedRequestEntries.isEmpty()) {
+            try {
+                batch.add(bufferedRequestEntries.remove());
+            } catch (NoSuchElementException e) {
+                // if there are not enough elements, just create a smaller batch
+                break;
+            }
+        }
+
+        ResultFuture<RequestEntryT> requestResult =
+                failedRequestEntries -> mailboxExecutor.execute(
+                        () -> completeRequest(failedRequestEntries),
+                        "Mark in-flight request as completed and requeue %d request entries",
+                        failedRequestEntries.size());
+
+        while (inFlightRequestsCount >= MAX_IN_FLIGHT_REQUESTS) {
+            mailboxExecutor.yield();
+        }
+
+        inFlightRequestsCount++;
+        submitRequestEntries(batch, requestResult);
     }
 
     /**
