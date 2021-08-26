@@ -54,7 +54,7 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
     }
 
     @Override
-    public Optional<GlobalCommitter<Void, Void>> createGlobalCommitter() throws IOException {
+    public Optional<GlobalCommitter<Void, Void>> createGlobalCommitter() {
         return Optional.empty();
     }
 
@@ -65,13 +65,6 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
 
     @Override
     public Optional<SimpleVersionedSerializer<Void>> getGlobalCommittableSerializer() {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<SimpleVersionedSerializer<Collection<RequestEntryT>>>
-            getWriterStateSerializer() {
-        // FIXMOI: implement
         return Optional.empty();
     }
 }

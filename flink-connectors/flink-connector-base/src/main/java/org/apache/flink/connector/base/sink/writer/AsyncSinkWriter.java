@@ -100,7 +100,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * construct a new (retry) request entry from the response and add that back to the queue for
      * later retry.
      */
-    private final BlockingDeque<RequestEntryT> bufferedRequestEntries = new LinkedBlockingDeque<>();
+    private final Deque<RequestEntryT> bufferedRequestEntries = new ArrayDeque<>();
 
     /**
      * Tracks all pending async calls that have been executed since the last checkpoint. Calls that

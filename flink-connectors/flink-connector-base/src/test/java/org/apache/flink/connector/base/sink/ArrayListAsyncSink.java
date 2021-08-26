@@ -5,11 +5,13 @@ import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ResultFuture;
+import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -20,6 +22,11 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
     public SinkWriter<String, Void, Collection<Integer>> createWriter(
             InitContext context, List<Collection<Integer>> states) {
         return new ArrayListAsyncSinkWriter(context);
+    }
+
+    @Override
+    public Optional<SimpleVersionedSerializer<Collection<Integer>>> getWriterStateSerializer() {
+        return Optional.empty();
     }
 
 }

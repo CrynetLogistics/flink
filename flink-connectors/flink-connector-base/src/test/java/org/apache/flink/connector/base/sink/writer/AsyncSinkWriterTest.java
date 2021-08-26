@@ -3,13 +3,9 @@ package org.apache.flink.connector.base.sink.writer;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
 
-import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
-import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.runtime.tasks.StreamTaskActionExecutor;
-import org.apache.flink.streaming.runtime.tasks.mailbox.MailboxExecutorFactory;
 import org.apache.flink.streaming.runtime.tasks.mailbox.MailboxExecutorImpl;
-import org.apache.flink.streaming.runtime.tasks.mailbox.TaskMailbox;
 import org.apache.flink.streaming.runtime.tasks.mailbox.TaskMailboxImpl;
 import org.apache.flink.util.UserCodeClassLoader;
 
@@ -29,8 +25,8 @@ public class AsyncSinkWriterTest {
 
     @Test
     public void test() throws IOException, InterruptedException {
-        Context context = new Context();
-        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(context);
+        SinkInitContext sinkInitContext = new SinkInitContext();
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext);
 
         for(int i=0; i<101; i++){
             sink.write(String.valueOf(i), null);
@@ -54,7 +50,7 @@ public class AsyncSinkWriterTest {
         }
     }
 
-    private class Context implements Sink.InitContext {
+    private static class SinkInitContext implements Sink.InitContext {
 
         @Override
         public UserCodeClassLoader getUserCodeClassLoader() {
