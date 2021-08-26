@@ -16,9 +16,13 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AsyncSinkWriterTest {
 
@@ -26,23 +30,47 @@ public class AsyncSinkWriterTest {
     private final SinkInitContext sinkInitContext = new SinkInitContext();
 
     @Before
-    public void before(){
+    public void before() {
         res.clear();
     }
 
     @Test
-    public void test() throws IOException, InterruptedException {
-        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 100, 10);
-        for(int i=0; i<101; i++){
+    public void numOfRecordsIsAMultipleOfBatchSizeResultsInThatNumberOfRecordsBeingWritten()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100);
+        for (int i = 0; i < 110; i++) {
             sink.write(String.valueOf(i), null);
         }
-        System.out.println(res.size());
+        assertEquals(110, res.size());
+    }
+
+    @Test
+    public void unwrittenRecordsInBufferArePersistedWhenSnapshotIsTaken()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100);
+        for (int i = 0; i < 23; i++) {
+            sink.write(String.valueOf(i), null);
+        }
+        assertEquals(20, res.size());
+        assertEquals(List.of(20, 21, 22), new ArrayList<>(sink.snapshotState().get(0)));
+    }
+
+    @Test
+    public void preparingCommitAtSnapshotTimeEnsuresTheBufferedRecordsArePersistedToDestination()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100);
+        for (int i = 0; i < 23; i++) {
+            sink.write(String.valueOf(i), null);
+        }
+        sink.prepareCommit(true);
+        assertEquals(23, res.size());
     }
 
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {
 
-        public AsyncSinkWriterImpl(Sink.InitContext context, int maxBatchSize,
-                                   int maxInFlightRequests, int maxBufferedRequests) {
+        public AsyncSinkWriterImpl(
+                Sink.InitContext context, int maxBatchSize,
+                int maxInFlightRequests, int maxBufferedRequests) {
             super((elem, ctx) -> Integer.parseInt(elem),
                     context, maxBatchSize, maxInFlightRequests, maxBufferedRequests);
         }
@@ -81,7 +109,10 @@ public class AsyncSinkWriterTest {
                     return callable.call();
                 }
             };
-            return new MailboxExecutorImpl(new TaskMailboxImpl(Thread.currentThread()), 10, streamTaskActionExecutor);
+            return new MailboxExecutorImpl(
+                    new TaskMailboxImpl(Thread.currentThread()),
+                    10,
+                    streamTaskActionExecutor);
         }
 
         @Override
