@@ -21,6 +21,8 @@ import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
 
+import org.apache.flink.util.Preconditions;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +54,10 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
 
+        Preconditions.checkArgument(
+                maxBufferedRequests > maxBatchSize,
+                "The maximum number of requests that may be buffered should be strictly"
+                        + "greater than the maximum number of requests per batch.");
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
@@ -81,8 +87,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * @param requestEntries a set of request entries that should be sent to the destination
      * @param requestResult a ResultFuture that needs to be completed once all request entries that
-     *     have been passed to the method on invocation have either been successfully persisted in
-     *     the destination or have been re-queued through {@code requestResult}
+     *         have been passed to the method on invocation have either been successfully persisted in
+     *         the destination or have been re-queued through {@code requestResult}
      */
     protected abstract void submitRequestEntries(
             List<RequestEntryT> requestEntries, ResultFuture<RequestEntryT> requestResult);
@@ -141,6 +147,11 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>The method blocks if too many async requests are in flight.
      */
     private void flush() throws InterruptedException, IOException {
+
+        while (inFlightRequestsCount >= maxInFlightRequests) {
+            mailboxExecutor.yield();
+        }
+
         // create a batch of request entries that should be persisted in the destination
         List<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
 
@@ -153,15 +164,15 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             }
         }
 
+        if (batch.size() == 0) {
+            return;
+        }
+
         ResultFuture<RequestEntryT> requestResult =
                 failedRequestEntries -> mailboxExecutor.execute(
                         () -> completeRequest(failedRequestEntries),
                         "Mark in-flight request as completed and requeue %d request entries",
                         failedRequestEntries.size());
-
-        while (inFlightRequestsCount >= maxInFlightRequests) {
-            mailboxExecutor.yield();
-        }
 
         inFlightRequestsCount++;
         try {
@@ -201,13 +212,13 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     @Override
     public List<Void> prepareCommit(boolean flush) throws IOException, InterruptedException {
-        if (flush) {
-            flush();
-        }
-
         // wait until all in-flight requests completed
-        while (inFlightRequestsCount > 0) {
+        while (inFlightRequestsCount > 0 || bufferedRequestEntries.size() > 0) {
             mailboxExecutor.yield();
+            if (flush) {
+                flushIfFull();
+                flush();
+            }
         }
 
         return Collections.emptyList();
@@ -225,5 +236,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     }
 
     @Override
-    public void close() throws Exception {}
+    public void close() throws Exception {
+    }
 }

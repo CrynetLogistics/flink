@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AsyncSinkWriterTest {
 
@@ -43,7 +44,7 @@ public class AsyncSinkWriterTest {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
                 10, 1, 100, false);
         for (int i = 0; i < 80; i++) {
-            sink.write(String.valueOf(i), null);
+            sink.write(String.valueOf(i));
         }
         assertEquals(80, res.size());
     }
@@ -54,7 +55,7 @@ public class AsyncSinkWriterTest {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
                 10, 1, 100, false);
         for (int i = 0; i < 23; i++) {
-            sink.write(String.valueOf(i), null);
+            sink.write(String.valueOf(i));
         }
         assertEquals(20, res.size());
         assertEquals(List.of(20, 21, 22), new ArrayList<>(sink.snapshotState().get(0)));
@@ -66,29 +67,38 @@ public class AsyncSinkWriterTest {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
                 10, 1, 100, false);
         for (int i = 0; i < 23; i++) {
-            sink.write(String.valueOf(i), null);
+            sink.write(String.valueOf(i));
         }
         sink.prepareCommit(true);
         assertEquals(23, res.size());
     }
 
     @Test
-    public void snapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualAndAutomaticFlush()
+    public void snapshotsAreTakenOfBufferCorrectlyBeforeAndAfterAutomaticFlush()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
                 3, 1, 100, false);
 
-        sink.write("25", null);
-        sink.write("55", null);
+        sink.write("25");
+        sink.write("55");
         assertEquals(List.of(25, 55), new ArrayList<>(sink.snapshotState().get(0)));
         assertEquals(0, res.size());
 
-        sink.write("75", null);
+        sink.write("75");
         assertEquals(List.of(), new ArrayList<>(sink.snapshotState().get(0)));
         assertEquals(3, res.size());
+    }
 
-        sink.write("95", null);
-        sink.write("955", null);
+    @Test
+    public void snapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualFlush()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
+                3, 1, 100, false);
+        sink.write("25");
+        sink.write("55");
+        sink.write("75");
+        sink.write("95");
+        sink.write("955");
         assertEquals(List.of(95, 955), new ArrayList<>(sink.snapshotState().get(0)));
         sink.prepareCommit(true);
         assertEquals(List.of(), new ArrayList<>(sink.snapshotState().get(0)));
@@ -100,17 +110,18 @@ public class AsyncSinkWriterTest {
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
                 3, 1, 100, false);
-        sink.write("25", null);
-        sink.write("55", null);
-        sink.write("75", null);
-        sink.write("95", null);
-        sink.write("125", null);
-        Exception e =
-                assertThrows(IOException.class, () -> sink.write("135", null));
-        assertEquals("Failed to submit up to [3] request entries, POSSIBLE DATA LOSS. A "
-                + "runtime exception occured during the submission of the request entries",
+        sink.write("25");
+        sink.write("55");
+        sink.write("75");
+        sink.write("95");
+        sink.write("125");
+        Exception e = assertThrows(IOException.class, () -> sink.write("135"));
+        assertEquals(
+                "Failed to submit up to [3] request entries, POSSIBLE DATA LOSS. A "
+                        + "runtime exception occured during the submission of the request entries",
                 e.getMessage());
-        assertEquals("Deliberate runtime exception occurred in SinkWriterImplementation.",
+        assertEquals(
+                "Deliberate runtime exception occurred in SinkWriterImplementation.",
                 e.getCause().getMessage());
 
         sink.prepareCommit(true);
@@ -121,23 +132,68 @@ public class AsyncSinkWriterTest {
     public void nonRuntimeErrorsDoNotResultInViolationOfAtLeastOnceSemanticsDueToRequeueOfFailures()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
-                3, 1, 100, false);
-        sink.write("25", null);
-        sink.write("55", null);
-        sink.write("75", null);
-        sink.write("95", null);
-        sink.write("955", null);
-        sink.write("550", null);
-        sink.write("45", null);
-        sink.write("545", null);
+                3, 1, 100, true);
+        sink.write("25");
+        sink.write("55");
+        sink.write("965");
+        sink.write("75");
+        sink.write("95");
+        sink.write("955");
+        sink.write("550");
+        sink.write("45");
+        sink.write("35");
+        sink.write("535");
 
-        assertEquals(6, res.size());
-        assertEquals(List.of(45, 545), new ArrayList<>(sink.snapshotState().get(0)));
+        // [535] should be in the bufferedRequestEntries
+        // [550] should be in the inFlightRequest, ready to be added
+        // [25, 55, 75, 95, 965, 45, 35, 955] should be downstream already
+        assertEquals(List.of(535), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(List.of(25, 55, 75, 95, 965, 45, 35, 955), res);
 
+        // Checkpoint occurs
         sink.prepareCommit(true);
-        assertEquals(8, res.size());
+        // Everything is saved
+        assertEquals(List.of(25, 55, 75, 95, 965, 45, 35, 955, 550, 535), res);
+        assertEquals(0, sink.snapshotState().get(0).size());
     }
 
+    @Test
+    public void failedEntriesAreRetriedInTheNextPossiblePersistRequestAndNoLater()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext,
+                3, 1, 100, true);
+        sink.write("25");
+        sink.write("55");
+        sink.write("965");
+        sink.write("75");
+        sink.write("95");
+        sink.write("955");
+        assertTrue(res.contains(965));
+        sink.write("550");
+        sink.write("645");
+        sink.write("545");
+        assertTrue(res.contains(955));
+        sink.write("535");
+        sink.write("515");
+        sink.write("505");
+        assertTrue(res.contains(550));
+        assertTrue(res.contains(645));
+        assertTrue(res.contains(545));
+        sink.prepareCommit(true);
+        assertTrue(res.contains(545));
+        assertTrue(res.contains(535));
+        assertTrue(res.contains(515));
+    }
+
+    @Test
+    public void maxBufferSizeOfSinkShouldBeStrictlyGreaterThanMaxSizeOfEachBatch() {
+        Exception e = assertThrows(
+                IllegalArgumentException.class,
+                () -> new AsyncSinkWriterImpl(sinkInitContext,
+                        10, 1, 10, false));
+        assertEquals(e.getMessage(), "The maximum number of requests that may be buffered "
+                + "should be strictlygreater than the maximum number of requests per batch.");
+    }
 
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {
 
@@ -152,36 +208,46 @@ public class AsyncSinkWriterTest {
             this.simulateFailures = simulateFailures;
         }
 
+        public void write(String val) throws IOException, InterruptedException {
+            write(val, null);
+        }
+
         /**
          * Fails if any value is between 101 and 200, and if {@code simulateFailures} is set,
          * fails on the first attempt but succeeds upon retry on all others
+         *
          * @param requestEntries a set of request entries that should be persisted to {@code res}
          * @param requestResult a ResultFuture that needs to be completed once all request entries
-         *     have been persisted. Any failures should be elements of the list being completed
+         *         have been persisted. Any failures should be elements of the list being completed
          */
         @Override
         protected void submitRequestEntries(
                 List<Integer> requestEntries,
                 ResultFuture<Integer> requestResult) {
-            if(requestEntries.stream().anyMatch(val -> val > 100 && val <= 200)) {
+            if (requestEntries.stream().anyMatch(val -> val > 100 && val <= 200)) {
                 throw new RuntimeException(
                         "Deliberate runtime exception occurred in SinkWriterImplementation.");
             }
-            if(simulateFailures) {
+            if (simulateFailures) {
                 List<Integer> successfulRetries = failedFirstAttempts.stream()
                         .filter(requestEntries::contains).collect(Collectors.toList());
-                requestEntries.removeIf(successfulRetries::contains);
                 failedFirstAttempts.removeIf(successfulRetries::contains);
 
-                List<Integer> firstTimeFailed = requestEntries
-                        .stream().filter(val -> val > 200).collect(Collectors.toList());
-                requestEntries.removeAll(firstTimeFailed);
+                List<Integer> requestEntriesWithoutSuccessfulRetries = requestEntries.stream()
+                        .filter(x -> !successfulRetries.contains(x)).collect(Collectors.toList());
 
-                res.addAll(requestEntries);
+                List<Integer> firstTimeFailed = requestEntriesWithoutSuccessfulRetries
+                        .stream().filter(val -> val > 200).collect(Collectors.toList());
+                requestEntriesWithoutSuccessfulRetries.removeAll(firstTimeFailed);
+                failedFirstAttempts.addAll(firstTimeFailed);
+
+                res.addAll(requestEntriesWithoutSuccessfulRetries);
+                res.addAll(successfulRetries);
                 requestResult.complete(firstTimeFailed);
+            } else {
+                res.addAll(requestEntries);
+                requestResult.complete(new ArrayList<>());
             }
-            res.addAll(requestEntries);
-            requestResult.complete(new ArrayList<>());
         }
     }
 
@@ -212,8 +278,7 @@ public class AsyncSinkWriterTest {
             };
             return new MailboxExecutorImpl(
                     new TaskMailboxImpl(Thread.currentThread()),
-                    10,
-                    streamTaskActionExecutor);
+                    Integer.MAX_VALUE, streamTaskActionExecutor);
         }
 
         @Override
