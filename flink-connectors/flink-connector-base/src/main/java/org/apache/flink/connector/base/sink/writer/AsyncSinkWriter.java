@@ -38,8 +38,6 @@ import java.util.NoSuchElementException;
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(AsyncSinkWriter.class);
-
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
 
@@ -127,8 +125,13 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         bufferedRequestEntries.add(elementConverter.apply(element, context));
 
-        // blocks if too many async requests are in flight
         flushIfFull();
+    }
+
+    private void flushIfFull() throws InterruptedException, IOException {
+        while (bufferedRequestEntries.size() >= maxBatchSize) {
+            flush();
+        }
     }
 
     /**
@@ -137,15 +140,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method blocks if too many async requests are in flight.
      */
-    private void flushIfFull() throws InterruptedException {
-        while (bufferedRequestEntries.size() >= maxBatchSize) {
-            flush();
-        }
-    }
-
-    private void flush() throws InterruptedException {
+    private void flush() throws InterruptedException, IOException {
         // create a batch of request entries that should be persisted in the destination
-        ArrayList<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
+        List<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
 
         while (batch.size() <= maxBatchSize && !bufferedRequestEntries.isEmpty()) {
             try {
@@ -167,7 +164,15 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         }
 
         inFlightRequestsCount++;
-        submitRequestEntries(batch, requestResult);
+        try {
+            submitRequestEntries(batch, requestResult);
+        } catch (RuntimeException e) {
+            // if an exception is thrown, completeRequest will not have been called
+            inFlightRequestsCount--;
+            throw new IOException(String.format("Failed to submit up to [%s] request entries, "
+                    + "POSSIBLE DATA LOSS. A runtime exception occured during the submission of the"
+                    + " request entries", batch.size()), e);
+        }
     }
 
     /**
@@ -215,7 +220,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * a failure/restart of the application.
      */
     @Override
-    public List<Collection<RequestEntryT>> snapshotState() throws IOException {
+    public List<Collection<RequestEntryT>> snapshotState() {
         return List.of(bufferedRequestEntries);
     }
 
