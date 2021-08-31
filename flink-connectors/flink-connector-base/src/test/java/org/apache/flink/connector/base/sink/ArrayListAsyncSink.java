@@ -23,6 +23,7 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ResultFuture;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +54,7 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
         protected void submitRequestEntries(
                 List<Integer> requestEntries, ResultFuture<Integer> requestResult) {
             ArrayListDestination.putRecords(requestEntries);
-            requestResult.complete(List.of());
+            requestResult.complete(Arrays.asList());
         }
     }
 

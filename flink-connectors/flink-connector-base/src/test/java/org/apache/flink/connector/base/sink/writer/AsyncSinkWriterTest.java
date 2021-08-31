@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -74,7 +75,7 @@ public class AsyncSinkWriterTest {
             sink.write(String.valueOf(i));
         }
         assertEquals(20, res.size());
-        assertEquals(List.of(20, 21, 22), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(20, 21, 22), new ArrayList<>(sink.snapshotState().get(0)));
     }
 
     @Test
@@ -95,11 +96,11 @@ public class AsyncSinkWriterTest {
 
         sink.write("25");
         sink.write("55");
-        assertEquals(List.of(25, 55), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(25, 55), new ArrayList<>(sink.snapshotState().get(0)));
         assertEquals(0, res.size());
 
         sink.write("75");
-        assertEquals(List.of(), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0)));
         assertEquals(3, res.size());
     }
 
@@ -112,9 +113,9 @@ public class AsyncSinkWriterTest {
         sink.write("75");
         sink.write("95");
         sink.write("955");
-        assertEquals(List.of(95, 955), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(95, 955), new ArrayList<>(sink.snapshotState().get(0)));
         sink.prepareCommit(true);
-        assertEquals(List.of(), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0)));
         assertEquals(5, res.size());
     }
 
@@ -158,13 +159,13 @@ public class AsyncSinkWriterTest {
         // [535] should be in the bufferedRequestEntries
         // [550] should be in the inFlightRequest, ready to be added
         // [25, 55, 75, 95, 965, 45, 35, 955] should be downstream already
-        assertEquals(List.of(535), new ArrayList<>(sink.snapshotState().get(0)));
-        assertEquals(List.of(25, 55, 75, 95, 965, 45, 35, 955), res);
+        assertEquals(Arrays.asList(535), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(25, 55, 75, 95, 965, 45, 35, 955), res);
 
         // Checkpoint occurs
         sink.prepareCommit(true);
         // Everything is saved
-        assertEquals(List.of(25, 55, 75, 95, 965, 45, 35, 955, 550, 535), res);
+        assertEquals(Arrays.asList(25, 55, 75, 95, 965, 45, 35, 955, 550, 535), res);
         assertEquals(0, sink.snapshotState().get(0).size());
     }
 
