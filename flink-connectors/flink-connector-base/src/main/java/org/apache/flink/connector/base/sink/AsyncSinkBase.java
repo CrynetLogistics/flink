@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.base.sink;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.Committer;
 import org.apache.flink.api.connector.sink.GlobalCommitter;
 import org.apache.flink.api.connector.sink.Sink;
@@ -44,6 +45,7 @@ import java.util.Optional;
  *   <li>We are not considering support for exactly-once semantics at this point.
  * </ul>
  */
+@PublicEvolving
 public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
         implements Sink<InputT, Void, Collection<RequestEntryT>, Void> {
 

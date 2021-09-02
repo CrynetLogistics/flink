@@ -131,7 +131,7 @@ public class AsyncSinkWriterTest {
         Exception e = assertThrows(IOException.class, () -> sink.write("135"));
         assertEquals(
                 "Failed to submit up to [3] request entries, POSSIBLE DATA LOSS. A "
-                        + "runtime exception occured during the submission of the request entries",
+                        + "runtime exception occurred during the submission of the request entries",
                 e.getMessage());
         assertEquals(
                 "Deliberate runtime exception occurred in SinkWriterImplementation.",

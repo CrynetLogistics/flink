@@ -17,6 +17,8 @@
 
 package org.apache.flink.connector.base.sink.writer;
 
+import org.apache.flink.annotation.PublicEvolving;
+
 import java.util.Collection;
 
 /**
@@ -32,6 +34,7 @@ import java.util.Collection;
  *
  * @param <RequestEntryT>
  */
+@PublicEvolving
 public interface ResultFuture<RequestEntryT> {
     /**
      * Completes the result future.

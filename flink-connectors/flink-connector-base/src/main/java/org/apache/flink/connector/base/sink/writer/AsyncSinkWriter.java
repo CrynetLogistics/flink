@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.base.sink.writer;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
@@ -34,6 +35,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /** AsyncSinkWriter. */
+@PublicEvolving
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
 
@@ -43,25 +45,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final int maxBatchSize;
     private final int maxInFlightRequests;
     private final int maxBufferedRequests;
-
-    public AsyncSinkWriter(
-            ElementConverter<InputT, RequestEntryT> elementConverter,
-            Sink.InitContext context,
-            int maxBatchSize,
-            int maxInFlightRequests,
-            int maxBufferedRequests) {
-        this.elementConverter = elementConverter;
-        this.mailboxExecutor = context.getMailboxExecutor();
-        this.timeService = context.getProcessingTimeService();
-
-        Preconditions.checkArgument(
-                maxBufferedRequests > maxBatchSize,
-                "The maximum number of requests that may be buffered should be strictly"
-                        + " greater than the maximum number of requests per batch.");
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-    }
 
     /**
      * The ElementConverter provides a mapping between for the elements of a stream to request
@@ -122,6 +105,26 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private int inFlightRequestsCount;
 
+
+    public AsyncSinkWriter(
+            ElementConverter<InputT, RequestEntryT> elementConverter,
+            Sink.InitContext context,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests) {
+        this.elementConverter = elementConverter;
+        this.mailboxExecutor = context.getMailboxExecutor();
+        this.timeService = context.getProcessingTimeService();
+
+        Preconditions.checkArgument(
+                maxBufferedRequests > maxBatchSize,
+                "The maximum number of requests that may be buffered should be strictly"
+                        + " greater than the maximum number of requests per batch.");
+        this.maxBatchSize = maxBatchSize;
+        this.maxInFlightRequests = maxInFlightRequests;
+        this.maxBufferedRequests = maxBufferedRequests;
+    }
+
     @Override
     public void write(InputT element, Context context) throws IOException, InterruptedException {
         while (bufferedRequestEntries.size() >= maxBufferedRequests) {
@@ -133,7 +136,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         flushIfFull();
     }
 
-    private void flushIfFull() throws InterruptedException, IOException {
+    private void flushIfFull() throws InterruptedException {
         while (bufferedRequestEntries.size() >= maxBatchSize) {
             flush();
         }
@@ -145,7 +148,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method blocks if too many async requests are in flight.
      */
-    private void flush() throws InterruptedException, IOException {
+    private void flush() throws InterruptedException {
         while (inFlightRequestsCount >= maxInFlightRequests) {
             mailboxExecutor.yield();
         }
@@ -172,19 +175,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                                 failedRequestEntries.size());
 
         inFlightRequestsCount++;
-        try {
-            submitRequestEntries(batch, requestResult);
-        } catch (RuntimeException e) {
-            // if a runtime exception is thrown, completeRequest will not have been called
-            inFlightRequestsCount--;
-            throw new IOException(
-                    String.format(
-                            "Failed to submit up to [%s] request entries, "
-                                    + "POSSIBLE DATA LOSS. A runtime exception occured during the submission of the"
-                                    + " request entries",
-                            batch.size()),
-                    e);
-        }
+        submitRequestEntries(batch, requestResult);
     }
 
     /**
