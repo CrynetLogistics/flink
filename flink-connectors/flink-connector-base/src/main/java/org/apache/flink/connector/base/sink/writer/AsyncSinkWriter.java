@@ -105,7 +105,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private int inFlightRequestsCount;
 
-
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
             Sink.InitContext context,
@@ -198,7 +197,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>To this end, all in-flight requests need to completed before proceeding with the commit.
      */
     @Override
-    public List<Void> prepareCommit(boolean flush) throws IOException, InterruptedException {
+    public List<Void> prepareCommit(boolean flush) throws InterruptedException {
         while (inFlightRequestsCount > 0 || bufferedRequestEntries.size() > 0) {
             mailboxExecutor.yield();
             if (flush) {
