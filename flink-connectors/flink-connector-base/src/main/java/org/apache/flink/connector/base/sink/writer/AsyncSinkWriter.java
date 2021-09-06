@@ -58,7 +58,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final int maxBatchSize;
     private final int maxInFlightRequests;
     private final int maxBufferedRequests;
-    private final int flushOnBufferSizeMB = 5;
+    private final double flushOnBufferSizeMB;
 
     /**
      * The ElementConverter provides a mapping between for the elements of a stream to request
@@ -161,7 +161,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             Sink.InitContext context,
             int maxBatchSize,
             int maxInFlightRequests,
-            int maxBufferedRequests) {
+            int maxBufferedRequests,
+            double flushOnBufferSizeMB) {
         this.elementConverter = elementConverter;
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
@@ -177,6 +178,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
+        this.flushOnBufferSizeMB = flushOnBufferSizeMB;
 
         this.inFlightRequestsCount = 0;
         this.bufferedRequestEntriesTotalSizeMB = 0;

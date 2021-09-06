@@ -51,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class AsyncSinkWriterTest {
 
+    private static final int BYTES_IN_MB = 1024 * 1024;
     private final List<Integer> res = new ArrayList<>();
     private final SinkInitContext sinkInitContext = new SinkInitContext();
 
@@ -239,23 +240,47 @@ public class AsyncSinkWriterTest {
         assertEquals(z, new ArrayList<>(sink.snapshotState().get(0)));
     }
 
+    @Test
+    public void flushThresholdMetBeforeBatchLimitWillCreateASmallerBatchOfSizeAboveThreshold()
+            throws IOException, InterruptedException {
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100,
+                (double)30/AsyncSinkWriter.BYTES_IN_MB, true);
+
+        /* Sink has flush threshold of 30 bytes, each integer is 4 bytes, therefore, flushing
+         * should occur once 8 elements have been written.
+         */
+        for (int i = 0; i < 15; i++) {
+            sink.write(String.valueOf(i));
+        }
+        assertEquals(8, res.size());
+    }
+
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {
 
         private final Set<Integer> failedFirstAttempts = new HashSet<>();
         private final boolean simulateFailures;
 
         public AsyncSinkWriterImpl(
-                Sink.InitContext context,
-                int maxBatchSize,
-                int maxInFlightRequests,
-                int maxBufferedRequests,
-                boolean simulateFailures) {
+                Sink.InitContext context, int maxBatchSize, int maxInFlightRequests,
+                int maxBufferedRequests, boolean simulateFailures) {
             super(
                     (elem, ctx) -> Integer.parseInt(elem),
                     context,
                     maxBatchSize,
                     maxInFlightRequests,
-                    maxBufferedRequests);
+                    maxBufferedRequests, 100);
+            this.simulateFailures = simulateFailures;
+        }
+
+        public AsyncSinkWriterImpl(
+                Sink.InitContext context,
+                int maxBatchSize,
+                int maxInFlightRequests,
+                int maxBufferedRequests,
+                double flushOnBufferSizeMB,
+                boolean simulateFailures) {
+            super((elem, ctx) -> Integer.parseInt(elem), context, maxBatchSize, maxInFlightRequests,
+                    maxBufferedRequests, flushOnBufferSizeMB);
             this.simulateFailures = simulateFailures;
         }
 
