@@ -59,17 +59,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final ElementConverter<InputT, RequestEntryT> elementConverter;
 
     /**
-     * This method allows the getting of the size of a {@code RequestEntryT} in bytes. The size in
-     * this case is measured as the total bytes that is written to the destination as a result of
-     * persisting this particular {@code RequestEntryT} rather than the serialized length (which may
-     * be the same).
-     *
-     * @param requestEntry the requestEntry for which we want to know the size
-     * @return the size of the requestEntry, as defined previously
-     */
-    protected abstract int getSizeInBytes(RequestEntryT requestEntry);
-
-    /**
      * Buffer to hold request entries that should be persisted into the destination.
      *
      * <p>A request entry contain all relevant details to make a call to the destination. Eg, for
@@ -131,6 +120,17 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     protected abstract void submitRequestEntries(
             List<RequestEntryT> requestEntries, ResultFuture<RequestEntryT> requestResult);
+
+    /**
+     * This method allows the getting of the size of a {@code RequestEntryT} in bytes. The size in
+     * this case is measured as the total bytes that is written to the destination as a result of
+     * persisting this particular {@code RequestEntryT} rather than the serialized length (which may
+     * be the same).
+     *
+     * @param requestEntry the requestEntry for which we want to know the size
+     * @return the size of the requestEntry, as defined previously
+     */
+    protected abstract int getSizeInBytes(RequestEntryT requestEntry);
 
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
