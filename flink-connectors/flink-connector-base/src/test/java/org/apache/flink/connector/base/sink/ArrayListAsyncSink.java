@@ -56,6 +56,11 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
             ArrayListDestination.putRecords(requestEntries);
             requestResult.complete(Arrays.asList());
         }
+
+        @Override
+        protected int getSizeInBytes(Integer requestEntry) {
+            return 4;
+        }
     }
 
     private final int maxBatchSize;
