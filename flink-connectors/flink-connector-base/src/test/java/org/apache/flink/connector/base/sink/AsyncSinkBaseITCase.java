@@ -49,7 +49,7 @@ public class AsyncSinkBaseITCase {
                         () -> env.execute("Integration Test: AsyncSinkBaseITCase"));
         assertEquals(
                 "Intentional error on persisting 1_000_000 to ArrayListDestination",
-                e.getCause().getCause().getCause().getMessage());
+                e.getCause().getCause().getMessage());
     }
 
     @Test

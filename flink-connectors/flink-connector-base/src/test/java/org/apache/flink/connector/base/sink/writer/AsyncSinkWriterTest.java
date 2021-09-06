@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -122,22 +123,15 @@ public class AsyncSinkWriterTest {
     @Test
     public void runtimeErrorsInSubmitRequestEntriesEndUpAsIOExceptionsWithNumberOfFailedRequests()
             throws IOException, InterruptedException {
-        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, false);
+        AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, true);
         sink.write("25");
         sink.write("55");
         sink.write("75");
         sink.write("95");
-        sink.write("125");
-        Exception e = assertThrows(IOException.class, () -> sink.write("135"));
-        assertEquals(
-                "Failed to submit up to [3] request entries, POSSIBLE DATA LOSS. A "
-                        + "runtime exception occurred during the submission of the request entries",
+        sink.write("35");
+        Exception e = assertThrows(RuntimeException.class, () -> sink.write("135"));
+        assertEquals("Deliberate runtime exception occurred in SinkWriterImplementation.",
                 e.getMessage());
-        assertEquals(
-                "Deliberate runtime exception occurred in SinkWriterImplementation.",
-                e.getCause().getMessage());
-
-        sink.prepareCommit(true);
         assertEquals(3, res.size());
     }
 
@@ -233,8 +227,9 @@ public class AsyncSinkWriterTest {
         }
 
         /**
-         * Fails if any value is between 101 and 200, and if {@code simulateFailures} is set, fails
-         * on the first attempt but succeeds upon retry on all others.
+         * Fails if any value is between 101 and 200. If {@code simulateFailures} is set, it will
+         * fail on the first attempt but succeeds upon retry on all others for entries strictly
+         * greater than 200.
          *
          * @param requestEntries a set of request entries that should be persisted to {@code res}
          * @param requestResult a ResultFuture that needs to be completed once all request entries
@@ -327,6 +322,11 @@ public class AsyncSinkWriterTest {
         @Override
         public SinkWriterMetricGroup metricGroup() {
             return null;
+        }
+
+        @Override
+        public OptionalLong getRestoredCheckpointId() {
+            return OptionalLong.empty();
         }
     }
 }
