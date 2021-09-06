@@ -137,30 +137,67 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void nonRuntimeErrorsDoNotResultInViolationOfAtLeastOnceSemanticsDueToRequeueOfFailures()
+    public void retryableErrorsDoNotResultInViolationOfAtLeastOnceSemanticsDueToRequeueOfFailures()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, true);
+
         sink.write("25");
+        assertEquals(Arrays.asList(), res);
+        assertEquals(Arrays.asList(25), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("55");
+        assertEquals(Arrays.asList(), res);
+        assertEquals(Arrays.asList(25, 55), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("965");
+        assertEquals(Arrays.asList(25, 55), res); // 25, 55 persisted; 965 failed
+        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0))); // 965 inflight
+
         sink.write("75");
+        assertEquals(Arrays.asList(25, 55), res);
+        assertEquals(Arrays.asList(75), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("95");
+        assertEquals(Arrays.asList(25, 55), res);
+        assertEquals(Arrays.asList(75, 95), new ArrayList<>(sink.snapshotState().get(0)));
+
+        /*
+         * Writing 955 to the sink increases the buffer to size 3 containing [75, 95, 955]. This
+         * triggers the outstanding in flight request with the failed 965 to be run, and 965 is
+         * placed at the front of the queue. The first {@code maxBatchSize = 3} elements are
+         * persisted, with 965 succeeding this (second) time. 955 remains in the buffer.
+         */
         sink.write("955");
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95), res);
+        assertEquals(Arrays.asList(955), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("550");
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95), res);
+        assertEquals(Arrays.asList(955, 550), new ArrayList<>(sink.snapshotState().get(0)));
+
+        /*
+         * [955, 550, 45] are attempted to be persisted
+         */
         sink.write("45");
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
+        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("35");
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
+        assertEquals(Arrays.asList(35), new ArrayList<>(sink.snapshotState().get(0)));
+
         sink.write("535");
 
-        // [535] should be in the bufferedRequestEntries
-        // [550] should be in the inFlightRequest, ready to be added
-        // [25, 55, 75, 95, 965, 45, 35, 955] should be downstream already
-        assertEquals(Arrays.asList(535), new ArrayList<>(sink.snapshotState().get(0)));
-        assertEquals(Arrays.asList(25, 55, 75, 95, 965, 45, 35, 955), res);
+        // [35, 535] should be in the bufferedRequestEntries
+        // [955, 550] should be in the inFlightRequest, ready to be added
+        // [25, 55, 965, 75, 95, 45] should be downstream already
+        assertEquals(Arrays.asList(35, 535), new ArrayList<>(sink.snapshotState().get(0)));
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
 
         // Checkpoint occurs
         sink.prepareCommit(true);
         // Everything is saved
-        assertEquals(Arrays.asList(25, 55, 75, 95, 965, 45, 35, 955, 550, 535), res);
+        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45, 550, 955, 35, 535), res);
         assertEquals(0, sink.snapshotState().get(0).size());
     }
 
@@ -178,14 +215,14 @@ public class AsyncSinkWriterTest {
         sink.write("550");
         sink.write("645");
         sink.write("545");
-        assertTrue(res.contains(955));
         sink.write("535");
         sink.write("515");
+        assertTrue(res.contains(955));
         sink.write("505");
         assertTrue(res.contains(550));
         assertTrue(res.contains(645));
-        assertTrue(res.contains(545));
         sink.prepareCommit(true);
+        assertTrue(res.contains(545));
         assertTrue(res.contains(545));
         assertTrue(res.contains(535));
         assertTrue(res.contains(515));
@@ -232,6 +269,8 @@ public class AsyncSinkWriterTest {
          * fail on the first attempt but succeeds upon retry on all others for entries strictly
          * greater than 200.
          *
+         * <p>A limitation of this basic implementation is that each element written must be unique.
+         *
          * @param requestEntries a set of request entries that should be persisted to {@code res}
          * @param requestResult a ResultFuture that needs to be completed once all request entries
          *     have been persisted. Any failures should be elements of the list being completed
@@ -250,20 +289,15 @@ public class AsyncSinkWriterTest {
                                 .collect(Collectors.toList());
                 failedFirstAttempts.removeIf(successfulRetries::contains);
 
-                List<Integer> requestEntriesWithoutSuccessfulRetries =
+                List<Integer> firstTimeFailed =
                         requestEntries.stream()
                                 .filter(x -> !successfulRetries.contains(x))
-                                .collect(Collectors.toList());
-
-                List<Integer> firstTimeFailed =
-                        requestEntriesWithoutSuccessfulRetries.stream()
                                 .filter(val -> val > 200)
                                 .collect(Collectors.toList());
-                requestEntriesWithoutSuccessfulRetries.removeAll(firstTimeFailed);
                 failedFirstAttempts.addAll(firstTimeFailed);
 
-                res.addAll(requestEntriesWithoutSuccessfulRetries);
-                res.addAll(successfulRetries);
+                requestEntries.removeAll(firstTimeFailed);
+                res.addAll(requestEntries);
                 requestResult.complete(firstTimeFailed);
             } else {
                 res.addAll(requestEntries);

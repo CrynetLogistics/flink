@@ -32,7 +32,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 /** AsyncSinkWriter. */
 @PublicEvolving
@@ -158,12 +157,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         List<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
 
-        while (batch.size() <= maxBatchSize && !bufferedRequestEntries.isEmpty()) {
-            try {
-                batch.add(bufferedRequestEntries.remove());
-            } catch (NoSuchElementException e) {
-                break;
-            }
+        int batchSize = Math.min(maxBatchSize, bufferedRequestEntries.size());
+        for (int i = 0; i < batchSize; i++) {
+            batch.add(bufferedRequestEntries.remove());
         }
 
         if (batch.size() == 0) {
