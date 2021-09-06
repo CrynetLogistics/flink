@@ -56,27 +56,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final ElementConverter<InputT, RequestEntryT> elementConverter;
 
     /**
-     * This method specifies how to persist buffered request entries into the destination. It is
-     * implemented when support for a new destination is added.
-     *
-     * <p>The method is invoked with a set of request entries according to the buffering hints (and
-     * the valid limits of the destination). The logic then needs to create and execute the request
-     * against the destination (ideally by batching together multiple request entries to increase
-     * efficiency). The logic also needs to identify individual request entries that were not
-     * persisted successfully and resubmit them using the {@code requeueFailedRequestEntry} method.
-     *
-     * <p>During checkpointing, the sink needs to ensure that there are no outstanding in-flight
-     * requests.
-     *
-     * @param requestEntries a set of request entries that should be sent to the destination
-     * @param requestResult a ResultFuture that needs to be completed once all request entries that
-     *     have been passed to the method on invocation have either been successfully persisted in
-     *     the destination or have been re-queued through {@code requestResult}
-     */
-    protected abstract void submitRequestEntries(
-            List<RequestEntryT> requestEntries, ResultFuture<RequestEntryT> requestResult);
-
-    /**
      * Buffer to hold request entries that should be persisted into the destination.
      *
      * <p>A request entry contain all relevant details to make a call to the destination. Eg, for
@@ -104,6 +83,27 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * fail, which could then lead to data loss.
      */
     private int inFlightRequestsCount;
+
+    /**
+     * This method specifies how to persist buffered request entries into the destination. It is
+     * implemented when support for a new destination is added.
+     *
+     * <p>The method is invoked with a set of request entries according to the buffering hints (and
+     * the valid limits of the destination). The logic then needs to create and execute the request
+     * against the destination (ideally by batching together multiple request entries to increase
+     * efficiency). The logic also needs to identify individual request entries that were not
+     * persisted successfully and resubmit them using the {@code requeueFailedRequestEntry} method.
+     *
+     * <p>During checkpointing, the sink needs to ensure that there are no outstanding in-flight
+     * requests.
+     *
+     * @param requestEntries a set of request entries that should be sent to the destination
+     * @param requestResult a ResultFuture that needs to be completed once all request entries that
+     *     have been passed to the method on invocation have either been successfully persisted in
+     *     the destination or have been re-queued through {@code requestResult}
+     */
+    protected abstract void submitRequestEntries(
+            List<RequestEntryT> requestEntries, ResultFuture<RequestEntryT> requestResult);
 
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
