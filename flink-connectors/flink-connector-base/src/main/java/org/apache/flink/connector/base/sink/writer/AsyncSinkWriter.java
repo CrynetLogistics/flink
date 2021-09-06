@@ -115,6 +115,10 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
 
+        Preconditions.checkNotNull(elementConverter);
+        Preconditions.checkArgument(maxBatchSize > 0);
+        Preconditions.checkArgument(maxBufferedRequests > 0);
+        Preconditions.checkArgument(maxInFlightRequests > 0);
         Preconditions.checkArgument(
                 maxBufferedRequests > maxBatchSize,
                 "The maximum number of requests that may be buffered should be strictly"
