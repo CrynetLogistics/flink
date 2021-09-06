@@ -131,8 +131,7 @@ public class AsyncSinkWriterTest {
         sink.write("95");
         sink.write("35");
         Exception e = assertThrows(RuntimeException.class, () -> sink.write("135"));
-        assertEquals(
-                "Deliberate runtime exception occurred in SinkWriterImplementation.",
+        assertEquals("Deliberate runtime exception occurred in SinkWriterImplementation.",
                 e.getMessage());
         assertEquals(3, res.size());
     }
@@ -303,6 +302,11 @@ public class AsyncSinkWriterTest {
                 res.addAll(requestEntries);
                 requestResult.accept(new ArrayList<>());
             }
+        }
+
+        @Override
+        protected int getSizeInBytes(Integer requestEntry) {
+            return 4;
         }
     }
 

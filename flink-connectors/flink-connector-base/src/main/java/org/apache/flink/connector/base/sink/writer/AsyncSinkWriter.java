@@ -50,12 +50,15 @@ import java.util.function.Consumer;
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
 
+    public static final int BYTES_IN_MB = 1024 * 1024;
+
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
 
     private final int maxBatchSize;
     private final int maxInFlightRequests;
     private final int maxBufferedRequests;
+    private final int flushOnBufferSizeMB = 5;
 
     /**
      * The ElementConverter provides a mapping between for the elements of a stream to request
@@ -96,6 +99,19 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private int inFlightRequestsCount;
 
     /**
+     * Tracks the cumulative size of all elements in {@code bufferedRequestEntries} to facilitate
+     * the criterion for flushing after {@code flushOnBufferSizeMB} is reached.
+     */
+    private double bufferedRequestEntriesTotalSizeMB;
+
+    /**
+     * Tracks the size of each element in {@code bufferedRequestEntries}. The sizes are stored in MB
+     * and the position in the deque reflects the position of the corresponding element in {@code
+     * bufferedRequestEntries}.
+     */
+    private final Deque<Double> bufferedRequestEntriesSizeMB = new ArrayDeque<>();
+
+    /**
      * This method specifies how to persist buffered request entries into the destination. It is
      * implemented when support for a new destination is added.
      *
@@ -118,6 +134,17 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     protected abstract void submitRequestEntries(
             List<RequestEntryT> requestEntries, Consumer<Collection<RequestEntryT>> requestResult);
 
+    /**
+     * This method allows the getting of the size of a {@code RequestEntryT} in bytes. The size in
+     * this case is measured as the total bytes that is written to the destination as a result of
+     * persisting this particular {@code RequestEntryT} rather than the serialized length (which may
+     * be the same).
+     *
+     * @param requestEntry the requestEntry for which we want to know the size
+     * @return the size of the requestEntry, as defined previously
+     */
+    protected abstract int getSizeInBytes(RequestEntryT requestEntry);
+
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
             Sink.InitContext context,
@@ -139,6 +166,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
+
+        this.inFlightRequestsCount = 0;
+        this.bufferedRequestEntriesTotalSizeMB = 0;
     }
 
     @Override
@@ -147,13 +177,18 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             mailboxExecutor.yield();
         }
 
-        bufferedRequestEntries.add(elementConverter.apply(element, context));
+        RequestEntryT requestEntry = elementConverter.apply(element, context);
+        double requestEntrySizeMB = (double) getSizeInBytes(requestEntry) / BYTES_IN_MB;
+        bufferedRequestEntries.add(requestEntry);
+        bufferedRequestEntriesSizeMB.add(requestEntrySizeMB);
+        bufferedRequestEntriesTotalSizeMB += requestEntrySizeMB;
 
-        flushIfFull();
+        flushIfAble();
     }
 
-    private void flushIfFull() throws InterruptedException {
-        while (bufferedRequestEntries.size() >= maxBatchSize) {
+    private void flushIfAble() throws InterruptedException {
+        while (bufferedRequestEntries.size() >= maxBatchSize
+                || bufferedRequestEntriesTotalSizeMB >= flushOnBufferSizeMB) {
             flush();
         }
     }
@@ -174,6 +209,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         int batchSize = Math.min(maxBatchSize, bufferedRequestEntries.size());
         for (int i = 0; i < batchSize; i++) {
             batch.add(bufferedRequestEntries.remove());
+            double elementSizeMB = bufferedRequestEntriesSizeMB.remove();
+            bufferedRequestEntriesTotalSizeMB -= elementSizeMB;
         }
 
         if (batch.size() == 0) {
@@ -199,7 +236,13 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private void completeRequest(Collection<RequestEntryT> failedRequestEntries) {
         inFlightRequestsCount--;
-        failedRequestEntries.forEach(bufferedRequestEntries::addFirst);
+        failedRequestEntries.forEach(
+                failedEntry -> {
+                    bufferedRequestEntries.addFirst(failedEntry);
+                    double sizeOfFailedEntry = getSizeInBytes(failedEntry);
+                    bufferedRequestEntriesSizeMB.addFirst(sizeOfFailedEntry);
+                    bufferedRequestEntriesTotalSizeMB += sizeOfFailedEntry;
+                });
     }
 
     /**
@@ -215,6 +258,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         while (inFlightRequestsCount > 0 || bufferedRequestEntries.size() > 0) {
             mailboxExecutor.yield();
             if (flush) {
+                flushIfAble();
                 flush();
             }
         }
