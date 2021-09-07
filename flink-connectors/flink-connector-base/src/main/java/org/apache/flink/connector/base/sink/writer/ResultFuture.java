@@ -40,8 +40,8 @@ public interface ResultFuture<RequestEntryT> {
      * Completes the result future.
      *
      * <p>The result future must only be completed when the request sent to the endpoint completed
-     * (sucessfully or unsuccessfully). Request entries that were not persisted successfully must be
-     * included in the {@code failedRequestEntries} parameter, so that they can be retried later.
+     * (successfully or unsuccessfully). Request entries that were not persisted successfully must
+     * be included in the {@code failedRequestEntries} parameter, so that they can be retried later.
      *
      * @param failedRequestEntries Request entries that need to be retried at a later point
      */

@@ -33,13 +33,13 @@ public class AsyncSinkBaseITCase {
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
     @Test
-    public void writeTwentyThousandRecordsToGenericSink() throws Exception {
+    public void testWriteTwentyThousandRecordsToGenericSink() throws Exception {
         env.fromSequence(1, 20000).map(Object::toString).sinkTo(new ArrayListAsyncSink());
         env.execute("Integration Test: AsyncSinkBaseITCase").getJobExecutionResult();
     }
 
     @Test
-    public void failuresOnPersistingToDestinationAreCaughtAndRaised() {
+    public void testFailuresOnPersistingToDestinationAreCaughtAndRaised() {
         env.fromSequence(999_999, 1_000_100)
                 .map(Object::toString)
                 .sinkTo(new ArrayListAsyncSink(1, 1, 2));
@@ -53,7 +53,7 @@ public class AsyncSinkBaseITCase {
     }
 
     @Test
-    public void noIssuesOccurWhenCheckpointingIsEnabled() throws Exception {
+    public void testThatNoIssuesOccurWhenCheckpointingIsEnabled() throws Exception {
         env.enableCheckpointing(20);
         env.setRestartStrategy(RestartStrategies.fixedDelayRestart(1, Time.milliseconds(200)));
         env.fromSequence(1, 10_000).map(Object::toString).sinkTo(new ArrayListAsyncSink());

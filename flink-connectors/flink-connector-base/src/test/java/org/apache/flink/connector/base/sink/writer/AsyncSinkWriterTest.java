@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -59,7 +58,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void numOfRecordsIsAMultipleOfBatchSizeResultsInThatNumberOfRecordsBeingWritten()
+    public void testNumberOfRecordsIsAMultipleOfBatchSizeResultsInThatNumberOfRecordsBeingWritten()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, false);
         for (int i = 0; i < 80; i++) {
@@ -69,7 +68,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void unwrittenRecordsInBufferArePersistedWhenSnapshotIsTaken()
+    public void testThatUnwrittenRecordsInBufferArePersistedWhenSnapshotIsTaken()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, false);
         for (int i = 0; i < 23; i++) {
@@ -80,7 +79,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void preparingCommitAtSnapshotTimeEnsuresTheBufferedRecordsArePersistedToDestination()
+    public void testPreparingCommitAtSnapshotTimeEnsuresBufferedRecordsArePersistedToDestination()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, false);
         for (int i = 0; i < 23; i++) {
@@ -91,7 +90,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void snapshotsAreTakenOfBufferCorrectlyBeforeAndAfterAutomaticFlush()
+    public void testThatSnapshotsAreTakenOfBufferCorrectlyBeforeAndAfterAutomaticFlush()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, false);
 
@@ -106,7 +105,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void snapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualFlush()
+    public void testThatSnapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualFlush()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, false);
         sink.write("25");
@@ -121,7 +120,7 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void runtimeErrorsInSubmitRequestEntriesEndUpAsIOExceptionsWithNumberOfFailedRequests()
+    public void testRuntimeErrorsInSubmitRequestEntriesEndUpAsIOExceptionsWithNumOfFailedRequests()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, true);
         sink.write("25");
@@ -137,29 +136,25 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void retryableErrorsDoNotResultInViolationOfAtLeastOnceSemanticsDueToRequeueOfFailures()
+    public void testRetryableErrorsDoNotViolateAtLeastOnceSemanticsDueToRequeueOfFailures()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, true);
 
-        sink.write("25");
-        assertEquals(Arrays.asList(), res);
-        assertEquals(Arrays.asList(25), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "25", Arrays.asList(), Arrays.asList(25));
 
-        sink.write("55");
-        assertEquals(Arrays.asList(), res);
-        assertEquals(Arrays.asList(25, 55), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "55", Arrays.asList(), Arrays.asList(25, 55));
 
-        sink.write("965");
-        assertEquals(Arrays.asList(25, 55), res); // 25, 55 persisted; 965 failed
-        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0))); // 965 inflight
+        // 25, 55 persisted; 965 failed and inflight
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "965", Arrays.asList(25, 55), Arrays.asList());
 
-        sink.write("75");
-        assertEquals(Arrays.asList(25, 55), res);
-        assertEquals(Arrays.asList(75), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "75", Arrays.asList(25, 55), Arrays.asList(75));
 
-        sink.write("95");
-        assertEquals(Arrays.asList(25, 55), res);
-        assertEquals(Arrays.asList(75, 95), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "95", Arrays.asList(25, 55), Arrays.asList(75, 95));
 
         /*
          * Writing 955 to the sink increases the buffer to size 3 containing [75, 95, 955]. This
@@ -167,42 +162,38 @@ public class AsyncSinkWriterTest {
          * placed at the front of the queue. The first {@code maxBatchSize = 3} elements are
          * persisted, with 965 succeeding this (second) time. 955 remains in the buffer.
          */
-        sink.write("955");
-        assertEquals(Arrays.asList(25, 55, 965, 75, 95), res);
-        assertEquals(Arrays.asList(955), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "955", Arrays.asList(25, 55, 965, 75, 95), Arrays.asList(955));
 
-        sink.write("550");
-        assertEquals(Arrays.asList(25, 55, 965, 75, 95), res);
-        assertEquals(Arrays.asList(955, 550), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "550", Arrays.asList(25, 55, 965, 75, 95), Arrays.asList(955, 550));
 
         /*
          * [955, 550, 45] are attempted to be persisted
          */
-        sink.write("45");
-        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
-        assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "45", Arrays.asList(25, 55, 965, 75, 95, 45), Arrays.asList());
 
-        sink.write("35");
-        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
-        assertEquals(Arrays.asList(35), new ArrayList<>(sink.snapshotState().get(0)));
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "35", Arrays.asList(25, 55, 965, 75, 95, 45), Arrays.asList(35));
 
-        sink.write("535");
-
-        // [35, 535] should be in the bufferedRequestEntries
-        // [955, 550] should be in the inFlightRequest, ready to be added
-        // [25, 55, 965, 75, 95, 45] should be downstream already
-        assertEquals(Arrays.asList(35, 535), new ArrayList<>(sink.snapshotState().get(0)));
-        assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45), res);
+        /* [35, 535] should be in the bufferedRequestEntries
+         * [955, 550] should be in the inFlightRequest, ready to be added
+         * [25, 55, 965, 75, 95, 45] should be downstream already
+         */
+        writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+                sink, "535", Arrays.asList(25, 55, 965, 75, 95, 45), Arrays.asList(35, 535));
 
         // Checkpoint occurs
         sink.prepareCommit(true);
+
         // Everything is saved
         assertEquals(Arrays.asList(25, 55, 965, 75, 95, 45, 550, 955, 35, 535), res);
         assertEquals(0, sink.snapshotState().get(0).size());
     }
 
     @Test
-    public void failedEntriesAreRetriedInTheNextPossiblePersistRequestAndNoLater()
+    public void testFailedEntriesAreRetriedInTheNextPossiblePersistRequestAndNoLater()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, true);
         sink.write("25");
@@ -228,15 +219,23 @@ public class AsyncSinkWriterTest {
     }
 
     @Test
-    public void maxBufferSizeOfSinkShouldBeStrictlyGreaterThanMaxSizeOfEachBatch() {
+    public void testThatMaxBufferSizeOfSinkShouldBeStrictlyGreaterThanMaxSizeOfEachBatch() {
         Exception e =
                 assertThrows(
                         IllegalArgumentException.class,
                         () -> new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 10, false));
         assertEquals(
                 e.getMessage(),
-                "The maximum number of requests that may be buffered "
-                        + "should be strictly greater than the maximum number of requests per batch.");
+                "The maximum number of requests that may be buffered should be "
+                        + "strictly greater than the maximum number of requests per batch.");
+    }
+
+    private void writeXToSinkAssertDestinationIsInStateYAndBufferHasZ(
+            AsyncSinkWriterImpl sink, String x, List<Integer> y, List<Integer> z)
+            throws IOException, InterruptedException {
+        sink.write(x);
+        assertEquals(y, res);
+        assertEquals(z, new ArrayList<>(sink.snapshotState().get(0)));
     }
 
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {

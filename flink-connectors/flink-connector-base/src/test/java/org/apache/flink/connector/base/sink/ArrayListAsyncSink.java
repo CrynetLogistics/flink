@@ -17,7 +17,6 @@
 
 package org.apache.flink.connector.base.sink;
 
-import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ResultFuture;
@@ -30,33 +29,6 @@ import java.util.Optional;
 
 /** Dummy destination that records write events. */
 public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
-
-    /**
-     * SinkWriter implementing {@code submitRequestEntries} that is used to define the persistence
-     * logic into {@code ArrayListDestination}.
-     */
-    public static class ArrayListAsyncSinkWriter extends AsyncSinkWriter<String, Integer> {
-
-        protected ArrayListAsyncSinkWriter(
-                Sink.InitContext context,
-                int maxBatchSize,
-                int maxInFlightRequests,
-                int maxBufferedRequests) {
-            super(
-                    (element, x) -> Integer.parseInt(element),
-                    context,
-                    maxBatchSize,
-                    maxInFlightRequests,
-                    maxBufferedRequests);
-        }
-
-        @Override
-        protected void submitRequestEntries(
-                List<Integer> requestEntries, ResultFuture<Integer> requestResult) {
-            ArrayListDestination.putRecords(requestEntries);
-            requestResult.complete(Arrays.asList());
-        }
-    }
 
     private final int maxBatchSize;
     private final int maxInFlightRequests;
@@ -75,8 +47,22 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
     @Override
     public SinkWriter<String, Void, Collection<Integer>> createWriter(
             InitContext context, List<Collection<Integer>> states) {
-        return new ArrayListAsyncSinkWriter(
-                context, maxBatchSize, maxInFlightRequests, maxBufferedRequests);
+        /* SinkWriter implementing {@code submitRequestEntries} that is used to define the persistence
+         * logic into {@code ArrayListDestination}.
+         */
+        return new AsyncSinkWriter<String, Integer>(
+                (element, x) -> Integer.parseInt(element),
+                context,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests) {
+            @Override
+            protected void submitRequestEntries(
+                    List<Integer> requestEntries, ResultFuture<Integer> requestResult) {
+                ArrayListDestination.putRecords(requestEntries);
+                requestResult.complete(Arrays.asList());
+            }
+        };
     }
 
     @Override
