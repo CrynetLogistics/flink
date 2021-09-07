@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * A generic sink writer that handles the general behaviour of a sink such as batching and flushing,
@@ -108,12 +109,14 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * requests.
      *
      * @param requestEntries a set of request entries that should be sent to the destination
-     * @param requestResult a ResultFuture that needs to be completed once all request entries that
-     *     have been passed to the method on invocation have either been successfully persisted in
-     *     the destination or have been re-queued through {@code requestResult}
+     * @param requestResult the {@code accept} method should be called on this Consumer once the
+     *     processing of the {@code requestEntries} are complete. Any entries that encountered
+     *     difficulties in persisting should be re-queued through {@code requestResult} by including
+     *     that element in the collection of {@code RequestEntryT}s passed to the {@code accept}
+     *     method. All other elements are assumed to have been successfully persisted.
      */
     protected abstract void submitRequestEntries(
-            List<RequestEntryT> requestEntries, ResultFuture<RequestEntryT> requestResult);
+            List<RequestEntryT> requestEntries, Consumer<Collection<RequestEntryT>> requestResult);
 
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
@@ -177,7 +180,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             return;
         }
 
-        ResultFuture<RequestEntryT> requestResult =
+        Consumer<Collection<RequestEntryT>> requestResult =
                 failedRequestEntries ->
                         mailboxExecutor.execute(
                                 () -> completeRequest(failedRequestEntries),

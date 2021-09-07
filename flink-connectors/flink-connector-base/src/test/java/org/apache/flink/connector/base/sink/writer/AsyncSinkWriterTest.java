@@ -33,10 +33,13 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -270,12 +273,12 @@ public class AsyncSinkWriterTest {
          * <p>A limitation of this basic implementation is that each element written must be unique.
          *
          * @param requestEntries a set of request entries that should be persisted to {@code res}
-         * @param requestResult a ResultFuture that needs to be completed once all request entries
-         *     have been persisted. Any failures should be elements of the list being completed
+         * @param requestResult a Consumer that needs to accept a collection of failure elements
+         *     once all request entries have been persisted
          */
         @Override
         protected void submitRequestEntries(
-                List<Integer> requestEntries, ResultFuture<Integer> requestResult) {
+                List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
             if (requestEntries.stream().anyMatch(val -> val > 100 && val <= 200)) {
                 throw new RuntimeException(
                         "Deliberate runtime exception occurred in SinkWriterImplementation.");
@@ -296,10 +299,10 @@ public class AsyncSinkWriterTest {
 
                 requestEntries.removeAll(firstTimeFailed);
                 res.addAll(requestEntries);
-                requestResult.complete(firstTimeFailed);
+                requestResult.accept(firstTimeFailed);
             } else {
                 res.addAll(requestEntries);
-                requestResult.complete(new ArrayList<>());
+                requestResult.accept(new ArrayList<>());
             }
         }
     }

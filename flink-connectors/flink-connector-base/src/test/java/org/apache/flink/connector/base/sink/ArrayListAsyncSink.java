@@ -19,13 +19,13 @@ package org.apache.flink.connector.base.sink;
 
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
-import org.apache.flink.connector.base.sink.writer.ResultFuture;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 /** Dummy destination that records write events. */
 public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
@@ -58,9 +58,9 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
                 maxBufferedRequests) {
             @Override
             protected void submitRequestEntries(
-                    List<Integer> requestEntries, ResultFuture<Integer> requestResult) {
+                    List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
                 ArrayListDestination.putRecords(requestEntries);
-                requestResult.complete(Arrays.asList());
+                requestResult.accept(Arrays.asList());
             }
         };
     }
