@@ -223,7 +223,6 @@ public class AsyncSinkWriterTest {
         assertTrue(res.contains(645));
         sink.prepareCommit(true);
         assertTrue(res.contains(545));
-        assertTrue(res.contains(545));
         assertTrue(res.contains(535));
         assertTrue(res.contains(515));
     }
@@ -357,11 +356,6 @@ public class AsyncSinkWriterTest {
         @Override
         public SinkWriterMetricGroup metricGroup() {
             return null;
-        }
-
-        @Override
-        public OptionalLong getRestoredCheckpointId() {
-            return OptionalLong.empty();
         }
     }
 }

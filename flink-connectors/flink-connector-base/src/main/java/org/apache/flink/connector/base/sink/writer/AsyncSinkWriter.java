@@ -33,7 +33,18 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 
-/** AsyncSinkWriter. */
+/**
+ * A generic sink writer that handles the general behaviour of a sink such as batching and flushing,
+ * and allows extenders to implement the logic for persisting individual request elements, with
+ * allowance for retries.
+ *
+ * <p>At least once semantics is supported through {@code prepareCommit} as outstanding requests are
+ * flushed or completed prior to checkpointing.
+ *
+ * <p>Designed to be returned at {@code createWriter} time by an {@code AsyncSinkBase}.
+ *
+ * <p>There are configuration options to customize the buffer size etc.
+ */
 @PublicEvolving
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
@@ -201,7 +212,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         while (inFlightRequestsCount > 0 || bufferedRequestEntries.size() > 0) {
             mailboxExecutor.yield();
             if (flush) {
-                flushIfFull();
                 flush();
             }
         }
