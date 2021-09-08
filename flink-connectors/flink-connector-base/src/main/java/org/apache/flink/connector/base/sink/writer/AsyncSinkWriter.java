@@ -59,6 +59,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final int maxInFlightRequests;
     private final int maxBufferedRequests;
     private final double flushOnBufferSizeMB;
+    private final int maxTimeInBufferMS;
 
     /**
      * The ElementConverter provides a mapping between for the elements of a stream to request
@@ -111,6 +112,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private final Deque<Double> bufferedRequestEntriesSizeMB = new ArrayDeque<>();
 
+    private boolean existsActiveTimerCallback = false;
+
     /**
      * This method specifies how to persist buffered request entries into the destination. It is
      * implemented when support for a new destination is added.
@@ -151,7 +154,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             int maxBatchSize,
             int maxInFlightRequests,
             int maxBufferedRequests,
-            double flushOnBufferSizeMB) {
+            double flushOnBufferSizeMB,
+            int maxTimeInBufferMS) {
         this.elementConverter = elementConverter;
         this.mailboxExecutor = context.getMailboxExecutor();
         this.timeService = context.getProcessingTimeService();
@@ -168,27 +172,37 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
         this.flushOnBufferSizeMB = flushOnBufferSizeMB;
+        this.maxTimeInBufferMS = maxTimeInBufferMS;
 
         this.inFlightRequestsCount = 0;
         this.bufferedRequestEntriesTotalSizeMB = 0;
     }
 
+    private void registerCallback() {
+        Sink.ProcessingTimeService.ProcessingTimeCallback ptc =
+                instant -> {
+                    existsActiveTimerCallback = false;
+                    while (!bufferedRequestEntries.isEmpty()) {
+                        flush();
+                    }
+                };
+        timeService.registerProcessingTimer(
+                timeService.getCurrentProcessingTime() + maxTimeInBufferMS, ptc);
+        existsActiveTimerCallback = true;
+    }
+
     @Override
     public void write(InputT element, Context context) throws IOException, InterruptedException {
         while (bufferedRequestEntries.size() >= maxBufferedRequests) {
-            mailboxExecutor.yield();
+            mailboxExecutor.tryYield();
         }
 
-        RequestEntryT requestEntry = elementConverter.apply(element, context);
-        double requestEntrySizeMB = getSizeInMB(requestEntry);
-        bufferedRequestEntries.add(requestEntry);
-        bufferedRequestEntriesSizeMB.add(requestEntrySizeMB);
-        bufferedRequestEntriesTotalSizeMB += requestEntrySizeMB;
+        addEntryToBuffer(elementConverter.apply(element, context), false);
 
         flushIfAble();
     }
 
-    private void flushIfAble() throws InterruptedException {
+    private void flushIfAble() {
         while (bufferedRequestEntries.size() >= maxBatchSize
                 || bufferedRequestEntriesTotalSizeMB >= flushOnBufferSizeMB) {
             flush();
@@ -201,9 +215,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method blocks if too many async requests are in flight.
      */
-    private void flush() throws InterruptedException {
+    private void flush() {
         while (inFlightRequestsCount >= maxInFlightRequests) {
-            mailboxExecutor.yield();
+            mailboxExecutor.tryYield();
         }
 
         List<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
@@ -238,16 +252,31 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private void completeRequest(Collection<RequestEntryT> failedRequestEntries) {
         inFlightRequestsCount--;
-        failedRequestEntries.forEach(
-                failedEntry -> {
-                    bufferedRequestEntries.addFirst(failedEntry);
-                    double sizeOfFailedEntry = getSizeInMB(failedEntry);
-                    bufferedRequestEntriesSizeMB.addFirst(sizeOfFailedEntry);
-                    bufferedRequestEntriesTotalSizeMB += sizeOfFailedEntry;
-                });
+        failedRequestEntries.forEach(failedEntry -> addEntryToBuffer(failedEntry, true));
     }
 
-    private double getSizeInMB(RequestEntryT requestEntry){
+    private void addEntryToBuffer(RequestEntryT entry, boolean insertAtHead) {
+        if (bufferedRequestEntries.isEmpty() && !existsActiveTimerCallback) {
+            registerCallback();
+        }
+        if (insertAtHead) {
+            bufferedRequestEntries.addFirst(entry);
+        } else {
+            bufferedRequestEntries.add(entry);
+        }
+
+        double requestEntrySizeMB = getSizeInMB(entry);
+
+        if (insertAtHead) {
+            bufferedRequestEntriesSizeMB.addFirst(requestEntrySizeMB);
+        } else {
+            bufferedRequestEntriesSizeMB.add(requestEntrySizeMB);
+        }
+
+        bufferedRequestEntriesTotalSizeMB += requestEntrySizeMB;
+    }
+
+    private double getSizeInMB(RequestEntryT requestEntry) {
         return getSizeInBytes(requestEntry) / (double) BYTES_IN_MB;
     }
 
@@ -260,9 +289,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>To this end, all in-flight requests need to completed before proceeding with the commit.
      */
     @Override
-    public List<Void> prepareCommit(boolean flush) throws InterruptedException {
+    public List<Void> prepareCommit(boolean flush) {
         while (inFlightRequestsCount > 0 || bufferedRequestEntries.size() > 0) {
-            mailboxExecutor.yield();
+            mailboxExecutor.tryYield();
             if (flush) {
                 flush();
             }

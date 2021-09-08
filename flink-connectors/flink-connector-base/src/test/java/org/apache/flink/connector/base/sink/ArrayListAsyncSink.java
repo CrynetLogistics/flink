@@ -34,17 +34,23 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
     private final int maxInFlightRequests;
     private final int maxBufferedRequests;
     private final double flushOnBufferSizeMB;
+    private final int maxTimeInBufferMS;
 
     public ArrayListAsyncSink() {
-        this(25, 1, 100, 0.1);
+        this(25, 1, 100, 0.1, 1000);
     }
 
-    public ArrayListAsyncSink(int maxBatchSize, int maxInFlightRequests, int maxBufferedRequests,
-                              double flushOnBufferSizeMB) {
+    public ArrayListAsyncSink(
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            double flushOnBufferSizeMB,
+            int maxTimeInBufferMS) {
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
         this.flushOnBufferSizeMB = flushOnBufferSizeMB;
+        this.maxTimeInBufferMS = maxTimeInBufferMS;
     }
 
     @Override
@@ -59,7 +65,8 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
                 maxBatchSize,
                 maxInFlightRequests,
                 maxBufferedRequests,
-                flushOnBufferSizeMB) {
+                flushOnBufferSizeMB,
+                maxTimeInBufferMS) {
 
             @Override
             protected void submitRequestEntries(
