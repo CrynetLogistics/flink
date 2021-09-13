@@ -316,7 +316,7 @@ public class AsyncSinkWriterTest {
     public void testThatABatchWithSizeSmallerThanMaxBatchSizeIsFlushedOnTimeoutExpiry()
             throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         tpts.setCurrentTime(0L);
@@ -334,7 +334,7 @@ public class AsyncSinkWriterTest {
     public void testThatTimeBasedBatchPicksUpAllRelevantItemsUpUntilExpiryOfTimer()
             throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         for (int i = 0; i < 98; i++) {
@@ -350,7 +350,7 @@ public class AsyncSinkWriterTest {
     @Test
     public void testThatOneAndOnlyOneCallbackIsEverRegistered() throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         tpts.setCurrentTime(0L);
@@ -375,7 +375,7 @@ public class AsyncSinkWriterTest {
     public void testThatIntermittentlyFailingEntriesShouldBeFlushedWithMainBatchInTimeBasedFlush()
             throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         tpts.setCurrentTime(0L);
@@ -395,7 +395,7 @@ public class AsyncSinkWriterTest {
     @Test
     public void testThatFlushingAnEmptyBufferDoesNotResultInErrorOrFailure() throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         tpts.setCurrentTime(0L);
@@ -409,7 +409,7 @@ public class AsyncSinkWriterTest {
     @Test
     public void testThatOnExpiryOfAnOldTimeoutANewOneMayBeRegisteredImmediately() throws Exception {
         AsyncSinkWriterImpl sink =
-                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 100, 100, true);
+                new AsyncSinkWriterImpl(sinkInitContext, 10, 20, 100, 10000, 100, true);
 
         TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
         tpts.setCurrentTime(0L);
@@ -552,8 +552,8 @@ public class AsyncSinkWriterTest {
                 int maxBatchSize,
                 int maxInFlightRequests,
                 int maxBufferedRequests,
-                double flushOnBufferSizeInBytes,
-                int maxTimeInBufferMS,
+                long flushOnBufferSizeInBytes,
+                long maxTimeInBufferMS,
                 boolean simulateFailures) {
             super(
                     (elem, ctx) -> Integer.parseInt(elem),
@@ -718,8 +718,8 @@ public class AsyncSinkWriterTest {
                 int maxBatchSize,
                 int maxInFlightRequests,
                 int maxBufferedRequests,
-                double flushOnBufferSizeInBytes,
-                int maxTimeInBufferMS,
+                long flushOnBufferSizeInBytes,
+                long maxTimeInBufferMS,
                 CountDownLatch blockedThreadLatch,
                 CountDownLatch delayedStartLatch,
                 boolean blockForLimitedTime) {
