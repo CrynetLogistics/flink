@@ -40,12 +40,18 @@ import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Unit Tests the functionality of AsyncSinkWriter without any assumptions of what a concrete
@@ -416,6 +422,110 @@ public class AsyncSinkWriterTest {
         assertEquals(2, res.size());
     }
 
+    /**
+     * This test considers what could happen if the timer elapses, triggering a flush, while a
+     * long-running call to {@code submitRequestEntries} remains uncompleted for some time. We have
+     * a countdown latch with an expiry of 500ms installed in the call to {@code
+     * submitRequestEntries} that blocks if the batch size received is 3 and subsequently accepts
+     * and succeeds with any value.
+     *
+     * <p>Let us call the thread writing "3" thread3 and the thread writing "4" thread4. Thread3
+     * will enter {@code submitRequestEntries} with 3 entries and release thread4. Thread3 becomes
+     * blocked for 500ms. Thread4 writes "4" to the buffer and is flushed when the timer triggers
+     * (timer was first set when "1" was written). Thread4 then is blocked during the flush phase
+     * since thread3 is in-flight and maxInFlightRequests=1. After 500ms elapses, thread3 is revived
+     * and proceeds, which also unblocks thread4. This results in 1, 2, 3 being written prior to 4.
+     *
+     * <p>This test also implicitly asserts that any thread in the SinkWriter must be the mailbox
+     * thread if it enters {@code mailbox.tryYield()}.
+     */
+    @Test
+    public void testThatInterleavingThreadsMayBlockEachOtherButDoNotCauseRaceConditions()
+            throws Exception {
+        CountDownLatch blockedWriteLatch = new CountDownLatch(1);
+        CountDownLatch delayedStartLatch = new CountDownLatch(1);
+        AsyncSinkWriterImpl sink =
+                new AsyncSinkReleaseAndBlockWriterImpl(
+                        sinkInitContext,
+                        3,
+                        1,
+                        20,
+                        100,
+                        100,
+                        blockedWriteLatch,
+                        delayedStartLatch,
+                        true);
+
+        writeTwoElementsAndInterleaveTheNextTwoElements(sink, blockedWriteLatch, delayedStartLatch);
+        assertEquals(Arrays.asList(1, 2, 3, 4), res);
+    }
+
+    /**
+     * This test considers what could happen if the timer elapses, triggering a flush, while a
+     * long-running call to {@code submitRequestEntries} remains blocked. We have a countdown latch
+     * that blocks permanently until freed once the timer based flush is complete.
+     *
+     * <p>Let us call the thread writing "3" thread3 and the thread writing "4" thread4. Thread3
+     * will enter {@code submitRequestEntries} with 3 entries and release thread4. Thread3 becomes
+     * blocked. Thread4 writes "4" to the buffer and is flushed when the timer triggers (timer was
+     * first set when "1" was written). Thread4 completes and frees thread3. Thread3 is revived and
+     * proceeds. This results in 4 being written prior to 1, 2, 3.
+     *
+     * <p>This test also implicitly asserts that any thread in the SinkWriter must be the mailbox
+     * thread if it enters {@code mailbox.tryYield()}.
+     */
+    @Test
+    public void testThatIfOneInterleavedThreadIsBlockedTheOtherThreadWillContinueAndCorrectlyWrite()
+            throws Exception {
+        CountDownLatch blockedWriteLatch = new CountDownLatch(1);
+        CountDownLatch delayedStartLatch = new CountDownLatch(1);
+        AsyncSinkWriterImpl sink =
+                new AsyncSinkReleaseAndBlockWriterImpl(
+                        sinkInitContext,
+                        3,
+                        2,
+                        20,
+                        100,
+                        100,
+                        blockedWriteLatch,
+                        delayedStartLatch,
+                        false);
+
+        writeTwoElementsAndInterleaveTheNextTwoElements(sink, blockedWriteLatch, delayedStartLatch);
+        assertEquals(new ArrayList<>(Arrays.asList(4, 1, 2, 3)), res);
+    }
+
+    private void writeTwoElementsAndInterleaveTheNextTwoElements(
+            AsyncSinkWriterImpl sink,
+            CountDownLatch blockedWriteLatch,
+            CountDownLatch delayedStartLatch)
+            throws Exception {
+
+        TestProcessingTimeService tpts = sinkInitContext.getTestProcessingTimeService();
+        ExecutorService es = Executors.newFixedThreadPool(4);
+
+        tpts.setCurrentTime(0L);
+        sink.write("1");
+        sink.write("2");
+        es.submit(
+                () -> {
+                    try {
+                        sink.write("3");
+                    } catch (IOException | InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                });
+
+        delayedStartLatch.await();
+        sink.write("4");
+        tpts.setCurrentTime(100L);
+        blockedWriteLatch.countDown();
+        es.shutdown();
+        assertTrue(
+                es.awaitTermination(500, TimeUnit.MILLISECONDS),
+                "Executor Service stuck at termination, not terminated after 500ms!");
+    }
+
     private class AsyncSinkWriterImpl extends AsyncSinkWriter<String, Integer> {
 
         private final Set<Integer> failedFirstAttempts = new HashSet<>();
@@ -590,6 +700,63 @@ public class AsyncSinkWriterTest {
 
         public TestProcessingTimeService getTestProcessingTimeService() {
             return processingTimeService;
+        }
+    }
+
+    /**
+     * This SinkWriter releases the lock on existing threads blocked by {@code delayedStartLatch}
+     * and blocks itself until {@code blockedThreadLatch} is unblocked.
+     */
+    private class AsyncSinkReleaseAndBlockWriterImpl extends AsyncSinkWriterImpl {
+
+        private final CountDownLatch blockedThreadLatch;
+        private final CountDownLatch delayedStartLatch;
+        private final boolean blockForLimitedTime;
+
+        public AsyncSinkReleaseAndBlockWriterImpl(
+                Sink.InitContext context,
+                int maxBatchSize,
+                int maxInFlightRequests,
+                int maxBufferedRequests,
+                double flushOnBufferSizeMB,
+                int maxTimeInBufferMS,
+                CountDownLatch blockedThreadLatch,
+                CountDownLatch delayedStartLatch,
+                boolean blockForLimitedTime) {
+            super(
+                    context,
+                    maxBatchSize,
+                    maxInFlightRequests,
+                    maxBufferedRequests,
+                    flushOnBufferSizeMB,
+                    maxTimeInBufferMS,
+                    false);
+            this.blockedThreadLatch = blockedThreadLatch;
+            this.delayedStartLatch = delayedStartLatch;
+            this.blockForLimitedTime = blockForLimitedTime;
+        }
+
+        @Override
+        protected void submitRequestEntries(
+                List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
+            if (requestEntries.size() == 3) {
+                try {
+                    delayedStartLatch.countDown();
+                    if (blockForLimitedTime) {
+                        assertFalse(
+                                blockedThreadLatch.await(500, TimeUnit.MILLISECONDS),
+                                "The countdown latch was released before the full amount"
+                                        + "of time was reached.");
+                    } else {
+                        blockedThreadLatch.await();
+                    }
+                } catch (InterruptedException e) {
+                    fail("The unit test latch must not have been interrupted by another thread.");
+                }
+            }
+
+            res.addAll(requestEntries);
+            requestResult.accept(new ArrayList<>());
         }
     }
 }
