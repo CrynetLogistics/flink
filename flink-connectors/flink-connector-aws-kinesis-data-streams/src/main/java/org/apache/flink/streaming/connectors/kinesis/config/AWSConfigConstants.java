@@ -126,6 +126,12 @@ public class AWSConfigConstants {
     /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
     public static final String AWS_ENDPOINT = "aws.endpoint";
 
+    /** Whether to trust all SSL certificates. */
+    public static final String TRUST_ALL_CERTIFICATES = "aws.trust.all.certificates";
+
+    /** The HTTP protocol version to use. */
+    public static final String HTTP_PROTOCOL_VERSION = "http.protocol.version";
+
     public static String accessKeyId(String prefix) {
         return prefix + ".basic.accesskeyid";
     }

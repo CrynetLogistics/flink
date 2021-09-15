@@ -54,7 +54,7 @@ import org.apache.flink.streaming.connectors.kinesis.testutils.FakeKinesisBehavi
 import org.apache.flink.streaming.connectors.kinesis.testutils.KinesisShardIdGenerator;
 import org.apache.flink.streaming.connectors.kinesis.testutils.TestUtils;
 import org.apache.flink.streaming.connectors.kinesis.testutils.TestableFlinkKinesisConsumer;
-import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigUtil;
+import org.apache.flink.streaming.connectors.kinesis.util.KinesisConfigGeneralUtil;
 import org.apache.flink.streaming.connectors.kinesis.util.RecordEmitter;
 import org.apache.flink.streaming.connectors.kinesis.util.WatermarkTracker;
 import org.apache.flink.streaming.util.AbstractStreamOperatorTestHarness;
@@ -103,7 +103,11 @@ import static org.mockito.Mockito.when;
 
 /** Suite of FlinkKinesisConsumer tests for the methods called throughout the source life cycle. */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({FlinkKinesisConsumer.class, KinesisConfigUtil.class})
+@PrepareForTest({
+    FlinkKinesisConsumer.class,
+    KinesisConfigGeneralUtil.class,
+    KinesisConfigGeneralUtil.class
+})
 public class FlinkKinesisConsumerTest extends TestLogger {
 
     // ----------------------------------------------------------------------
@@ -324,8 +328,8 @@ public class FlinkKinesisConsumerTest extends TestLogger {
         KinesisDataFetcher mockedFetcher = mockKinesisDataFetcher();
 
         // assume the given config is correct
-        PowerMockito.mockStatic(KinesisConfigUtil.class);
-        PowerMockito.doNothing().when(KinesisConfigUtil.class);
+        PowerMockito.mockStatic(KinesisConfigGeneralUtil.class);
+        PowerMockito.doNothing().when(KinesisConfigGeneralUtil.class);
 
         TestableFlinkKinesisConsumer consumer =
                 new TestableFlinkKinesisConsumer("fakeStream", new Properties(), 10, 2);
@@ -374,8 +378,8 @@ public class FlinkKinesisConsumerTest extends TestLogger {
         when(mockedFetcher.discoverNewShardsToSubscribe()).thenReturn(shards);
 
         // assume the given config is correct
-        PowerMockito.mockStatic(KinesisConfigUtil.class);
-        PowerMockito.doNothing().when(KinesisConfigUtil.class);
+        PowerMockito.mockStatic(KinesisConfigGeneralUtil.class);
+        PowerMockito.doNothing().when(KinesisConfigGeneralUtil.class);
 
         // ----------------------------------------------------------------------
         // start to test fetcher's initial state seeding
@@ -451,8 +455,8 @@ public class FlinkKinesisConsumerTest extends TestLogger {
         when(mockedFetcher.discoverNewShardsToSubscribe()).thenReturn(shards);
 
         // assume the given config is correct
-        PowerMockito.mockStatic(KinesisConfigUtil.class);
-        PowerMockito.doNothing().when(KinesisConfigUtil.class);
+        PowerMockito.mockStatic(KinesisConfigGeneralUtil.class);
+        PowerMockito.doNothing().when(KinesisConfigGeneralUtil.class);
 
         // ----------------------------------------------------------------------
         // start to test fetcher's initial state seeding
@@ -564,8 +568,8 @@ public class FlinkKinesisConsumerTest extends TestLogger {
         when(mockedFetcher.discoverNewShardsToSubscribe()).thenReturn(shards);
 
         // assume the given config is correct
-        PowerMockito.mockStatic(KinesisConfigUtil.class);
-        PowerMockito.doNothing().when(KinesisConfigUtil.class);
+        PowerMockito.mockStatic(KinesisConfigGeneralUtil.class);
+        PowerMockito.doNothing().when(KinesisConfigGeneralUtil.class);
 
         // ----------------------------------------------------------------------
         // start to test fetcher's initial state seeding
@@ -709,8 +713,8 @@ public class FlinkKinesisConsumerTest extends TestLogger {
         when(mockedFetcher.discoverNewShardsToSubscribe()).thenReturn(shards);
 
         // assume the given config is correct
-        PowerMockito.mockStatic(KinesisConfigUtil.class);
-        PowerMockito.doNothing().when(KinesisConfigUtil.class);
+        PowerMockito.mockStatic(KinesisConfigGeneralUtil.class);
+        PowerMockito.doNothing().when(KinesisConfigGeneralUtil.class);
 
         // ----------------------------------------------------------------------
         // start to test fetcher's initial state seeding

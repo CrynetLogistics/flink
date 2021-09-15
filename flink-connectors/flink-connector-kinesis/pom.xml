@@ -139,6 +139,11 @@ under the License.
 			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-aws-kinesis-data-streams</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 
 		<!-- Flink Table API ecosystem -->
 		<!-- Projects depending on this project won't depend on flink-table-*. -->
@@ -196,6 +201,12 @@ under the License.
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-aws-kinesis-data-streams</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
 		</dependency>
 
 		<!-- Kinesis table factory testing -->
@@ -286,6 +297,7 @@ under the License.
 							<promoteTransitiveDependencies>true</promoteTransitiveDependencies>
 							<artifactSet combine.children="append">
 								<includes>
+									<include>org.apache.flink:flink-connector-aws-kinesis-data-streams:*</include>
 									<include>com.amazonaws:*</include>
 									<include>com.google.protobuf:*</include>
 									<include>org.apache.httpcomponents:*</include>
