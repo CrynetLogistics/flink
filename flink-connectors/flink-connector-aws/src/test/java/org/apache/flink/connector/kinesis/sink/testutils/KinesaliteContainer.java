@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.testutils;
+package org.apache.flink.connector.kinesis.sink.testutils;
 
 import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
@@ -25,11 +25,22 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.ListStreamsResult;
+import org.rnorth.ducttape.ratelimits.RateLimiter;
+import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
+import software.amazon.awssdk.utils.AttributeMap;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -45,23 +56,18 @@ import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_ENV_VAR;
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     private static final String ACCESS_KEY = "access key";
     private static final String SECRET_KEY = "secret key";
+    private static final Region REGION = Region.US_EAST_1;
 
     public KinesaliteContainer(DockerImageName imageName) {
         super(imageName);
+
+        System.setProperty("com.amazonaws.sdk.disableCertChecking", "true");
 
         withEnv(ACCESS_KEY_ENV_VAR, ACCESS_KEY);
         withEnv(SECRET_KEY_ENV_VAR, ACCESS_KEY);
         withExposedPorts(4567);
         waitingFor(new ListStreamsWaitStrategy());
-        withCreateContainerCmdModifier(
-                cmd ->
-                        cmd.withEntrypoint(
-                                "/tini",
-                                "--",
-                                "/usr/src/app/node_modules/kinesalite/cli.js",
-                                "--path",
-                                "/var/lib/kinesalite",
-                                "--ssl"));
+        tryStartContainer();
     }
 
     /** Returns the endpoint url to access the container from outside the docker network. */
@@ -80,6 +86,10 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
     public String getSecretKey() {
         return SECRET_KEY;
+    }
+
+    public Region getRegion() {
+        return REGION;
     }
 
     /** Returns the properties to access the container from outside the docker network. */
@@ -112,9 +122,31 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
                 .build();
     }
 
+    public KinesisAsyncClient getV2Client() throws URISyntaxException {
+        return KinesisAsyncClient.builder()
+                .endpointOverride(new URI(getHostEndpointUrl()))
+                .region(REGION)
+                .credentialsProvider(
+                        () -> AwsBasicCredentials.create(getAccessKey(), getSecretKey()))
+                .httpClient(buildSdkAsyncHttpClient())
+                .build();
+    }
+
+    private void tryStartContainer() {
+        withCreateContainerCmdModifier(
+                cmd ->
+                        cmd.withEntrypoint(
+                                "/tini",
+                                "--",
+                                "/usr/src/app/node_modules/kinesalite/cli.js",
+                                "--path",
+                                "/var/lib/kinesalite",
+                                "--ssl"));
+    }
+
     private Properties getProperties(String endpointUrl) {
         Properties config = new Properties();
-        config.setProperty(AWSConfigConstants.AWS_REGION, "us-east-1");
+        config.setProperty(AWSConfigConstants.AWS_REGION, REGION.toString());
         config.setProperty(AWSConfigConstants.AWS_ENDPOINT, endpointUrl);
         config.setProperty(AWSConfigConstants.AWS_ACCESS_KEY_ID, getAccessKey());
         config.setProperty(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, getSecretKey());
@@ -122,16 +154,31 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     }
 
     private class ListStreamsWaitStrategy extends AbstractWaitStrategy {
+        private final RateLimiter rateLimiter =
+                RateLimiterBuilder.newBuilder()
+                        .withRate(10, TimeUnit.SECONDS)
+                        .withConstantThroughput()
+                        .build();
+
         @Override
         protected void waitUntilReady() {
             Unreliables.retryUntilSuccess(
                     (int) this.startupTimeout.getSeconds(),
                     TimeUnit.SECONDS,
-                    () -> this.getRateLimiter().getWhenReady(() -> tryList()));
+                    () -> rateLimiter.getWhenReady(() -> tryList()));
         }
 
         private ListStreamsResult tryList() {
+            tryStartContainer();
             return getContainerClient().listStreams();
         }
+    }
+
+    private SdkAsyncHttpClient buildSdkAsyncHttpClient() {
+        return NettyNioAsyncHttpClient.builder()
+                .buildWithDefaults(
+                        AttributeMap.builder()
+                                .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+                                .build());
     }
 }

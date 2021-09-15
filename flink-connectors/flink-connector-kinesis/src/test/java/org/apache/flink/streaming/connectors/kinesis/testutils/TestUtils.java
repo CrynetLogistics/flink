@@ -19,7 +19,6 @@ package org.apache.flink.streaming.connectors.kinesis.testutils;
 
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.configuration.ConfigConstants;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 import org.apache.flink.streaming.connectors.kinesis.internals.publisher.RecordBatch;
 import org.apache.flink.streaming.connectors.kinesis.internals.publisher.RecordPublisher;
 import org.apache.flink.streaming.connectors.kinesis.model.SequenceNumber;
@@ -54,16 +53,7 @@ import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfi
 import static org.mockito.Mockito.mock;
 
 /** General test utils. */
-public class TestUtils {
-    /** Get standard Kinesis-related config properties. */
-    public static Properties getStandardProperties() {
-        Properties config = new Properties();
-        config.setProperty(AWSConfigConstants.AWS_REGION, "us-east-1");
-        config.setProperty(AWSConfigConstants.AWS_ACCESS_KEY_ID, "accessKeyId");
-        config.setProperty(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "secretKey");
-
-        return config;
-    }
+public class TestUtils extends GeneralTestUtils {
 
     /**
      * Creates a batch of {@code numOfAggregatedRecords} aggregated records. Each aggregated record
