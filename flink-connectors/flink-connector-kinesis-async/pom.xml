@@ -46,50 +46,50 @@ under the License.
 	<packaging>jar</packaging>
 
 	<dependencies>
-		<!-- AWS dependencies -->
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>amazon-kinesis-aggregator</artifactId>
-			<version>1.0.3</version>
-			<scope>test</scope>
-		</dependency>
 
-		<!-- Amazon AWS SDK v1.x dependencies -->
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-kinesis</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-sts</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-kms</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-s3</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-dynamodb</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-cloudwatch</artifactId>
-			<version>${aws.sdk.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>amazon-kinesis-producer</artifactId>
-			<version>${aws.kinesis-kpl.version}</version>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>amazon-kinesis-aggregator</artifactId>-->
+			<!--<version>1.0.3</version>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
+		<!---->
+
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-kinesis</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-sts</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-kms</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-s3</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-dynamodb</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>aws-java-sdk-cloudwatch</artifactId>-->
+			<!--<version>${aws.sdk.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>amazon-kinesis-producer</artifactId>-->
+			<!--<version>${aws.kinesis-kpl.version}</version>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>amazon-kinesis-client</artifactId>
@@ -105,34 +105,30 @@ under the License.
 				</exclusion>
 			</exclusions>
 		</dependency>
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>dynamodb-streams-kinesis-adapter</artifactId>
-			<version>${aws.dynamodbstreams-kinesis-adapter.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.fasterxml.jackson.core</groupId>
-					<artifactId>jackson-databind</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<!-- Other third-party dependencies -->
-		<dependency>
-			<!-- KPL requires jaxb-api for javax.xml.bind.DatatypeConverter -->
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<version>${jaxb.api.version}</version>
-			<!-- packaged in flink-dist -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>${guava.version}</version>
-		</dependency>
-
-		<!-- Flink ecosystem -->
+		<!--<dependency>-->
+			<!--<groupId>com.amazonaws</groupId>-->
+			<!--<artifactId>dynamodb-streams-kinesis-adapter</artifactId>-->
+			<!--<version>${aws.dynamodbstreams-kinesis-adapter.version}</version>-->
+			<!--<exclusions>-->
+				<!--<exclusion>-->
+					<!--<groupId>com.fasterxml.jackson.core</groupId>-->
+					<!--<artifactId>jackson-databind</artifactId>-->
+				<!--</exclusion>-->
+			<!--</exclusions>-->
+		<!--</dependency>-->
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>javax.xml.bind</groupId>-->
+			<!--<artifactId>jaxb-api</artifactId>-->
+			<!--<version>${jaxb.api.version}</version>-->
+			<!--<scope>provided</scope>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>com.google.guava</groupId>-->
+			<!--<artifactId>guava</artifactId>-->
+			<!--<version>${guava.version}</version>-->
+		<!--</dependency>-->
+		<!---->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
@@ -140,8 +136,6 @@ under the License.
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- Flink Table API ecosystem -->
-		<!-- Projects depending on this project won't depend on flink-table-*. -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
@@ -149,7 +143,12 @@ under the License.
 			<scope>provided</scope>
 			<optional>true</optional>
 		</dependency>
-
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-clients_${scala.binary.version}</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<!---->
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
@@ -165,19 +164,19 @@ under the License.
 			<scope>test</scope>
 			<type>test-jar</type>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-tests</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-test-utils_${scala.binary.version}</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>org.apache.flink</groupId>-->
+			<!--<artifactId>flink-tests</artifactId>-->
+			<!--<version>${project.version}</version>-->
+			<!--<type>test-jar</type>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>org.apache.flink</groupId>-->
+			<!--<artifactId>flink-test-utils_${scala.binary.version}</artifactId>-->
+			<!--<version>${project.version}</version>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-runtime</artifactId>
@@ -185,63 +184,62 @@ under the License.
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
-
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Kinesis table factory testing -->
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-common</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-planner_${scala.binary.version}</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>org.testcontainers</groupId>-->
+			<!--<artifactId>testcontainers</artifactId>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>org.apache.flink</groupId>-->
+			<!--<artifactId>flink-table-common</artifactId>-->
+			<!--<version>${project.version}</version>-->
+			<!--<type>test-jar</type>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>org.apache.flink</groupId>-->
+			<!--<artifactId>flink-table-planner_${scala.binary.version}</artifactId>-->
+			<!--<version>${project.version}</version>-->
+			<!--<type>test-jar</type>-->
+			<!--<scope>test</scope>-->
+		<!--</dependency>-->
+		<!---->
 		<!-- Amazon AWS SDK v2.x dependencies -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>kinesis</artifactId>
 			<version>${aws.sdkv2.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>software.amazon.awssdk</groupId>
-			<artifactId>netty-nio-client</artifactId>
-			<version>${aws.sdkv2.version}</version>
-		</dependency>
-
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>software.amazon.awssdk</groupId>-->
+			<!--<artifactId>netty-nio-client</artifactId>-->
+			<!--<version>${aws.sdkv2.version}</version>-->
+		<!--</dependency>-->
+		<!---->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>sts</artifactId>
 			<version>${aws.sdkv2.version}</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpclient</artifactId>
-			<version>${httpclient.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents</groupId>
-			<artifactId>httpcore</artifactId>
-			<version>${httpcore.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-cbor</artifactId>
-		</dependency>
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>org.apache.httpcomponents</groupId>-->
+			<!--<artifactId>httpclient</artifactId>-->
+			<!--<version>${httpclient.version}</version>-->
+		<!--</dependency>-->
+		<!--<dependency>-->
+			<!--<groupId>org.apache.httpcomponents</groupId>-->
+			<!--<artifactId>httpcore</artifactId>-->
+			<!--<version>${httpcore.version}</version>-->
+		<!--</dependency>-->
+		<!---->
+		<!--<dependency>-->
+			<!--<groupId>com.fasterxml.jackson.dataformat</groupId>-->
+			<!--<artifactId>jackson-dataformat-cbor</artifactId>-->
+		<!--</dependency>-->
 
 	</dependencies>
 
