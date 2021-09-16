@@ -89,6 +89,6 @@ public class KinesisDataStreamsAsyncSinkWriter<InputT>
 
     @Override
     protected long getSizeInBytes(PutRecordsRequestEntry requestEntry) {
-        return 0;
+        return requestEntry.data().asByteArrayUnsafe().length;
     }
 }
