@@ -1,15 +1,25 @@
 package org.apache.flink.streaming.connectors.kinesis.async;
 
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 
 import org.junit.jupiter.api.Test;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Properties;
 
 /** a. */
 public class KinesisDataStreamsAsyncSinkITCase {
+
+    private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
+            (element, context) ->
+                    PutRecordsRequestEntry.builder()
+                            .data(SdkBytes.fromUtf8String(element))
+                            .partitionKey(String.valueOf(element.hashCode()))
+                            .build();
 
     @Test
     public void test() throws Exception {
@@ -58,7 +68,7 @@ public class KinesisDataStreamsAsyncSinkITCase {
                             System.out.println(x);
                             return x;
                         })
-                .sinkTo(new KinesisDataStreamsAsyncSink<>());
+                .sinkTo(new KinesisDataStreamsAsyncSink<>(elementConverter));
 
         /*
          * Here, you can start creating your execution plan for Flink.

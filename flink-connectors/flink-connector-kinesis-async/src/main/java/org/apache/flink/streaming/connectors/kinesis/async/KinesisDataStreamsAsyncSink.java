@@ -5,10 +5,8 @@ import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -17,19 +15,16 @@ import java.util.Optional;
 public class KinesisDataStreamsAsyncSink<InputT>
         extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
-    private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter =
-            (element, context) ->
-                    PutRecordsRequestEntry.builder()
-                            .data(SdkBytes.fromUtf8String(element.toString()))
-                            .partitionKey(String.valueOf(element.hashCode()))
-                            .build();
+    private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
 
-    public KinesisDataStreamsAsyncSink() {}
+    public KinesisDataStreamsAsyncSink(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
+        this.elementConverter = elementConverter;
+    }
 
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
-            InitContext context, List<Collection<PutRecordsRequestEntry>> states)
-            throws IOException {
+            InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
         return new KinesisDataStreamsAsyncSinkWriter<>(
                 elementConverter, context, 10, 1, 100, 1024, 10000);
     }
