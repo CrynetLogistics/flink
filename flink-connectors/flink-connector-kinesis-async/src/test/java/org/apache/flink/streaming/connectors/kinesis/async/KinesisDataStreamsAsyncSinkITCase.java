@@ -16,7 +16,7 @@ public class KinesisDataStreamsAsyncSinkITCase {
         // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        // env.enableCheckpointing(10_000);
+        env.enableCheckpointing(10_000);
 
         //        DataStream<String> stream =
         // env.readTextFile("s3://shausma-nyc-tlc/yellow-trip-data/taxi-trips.json/dropoff_year=2010/part-00000-cdac5fe4-b823-4576-aeb7-7327b077476e.c000.json");
@@ -31,16 +31,15 @@ public class KinesisDataStreamsAsyncSinkITCase {
                         new RichSourceFunction<String>() {
                             private static final long serialVersionUID = 1L;
                             private volatile boolean running = true;
-                            private volatile boolean isRestored = false;
                             private int emittedCount = 0;
 
                             public void run(SourceContext<String> ctx) throws Exception {
-                                for (; this.running; Thread.sleep(1L)) {
+                                for (; this.running; Thread.sleep(5L)) {
                                     synchronized (ctx.getCheckpointLock()) {
-                                        ctx.collect(String.valueOf(this.emittedCount));
+                                        ctx.collect("{\"time\":" + this.emittedCount + ",\"woo\":45}");
                                     }
 
-                                    if (this.emittedCount < 100) {
+                                    if (this.emittedCount < 1000) {
                                         ++this.emittedCount;
                                     } else {
                                         this.emittedCount = 0;
