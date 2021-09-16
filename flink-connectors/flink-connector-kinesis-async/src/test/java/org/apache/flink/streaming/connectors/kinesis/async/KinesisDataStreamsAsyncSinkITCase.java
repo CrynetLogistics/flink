@@ -36,7 +36,8 @@ public class KinesisDataStreamsAsyncSinkITCase {
                             public void run(SourceContext<String> ctx) throws Exception {
                                 for (; this.running; Thread.sleep(5L)) {
                                     synchronized (ctx.getCheckpointLock()) {
-                                        ctx.collect("{\"time\":" + this.emittedCount + ",\"woo\":45}");
+                                        ctx.collect(
+                                                "{\"time\":" + this.emittedCount + ",\"woo\":45}");
                                     }
 
                                     if (this.emittedCount < 1000) {

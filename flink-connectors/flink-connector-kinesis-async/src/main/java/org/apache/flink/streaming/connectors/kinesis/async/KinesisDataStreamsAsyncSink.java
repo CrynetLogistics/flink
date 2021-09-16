@@ -30,7 +30,7 @@ public class KinesisDataStreamsAsyncSink<InputT>
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states)
             throws IOException {
-        return new KinesisDataStreamsAsyncSinkWriter<InputT>(
+        return new KinesisDataStreamsAsyncSinkWriter<>(
                 elementConverter, context, 10, 1, 100, 1024, 10000);
     }
 
