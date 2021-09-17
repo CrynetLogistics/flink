@@ -28,7 +28,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 /**
  * An example application on how to sink into KDS, the following environment variables are set:
- * AWS_REGION AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+ * AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
  */
 public class SinkIntoKinesis {
 
