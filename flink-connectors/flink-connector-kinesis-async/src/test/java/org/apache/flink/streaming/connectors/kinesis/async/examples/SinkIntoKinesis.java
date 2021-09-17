@@ -62,7 +62,7 @@ public class SinkIntoKinesis {
         env.execute("KDS Async Sink Example Program");
     }
 
-    static class ExampleDataSourceFunction extends RichSourceFunction<String> {
+    private static class ExampleDataSourceFunction extends RichSourceFunction<String> {
         private static final long serialVersionUID = 1L;
         private volatile boolean running = true;
         private int emittedCount = 1000000000;
