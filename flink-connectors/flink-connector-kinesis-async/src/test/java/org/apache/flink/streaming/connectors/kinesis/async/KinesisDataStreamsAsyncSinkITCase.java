@@ -1,5 +1,6 @@
 package org.apache.flink.streaming.connectors.kinesis.async;
 
+import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -38,7 +39,7 @@ public class KinesisDataStreamsAsyncSinkITCase {
 
         DataStream<String> fromGen =
                 env.addSource(
-                        new RichSourceFunction<String>() {
+                        new RichSourceFunction<>() {
                             private static final long serialVersionUID = 1L;
                             private volatile boolean running = true;
                             private int emittedCount = 0;
@@ -63,12 +64,22 @@ public class KinesisDataStreamsAsyncSinkITCase {
                             }
                         });
 
+        KinesisDataStreamsAsyncSinkBuilder<String> kdsSinkBuilder = KinesisDataStreamsAsyncSink.builder();
+        KinesisDataStreamsAsyncSink<String> kdsSink = kdsSinkBuilder
+                        .setElementConverter(elementConverter)
+                        .setMaxTimeInBufferMS(10000)
+                        .setFlushOnBufferSizeInBytes(1024)
+                        .setMaxInFlightRequests(1)
+                        .setMaxBatchSize(100)
+                        .setMaxBufferedRequests(1000)
+                        .build();
+
         fromGen.map(
                         x -> {
                             System.out.println(x);
                             return x;
                         })
-                .sinkTo(new KinesisDataStreamsAsyncSink<>(elementConverter));
+                .sinkTo(kdsSink);
 
         /*
          * Here, you can start creating your execution plan for Flink.

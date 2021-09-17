@@ -1,5 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.flink.streaming.connectors.kinesis.async;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
@@ -12,14 +29,41 @@ import java.util.List;
 import java.util.Optional;
 
 /** a. */
+@PublicEvolving
 public class KinesisDataStreamsAsyncSink<InputT>
         extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
     private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
+    private final int maxBatchSize;
+    private final int maxInFlightRequests;
+    private final int maxBufferedRequests;
+    private final long flushOnBufferSizeInBytes;
+    private final long maxTimeInBufferMS;
 
-    public KinesisDataStreamsAsyncSink(
-            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
+    KinesisDataStreamsAsyncSink(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long flushOnBufferSizeInBytes,
+            long maxTimeInBufferMS) {
         this.elementConverter = elementConverter;
+        this.maxBatchSize = maxBatchSize;
+        this.maxInFlightRequests = maxInFlightRequests;
+        this.maxBufferedRequests = maxBufferedRequests;
+        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
+        this.maxTimeInBufferMS = maxTimeInBufferMS;
+    }
+
+    /**
+     * Create a {@link KinesisDataStreamsAsyncSinkBuilder} to construct a new
+     * {@link KinesisDataStreamsAsyncSink}.
+     *
+     * @param <InputT> type of incoming records
+     * @return {@link KinesisDataStreamsAsyncSinkBuilder}
+     */
+    public static <InputT> KinesisDataStreamsAsyncSinkBuilder<InputT> builder() {
+        return new KinesisDataStreamsAsyncSinkBuilder<>();
     }
 
     @Override
