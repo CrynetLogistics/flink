@@ -30,8 +30,7 @@ import java.util.Optional;
 
 /** a. */
 @PublicEvolving
-public class KinesisDataStreamsAsyncSink<InputT>
-        extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
+public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
     private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
     private final int maxBatchSize;
@@ -40,7 +39,7 @@ public class KinesisDataStreamsAsyncSink<InputT>
     private final long flushOnBufferSizeInBytes;
     private final long maxTimeInBufferMS;
 
-    KinesisDataStreamsAsyncSink(
+    KinesisDataStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             int maxBatchSize,
             int maxInFlightRequests,
@@ -56,20 +55,20 @@ public class KinesisDataStreamsAsyncSink<InputT>
     }
 
     /**
-     * Create a {@link KinesisDataStreamsAsyncSinkBuilder} to construct a new
-     * {@link KinesisDataStreamsAsyncSink}.
+     * Create a {@link KinesisDataStreamsSinkBuilder} to construct a new {@link
+     * KinesisDataStreamsSink}.
      *
      * @param <InputT> type of incoming records
-     * @return {@link KinesisDataStreamsAsyncSinkBuilder}
+     * @return {@link KinesisDataStreamsSinkBuilder}
      */
-    public static <InputT> KinesisDataStreamsAsyncSinkBuilder<InputT> builder() {
-        return new KinesisDataStreamsAsyncSinkBuilder<>();
+    public static <InputT> KinesisDataStreamsSinkBuilder<InputT> builder() {
+        return new KinesisDataStreamsSinkBuilder<>();
     }
 
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
-        return new KinesisDataStreamsAsyncSinkWriter<>(
+        return new KinesisDataStreamsSinkWriter<>(
                 elementConverter, context, 10, 1, 100, 1024, 10000);
     }
 

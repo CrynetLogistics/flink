@@ -36,12 +36,12 @@ import java.util.function.Consumer;
 
 /** a. */
 @PublicEvolving
-public class KinesisDataStreamsAsyncSinkWriter<InputT>
+public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
     private static final KinesisAsyncClient client = KinesisAsyncClient.create();
 
-    public KinesisDataStreamsAsyncSinkWriter(
+    public KinesisDataStreamsSinkWriter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             Sink.InitContext context,
             int maxBatchSize,
