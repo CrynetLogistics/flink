@@ -14,37 +14,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.flink.streaming.connectors.kinesis.async.examples;
+package org.apache.flink.streaming.connectors.kinesis.async;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkBuilder;
 
+import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
-/**
- * An example application on how to sink into KDS, the following environment variables are set:
- * AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
- */
-public class SinkIntoKinesis {
+import java.util.Properties;
 
-    private static final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
+/** a. */
+public class KinesisDataStreamsSinkTempExample {
+
+    private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
                     PutRecordsRequestEntry.builder()
                             .data(SdkBytes.fromUtf8String(element))
                             .partitionKey(String.valueOf(element.hashCode()))
                             .build();
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    public void test() throws Exception {
+        // set up the streaming execution environment
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+
         env.enableCheckpointing(10_000);
 
-        DataStream<String> fromGen =
-                env.addSource(new ExampleDataSourceFunction());
+        //        DataStream<String> stream =
+        // env.readTextFile("s3://shausma-nyc-tlc/yellow-trip-data/taxi-trips.json/dropoff_year=2010/part-00000-cdac5fe4-b823-4576-aeb7-7327b077476e.c000.json");
+
+        Properties consumerConfig = new Properties();
+        consumerConfig.put("aws.region", "eu-west-1");
+        consumerConfig.put("aws.credentials.provider", "AUTO");
+        consumerConfig.put("flink.stream.initpos", "TRIM_HORIZON");
+
+        DataStream<String> fromGen = env.addSource(new ExampleSource());
 
         KinesisDataStreamsSinkBuilder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
         KinesisDataStreamsSink<String> kdsSink =
@@ -57,37 +65,55 @@ public class SinkIntoKinesis {
                         .setMaxBufferedRequests(1000)
                         .build();
 
-        fromGen.sinkTo(kdsSink);
+        fromGen.map(
+                        x -> {
+                            System.out.println(x);
+                            return x;
+                        })
+                .sinkTo(kdsSink);
 
-        env.execute("KDS Async Sink Example Program");
+        /*
+         * Here, you can start creating your execution plan for Flink.
+         *
+         * Start with getting some data from the environment, like
+         * 	env.readTextFile(textPath);
+         *
+         * then, transform the resulting DataStream<String> using operations
+         * like
+         * 	.filter()
+         * 	.flatMap()
+         * 	.join()
+         * 	.coGroup()
+         *
+         * and many more.
+         * Have a look at the programming guide for the Java API:
+         *
+         * https://flink.apache.org/docs/latest/apis/streaming/index.html
+         *
+         */
+
+        // execute program
+        env.execute("Flink Streaming Java API Skeleton");
     }
 
-    private static class ExampleDataSourceFunction extends RichSourceFunction<String> {
+    public static class ExampleSource extends RichSourceFunction<String> {
         private static final long serialVersionUID = 1L;
         private volatile boolean running = true;
-        private int emittedCount = 1000000000;
+        private int emittedCount = 0;
 
         public void run(SourceContext<String> ctx) throws Exception {
             for (; this.running; Thread.sleep(5L)) {
                 synchronized (ctx.getCheckpointLock()) {
                     ctx.collect(
-                            "{\"isin\":\"US"
-                                    + this.emittedCount
-                                    + "\",\"price\":"
-                                    + generateBondPrice()
-                                    + "}");
+                            "{\"time\":" + this.emittedCount + ",\"woo\":45}");
                 }
 
-                if (this.emittedCount < Integer.MAX_VALUE) {
+                if (this.emittedCount < 1000) {
                     ++this.emittedCount;
                 } else {
-                    this.emittedCount = 1000000000;
+                    this.emittedCount = 0;
                 }
             }
-        }
-
-        private String generateBondPrice() {
-            return String.valueOf(100 + 200 * (Math.random() - .5));
         }
 
         public void cancel() {
