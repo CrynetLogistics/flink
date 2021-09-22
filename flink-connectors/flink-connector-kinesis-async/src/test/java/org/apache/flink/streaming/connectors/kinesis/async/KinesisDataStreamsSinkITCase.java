@@ -46,6 +46,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
@@ -94,8 +95,6 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                 });
     }
 
-    public static final String TEST_STREAM = "test_stream";
-
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
                     PutRecordsRequestEntry.builder()
@@ -103,50 +102,16 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                             .partitionKey(String.valueOf(element.hashCode()))
                             .build();
 
-//    @ClassRule
-//    public static MiniClusterWithClientResource miniCluster =
-//            new MiniClusterWithClientResource(
-//                    new MiniClusterResourceConfiguration.Builder().build());
-
     @ClassRule
     public static KinesaliteContainer kinesalite =
             new KinesaliteContainer(DockerImageName.parse(DockerImageVersions.KINESALITE));
 
     @Rule public TemporaryFolder temp = new TemporaryFolder();
 
-    private static final SimpleStringSchema STRING_SCHEMA = new SimpleStringSchema();
-
-//    private KinesisPubsubClient client;
-//
-//    @Before
-//    public void setupClient() {
-//        client = new KinesisPubsubClient(kinesalite.getContainerProperties());
-//    }
-
-    /**
-     * Tests that pending elements do not cause a deadlock during stop with savepoint (FLINK-17170).
-     *
-     * <ol>
-     *   <li>The test setups up a stream with 100 records and creates a Flink job that reads them
-     *       with very slowly (using up a large chunk of time of the mailbox).
-     *   <li>After ensuring that consumption has started, the job is stopped in a parallel thread.
-     *   <li>Without the fix of FLINK-17170, the job now has a high chance to deadlock during
-     *       cancel.
-     *   <li>With the fix, the job proceeds and we can lift the backpressure.
-     * </ol>
-     */
     @Test
     public void testStopWithSavepoint() throws Exception {
-//        client.createTopic(TEST_STREAM, 1, new Properties());
-//
-//        // add elements to the test stream
-//        int numElements = 1000;
-//        client.sendMessage(
-//                TEST_STREAM,
-//                IntStream.range(0, numElements).mapToObj(String::valueOf).toArray(String[]::new));
 
-        System.setProperty(SDKGlobalConfiguration.DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "true");
-
+        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -169,17 +134,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 
 
         DataStream<String> stream = env.addSource(new ExampleSource());
-        //.map(new WaitingMapper());
-        // call stop with savepoint in another thread
-//        ForkJoinTask<Object> stopTask =
-//                ForkJoinPool.commonPool()
-//                        .submit(
-//                                () -> {
-//                                    WaitingMapper.firstElement.await();
-//                                    stopWithSavepoint();
-//                                    WaitingMapper.stopped = true;
-//                                    return null;
-//                                });
+
         KinesisDataStreamsSinkBuilder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
         KinesisDataStreamsSink<String> kdsSink =
                 kdsSinkBuilder
@@ -193,47 +148,17 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .build();
         stream.sinkTo(kdsSink);
         env.execute("KDS Async Sink Example Program");
-//        PutRecordsRequestEntry requestEntries = x();
-//        PutRecordsRequest batchRequest =
-//                PutRecordsRequest.builder().records(requestEntries).streamName("py-output").build();
-//
-//
-//
-//        PutRecordRequest req = PutRecordRequest
-//                .builder()
-//                .partitionKey("1")
-//                .streamName("py-output")
-//                .data(SdkBytes.fromUtf8String("{\"a\":\"a\",\"b\":\"a\"}"))
-//                .build();
-//        System.out.println(req);
-//        kiness.putRecord(req).get();
 
         System.out.println(kiness.listShards(ListShardsRequest.builder().streamName("py-output").build()).get().shards().stream().map(x -> x.toString()).collect(
                 Collectors.toList()));
 
-        //Thread.sleep(1000000);
 
         String shardIterator = kiness.getShardIterator(GetShardIteratorRequest.builder().shardId("shardId-000000000000").shardIteratorType(
                 ShardIteratorType.TRIM_HORIZON).streamName("py-output").build()).get().shardIterator();
 
-        assertEquals(1000,
+        assertEquals(10000,
                 kiness.getRecords(
-                        GetRecordsRequest.builder().shardIterator(shardIterator).limit(1).build()).get().records().size());
-//        try {
-//            List<String> result = stream.executeAndCollect(10000);
-//            // stop with savepoint will most likely only return a small subset of the elements
-//            // validate that the prefix is as expected
-//            assertThat(result, hasSize(lessThan(numElements)));
-//            assertThat(
-//                    result,
-//                    equalTo(
-//                            IntStream.range(0, numElements)
-//                                    .mapToObj(String::valueOf)
-//                                    .collect(Collectors.toList())
-//                                    .subList(0, result.size())));
-//        } finally {
-//            stopTask.cancel(true);
-//        }
+                        GetRecordsRequest.builder().shardIterator(shardIterator).build()).get().records().size());
     }
 
     private PutRecordsRequestEntry x(){
