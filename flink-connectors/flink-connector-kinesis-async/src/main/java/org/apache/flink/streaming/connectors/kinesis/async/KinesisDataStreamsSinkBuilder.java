@@ -19,6 +19,7 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 /** a. */
@@ -31,6 +32,7 @@ public class KinesisDataStreamsSinkBuilder<InputT> {
     private int maxBufferedRequests;
     private long flushOnBufferSizeInBytes;
     private long maxTimeInBufferMS;
+    private KinesisAsyncClient client;
 
     public KinesisDataStreamsSinkBuilder<InputT> setElementConverter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
@@ -64,6 +66,11 @@ public class KinesisDataStreamsSinkBuilder<InputT> {
         return this;
     }
 
+    public KinesisDataStreamsSinkBuilder<InputT> lol(KinesisAsyncClient client){
+        this.client = client;
+        return this;
+    }
+
     public KinesisDataStreamsSink<InputT> build() {
         return new KinesisDataStreamsSink<>(
                 elementConverter,
@@ -71,6 +78,7 @@ public class KinesisDataStreamsSinkBuilder<InputT> {
                 maxInFlightRequests,
                 maxBufferedRequests,
                 flushOnBufferSizeInBytes,
-                maxTimeInBufferMS);
+                maxTimeInBufferMS,
+                client);
     }
 }
