@@ -77,7 +77,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        System.out.printf("kinesis:PutRecords request failed: %n", err);
+                        System.out.printf("kinesis:PutRecords request failed: %s", err);
 
                         requestResult.accept(requestEntries);
 
@@ -86,7 +86,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
 
                     if (response.failedRecordCount() > 0) {
                         System.out.printf(
-                                "Re-queueing {} messages%n", response.failedRecordCount());
+                                "Re-queueing {} messages%s", response.failedRecordCount());
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
