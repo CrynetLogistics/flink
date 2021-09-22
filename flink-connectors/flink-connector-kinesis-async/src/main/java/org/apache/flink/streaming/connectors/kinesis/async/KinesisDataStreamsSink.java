@@ -40,23 +40,6 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
     private final long flushOnBufferSizeInBytes;
     private final long maxTimeInBufferMS;
 
-    transient KinesisAsyncClient client;
-
-    KinesisDataStreamsSink(
-            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
-            int maxBatchSize,
-            int maxInFlightRequests,
-            int maxBufferedRequests,
-            long flushOnBufferSizeInBytes,
-            long maxTimeInBufferMS) {
-        this.elementConverter = elementConverter;
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-        this.maxTimeInBufferMS = maxTimeInBufferMS;
-    }
-
     KinesisDataStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             int maxBatchSize,
@@ -71,7 +54,6 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
         this.maxBufferedRequests = maxBufferedRequests;
         this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
-        KinesisDataStreamsSinkWriter.client = client;
     }
 
     /**
@@ -88,8 +70,9 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
-        return new KinesisDataStreamsSinkWriter<>(
-                elementConverter, context, 10, 1, 100, 1024, 10000);
+        return new KinesisDataStreamsSinkWriter<>(elementConverter, context, maxBatchSize,
+                maxInFlightRequests, maxBufferedRequests, flushOnBufferSizeInBytes,
+                maxTimeInBufferMS);
     }
 
     @Override

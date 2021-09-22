@@ -39,7 +39,7 @@ import java.util.function.Consumer;
 public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
-    public static KinesisAsyncClient client = KinesisAsyncClient.create();
+    private static final KinesisAsyncClient client = KinesisAsyncClient.create();
 
     public KinesisDataStreamsSinkWriter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,

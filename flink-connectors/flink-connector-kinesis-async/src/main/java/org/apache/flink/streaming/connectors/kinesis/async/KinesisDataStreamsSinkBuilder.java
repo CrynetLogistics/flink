@@ -32,7 +32,7 @@ public class KinesisDataStreamsSinkBuilder<InputT> {
     private int maxBufferedRequests;
     private long flushOnBufferSizeInBytes;
     private long maxTimeInBufferMS;
-    private KinesisAsyncClient client;
+    private KinesisAsyncClient client = KinesisAsyncClient.create();
 
     public KinesisDataStreamsSinkBuilder<InputT> setElementConverter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
@@ -63,11 +63,6 @@ public class KinesisDataStreamsSinkBuilder<InputT> {
 
     public KinesisDataStreamsSinkBuilder<InputT> setMaxTimeInBufferMS(long maxTimeInBufferMS) {
         this.maxTimeInBufferMS = maxTimeInBufferMS;
-        return this;
-    }
-
-    public KinesisDataStreamsSinkBuilder<InputT> lol(KinesisAsyncClient client){
-        this.client = client;
         return this;
     }
 
