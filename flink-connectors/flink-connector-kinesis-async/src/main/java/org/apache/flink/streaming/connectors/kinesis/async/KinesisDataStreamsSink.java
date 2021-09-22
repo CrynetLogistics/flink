@@ -22,7 +22,6 @@ import org.apache.flink.connector.base.sink.AsyncSinkBase;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Collection;
@@ -40,8 +39,6 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
     private final long flushOnBufferSizeInBytes;
     private final long maxTimeInBufferMS;
 
-    transient KinesisAsyncClient client;
-
     KinesisDataStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             int maxBatchSize,
@@ -55,23 +52,6 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
         this.maxBufferedRequests = maxBufferedRequests;
         this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
-    }
-
-    KinesisDataStreamsSink(
-            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
-            int maxBatchSize,
-            int maxInFlightRequests,
-            int maxBufferedRequests,
-            long flushOnBufferSizeInBytes,
-            long maxTimeInBufferMS,
-            KinesisAsyncClient client) {
-        this.elementConverter = elementConverter;
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-        this.maxTimeInBufferMS = maxTimeInBufferMS;
-        KinesisDataStreamsSinkWriter.client = client;
     }
 
     /**
