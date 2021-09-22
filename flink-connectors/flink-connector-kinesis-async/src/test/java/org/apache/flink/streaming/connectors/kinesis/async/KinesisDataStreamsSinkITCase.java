@@ -156,8 +156,20 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 //        FlinkKinesisConsumer<String> consumer =
 //                new FlinkKinesisConsumer<>(TEST_STREAM, STRING_SCHEMA, config);
 
+
+
+        KinesisAsyncClient kiness = kinesalite.getNewClient();
+        kiness.createStream(CreateStreamRequest.builder().streamName("py-output").shardCount(1).build()).get();
+        DescribeStreamResponse res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
+        System.out.println(res);
+        while(res.streamDescription().streamStatus() != StreamStatus.ACTIVE){
+            res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
+        }
+        System.out.println(res);
+
+
         DataStream<String> stream = env.addSource(new ExampleSource());
-                //.map(new WaitingMapper());
+        //.map(new WaitingMapper());
         // call stop with savepoint in another thread
 //        ForkJoinTask<Object> stopTask =
 //                ForkJoinPool.commonPool()
@@ -177,34 +189,24 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
                         .setMaxBufferedRequests(1000)
+                        .lol(kiness)
                         .build();
         stream.sinkTo(kdsSink);
-
-
-        KinesisAsyncClient kiness = kinesalite.getNewClient();
-        kiness.createStream(CreateStreamRequest.builder().streamName("py-output").shardCount(1).build()).get();
-        DescribeStreamResponse res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
-        System.out.println(res);
-        while(res.streamDescription().streamStatus() != StreamStatus.ACTIVE){
-            res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
-        }
-        System.out.println(res);
-
-
-        PutRecordsRequestEntry requestEntries = x();
-        PutRecordsRequest batchRequest =
-                PutRecordsRequest.builder().records(requestEntries).streamName("py-output").build();
-
-        
-
-        PutRecordRequest req = PutRecordRequest
-                .builder()
-                .partitionKey("1")
-                .streamName("py-output")
-                .data(SdkBytes.fromUtf8String("{\"a\":\"a\",\"b\":\"a\"}"))
-                .build();
-        System.out.println(req);
-        kiness.putRecord(req).get();
+        env.execute("KDS Async Sink Example Program");
+//        PutRecordsRequestEntry requestEntries = x();
+//        PutRecordsRequest batchRequest =
+//                PutRecordsRequest.builder().records(requestEntries).streamName("py-output").build();
+//
+//
+//
+//        PutRecordRequest req = PutRecordRequest
+//                .builder()
+//                .partitionKey("1")
+//                .streamName("py-output")
+//                .data(SdkBytes.fromUtf8String("{\"a\":\"a\",\"b\":\"a\"}"))
+//                .build();
+//        System.out.println(req);
+//        kiness.putRecord(req).get();
 
         System.out.println(kiness.listShards(ListShardsRequest.builder().streamName("py-output").build()).get().shards().stream().map(x -> x.toString()).collect(
                 Collectors.toList()));
