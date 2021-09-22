@@ -21,7 +21,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkBuilder;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -46,7 +45,7 @@ public class SinkIntoKinesis {
         DataStream<String> fromGen =
                 env.addSource(new ExampleDataSourceFunction());
 
-        KinesisDataStreamsSinkBuilder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
+        KinesisDataStreamsSink.Builder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
         KinesisDataStreamsSink<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)

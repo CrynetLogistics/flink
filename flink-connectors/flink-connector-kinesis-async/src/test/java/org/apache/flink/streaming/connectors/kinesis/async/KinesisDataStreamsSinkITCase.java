@@ -65,6 +65,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public void testStopWithSavepoint() throws Exception {
 
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
+        System.setProperty("aws.region", "us-east-1");
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -84,7 +85,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 
 
 
-        KinesisDataStreamsSinkBuilder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
+        KinesisDataStreamsSink.Builder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
         KinesisDataStreamsSink<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)
