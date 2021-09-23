@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A Kinesis Data Streams (KDS) Sink that performs async requests against a destination stream using the
- * buffering protocol specified in {@link AsyncSinkBase}.
+ * A Kinesis Data Streams (KDS) Sink that performs async requests against a destination stream using
+ * the buffering protocol specified in {@link AsyncSinkBase}.
  *
  * <p>The sink internally uses a {@link software.amazon.awssdk.services.kinesis.KinesisAsyncClient}
  * to communicate with the AWS endpoint.
@@ -40,14 +40,15 @@ import java.util.Optional;
  * <ul>
  *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to KDS
  *   <li>{@code maxInFlightRequests}: the maximum number of in flight requests that may exist, if
- *   any more in flight requests need to be initiated once the maximum has been reached, then it
- *   will be blocked until some have completed
+ *       any more in flight requests need to be initiated once the maximum has been reached, then it
+ *       will be blocked until some have completed
  *   <li>{@code maxBufferedRequests}: the maximum number of elements held in the buffer, requests to
- *   add elements will be blocked while the number of elements in the buffer is at the maximum
+ *       add elements will be blocked while the number of elements in the buffer is at the maximum
  *   <li>{@code flushOnBufferSizeInBytes}: if the total size in bytes of all elements in the buffer
- *   reaches this value, then a flush will occur the next time any elements are added to the buffer
+ *       reaches this value, then a flush will occur the next time any elements are added to the
+ *       buffer
  *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
- *   buffer, if any element reaches this age, the entire buffer will be flushed immediately
+ *       buffer, if any element reaches this age, the entire buffer will be flushed immediately
  * </ul>
  *
  * <p>Please see the writer implementation in {@link KinesisDataStreamsSinkWriter}
@@ -59,7 +60,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
 
     private final KinesisDataStreamsSinkConfig<InputT> config;
 
-    public KinesisDataStreamsSink(KinesisDataStreamsSinkConfig<InputT> config){
+    public KinesisDataStreamsSink(KinesisDataStreamsSinkConfig<InputT> config) {
         this.config = config;
     }
 
@@ -82,5 +83,4 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             getWriterStateSerializer() {
         return Optional.empty();
     }
-
 }

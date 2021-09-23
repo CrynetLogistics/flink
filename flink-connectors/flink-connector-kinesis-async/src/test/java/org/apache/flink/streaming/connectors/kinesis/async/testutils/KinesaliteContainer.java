@@ -86,11 +86,11 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     }
 
     public KinesisAsyncClient getNewClient() throws URISyntaxException {
-        return KinesisAsyncClient
-                .builder()
+        return KinesisAsyncClient.builder()
                 .endpointOverride(new URI(getHostEndpointUrl()))
                 .region(REGION)
-                .credentialsProvider(() -> AwsBasicCredentials.create(getAccessKey(), getSecretKey()))
+                .credentialsProvider(
+                        () -> AwsBasicCredentials.create(getAccessKey(), getSecretKey()))
                 .httpClient(buildSdkAsyncHttpClient())
                 .build();
     }
@@ -104,7 +104,8 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
                     () -> this.getRateLimiter().getWhenReady(this::tryList));
         }
 
-        private ListStreamsResponse tryList() throws URISyntaxException, ExecutionException, InterruptedException {
+        private ListStreamsResponse tryList()
+                throws URISyntaxException, ExecutionException, InterruptedException {
             return getNewClient().listStreams().get();
         }
     }
@@ -114,7 +115,6 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
                 .buildWithDefaults(
                         AttributeMap.builder()
                                 .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-                                .build()
-                );
+                                .build());
     }
 }

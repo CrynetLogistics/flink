@@ -78,14 +78,33 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         env.setParallelism(1);
 
         kinesisClient = kinesalite.getNewClient();
-        setFinalStatic(KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
+        setFinalStatic(
+                KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
 
-        kinesisClient.createStream(CreateStreamRequest.builder().streamName(TEST_STREAM_NAME).shardCount(1).build()).get();
+        kinesisClient
+                .createStream(
+                        CreateStreamRequest.builder()
+                                .streamName(TEST_STREAM_NAME)
+                                .shardCount(1)
+                                .build())
+                .get();
 
-        DescribeStreamResponse describeStream = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
+        DescribeStreamResponse describeStream =
+                kinesisClient
+                        .describeStream(
+                                DescribeStreamRequest.builder()
+                                        .streamName(TEST_STREAM_NAME)
+                                        .build())
+                        .get();
 
-        while(describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE){
-            describeStream = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
+        while (describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE) {
+            describeStream =
+                    kinesisClient
+                            .describeStream(
+                                    DescribeStreamRequest.builder()
+                                            .streamName(TEST_STREAM_NAME)
+                                            .build())
+                            .get();
         }
     }
 
@@ -94,7 +113,8 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 
         DataStream<String> stream = env.addSource(new ExampleSource(1, 2, 10, 969));
 
-        KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder = KinesisDataStreamsSinkConfig.builder();
+        KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder =
+                KinesisDataStreamsSinkConfig.builder();
         KinesisDataStreamsSinkConfig<String> sinkConfig =
                 sinkConfigBuilder
                         .setElementConverter(elementConverter)
@@ -107,21 +127,27 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .build();
         stream.sinkTo(new KinesisDataStreamsSink<>(sinkConfig));
 
-
         env.execute("KDS Async Sink Example Program");
 
-        String shardIterator = kinesisClient.getShardIterator(
-                GetShardIteratorRequest.builder()
-                        .shardId(DEFAULT_FIRST_SHARD_NAME)
-                        .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
-                        .streamName(TEST_STREAM_NAME).build()
-        ).get().shardIterator();
+        String shardIterator =
+                kinesisClient
+                        .getShardIterator(
+                                GetShardIteratorRequest.builder()
+                                        .shardId(DEFAULT_FIRST_SHARD_NAME)
+                                        .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
+                                        .streamName(TEST_STREAM_NAME)
+                                        .build())
+                        .get()
+                        .shardIterator();
 
-
-
-        assertEquals(2,
-                kinesisClient.getRecords(
-                        GetRecordsRequest.builder().shardIterator(shardIterator).build()).get().records().size());
+        assertEquals(
+                2,
+                kinesisClient
+                        .getRecords(
+                                GetRecordsRequest.builder().shardIterator(shardIterator).build())
+                        .get()
+                        .records()
+                        .size());
     }
 
     private static void setFinalStatic(Field field, Object newValue) throws Exception {
@@ -143,12 +169,18 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         private final int keepAliveTimeAfterMS;
         private final String payload;
 
-        public ExampleSource(int numToCountTo, int timeBetweenHitsMS, int keepAliveTimeAfterMS, int sizeOfEachMessageBytes){
+        public ExampleSource(
+                int numToCountTo,
+                int timeBetweenHitsMS,
+                int keepAliveTimeAfterMS,
+                int sizeOfEachMessageBytes) {
             this.numToCountTo = numToCountTo;
             this.timeBetweenHitsMS = timeBetweenHitsMS;
             this.keepAliveTimeAfterMS = keepAliveTimeAfterMS;
-            Preconditions.checkArgument(sizeOfEachMessageBytes >= 25, "The minimum size of the message should be 25 bytes, i.e. that is "
-                    + "the size of the message with an empty payload. Additional data in the payload is 1 byte per character.");
+            Preconditions.checkArgument(
+                    sizeOfEachMessageBytes >= 25,
+                    "The minimum size of the message should be 25 bytes, i.e. that is "
+                            + "the size of the message with an empty payload. Additional data in the payload is 1 byte per character.");
             payload = new String(new char[sizeOfEachMessageBytes - 25]).replace('\0', '*');
         }
 
@@ -173,8 +205,9 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             this.running = false;
         }
 
-        private String emittedMessage(){
-            return String.format("{\"%s\":%d, \"%s\":\"%s\"}", "count", this.emittedCount, "payload", payload);
+        private String emittedMessage() {
+            return String.format(
+                    "{\"%s\":%d, \"%s\":\"%s\"}", "count", this.emittedCount, "payload", payload);
         }
     }
 }

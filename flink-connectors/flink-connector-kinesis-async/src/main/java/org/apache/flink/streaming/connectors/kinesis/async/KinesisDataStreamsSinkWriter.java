@@ -37,13 +37,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- *  Sink writer created by {@link KinesisDataStreamsSink} to write to Kinesis Data Streams. More
- *  details on the operation of this sink writer may be found in the doc for {@link KinesisDataStreamsSink}.
- *  More details on the internals of this sink writer may be found in {@link AsyncSinkWriter}.
+ * Sink writer created by {@link KinesisDataStreamsSink} to write to Kinesis Data Streams. More
+ * details on the operation of this sink writer may be found in the doc for {@link
+ * KinesisDataStreamsSink}. More details on the internals of this sink writer may be found in {@link
+ * AsyncSinkWriter}.
  *
- *  <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the
- *  AWS SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and
- *  {@code AWS_SECRET_ACCESS_KEY} through environment variables etc.
+ * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the AWS SDK
+ * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
+ * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 @PublicEvolving
 public class KinesisDataStreamsSinkWriter<InputT>
@@ -88,13 +89,17 @@ public class KinesisDataStreamsSinkWriter<InputT>
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        LOG.warn("KDS Sink failed to persist {} entries to KDS, retrying whole batch", requestEntries.size());
+                        LOG.warn(
+                                "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
+                                requestEntries.size());
                         requestResult.accept(requestEntries);
                         return;
                     }
 
                     if (response.failedRecordCount() > 0) {
-                        LOG.warn("KDS Sink failed to persist {} entries to KDS, retrying a partial batch", response.failedRecordCount());
+                        LOG.warn(
+                                "KDS Sink failed to persist {} entries to KDS, retrying a partial batch",
+                                response.failedRecordCount());
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());

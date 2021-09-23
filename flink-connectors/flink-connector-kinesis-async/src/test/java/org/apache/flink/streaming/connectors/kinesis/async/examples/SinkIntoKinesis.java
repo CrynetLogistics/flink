@@ -21,7 +21,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkConfig;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -31,9 +30,9 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 /**
  * An example application on how to sink into KDS.
  *
- * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the
- * AWS SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and
- * {@code AWS_SECRET_ACCESS_KEY} through environment variables etc.
+ * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the AWS SDK
+ * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
+ * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 public class SinkIntoKinesis {
 
@@ -48,10 +47,10 @@ public class SinkIntoKinesis {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
 
-        DataStream<String> fromGen =
-                env.addSource(new ExampleDataSourceFunction());
+        DataStream<String> fromGen = env.addSource(new ExampleDataSourceFunction());
 
-        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder = KinesisDataStreamsSinkConfig.builder();
+        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder =
+                KinesisDataStreamsSinkConfig.builder();
         KinesisDataStreamsSinkConfig<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)

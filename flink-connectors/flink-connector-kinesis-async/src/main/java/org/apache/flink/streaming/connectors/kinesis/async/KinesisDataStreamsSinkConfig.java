@@ -1,7 +1,6 @@
 package org.apache.flink.streaming.connectors.kinesis.async;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-
 import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -25,13 +24,14 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
     private final long maxTimeInBufferMS;
     private final String streamName;
 
-    public KinesisDataStreamsSinkConfig(ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
-                                        int maxBatchSize,
-                                        int maxInFlightRequests,
-                                        int maxBufferedRequests,
-                                        long flushOnBufferSizeInBytes,
-                                        long maxTimeInBufferMS,
-                                        String streamName) {
+    public KinesisDataStreamsSinkConfig(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long flushOnBufferSizeInBytes,
+            long maxTimeInBufferMS,
+            String streamName) {
         this.elementConverter = elementConverter;
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
@@ -42,8 +42,7 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
     }
 
     /**
-     * Create a {@link Builder} to construct a new {@link
-     * KinesisDataStreamsSink}.
+     * Create a {@link Builder} to construct a new {@link KinesisDataStreamsSink}.
      *
      * @param <InputT> type of incoming records
      * @return {@link Builder}
@@ -111,8 +110,7 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
             return this;
         }
 
-        public Builder<InputT> setFlushOnBufferSizeInBytes(
-                long flushOnBufferSizeInBytes) {
+        public Builder<InputT> setFlushOnBufferSizeInBytes(long flushOnBufferSizeInBytes) {
             this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
             return this;
         }
@@ -129,10 +127,14 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
         }
 
         public KinesisDataStreamsSinkConfig<InputT> build() {
-            Preconditions.checkNotNull(streamName, "The stream name must be set and "
-                    + "set to a non null value when initializing the KDS Sink.");
-            Preconditions.checkNotNull(elementConverter, "A non-null element converter must be "
-                    + "provided when initializing the KDS Sink.");
+            Preconditions.checkNotNull(
+                    streamName,
+                    "The stream name must be set and "
+                            + "set to a non null value when initializing the KDS Sink.");
+            Preconditions.checkNotNull(
+                    elementConverter,
+                    "A non-null element converter must be "
+                            + "provided when initializing the KDS Sink.");
             return new KinesisDataStreamsSinkConfig<>(
                     elementConverter,
                     maxBatchSize,
@@ -143,5 +145,4 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
                     streamName);
         }
     }
-
 }
