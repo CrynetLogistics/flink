@@ -23,11 +23,15 @@ import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
 
 import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 /**
- * An example application on how to sink into KDS, the following environment variables are set:
- * AWS_REGION, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+ * An example application on how to sink into KDS.
+ *
+ * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the
+ * AWS SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and
+ * {@code AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 public class SinkIntoKinesis {
 
