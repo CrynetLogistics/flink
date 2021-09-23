@@ -22,6 +22,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
 
+import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkConfig;
+
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -49,8 +51,8 @@ public class SinkIntoKinesis {
         DataStream<String> fromGen =
                 env.addSource(new ExampleDataSourceFunction());
 
-        KinesisDataStreamsSink.Builder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
-        KinesisDataStreamsSink<String> kdsSink =
+        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder = KinesisDataStreamsSinkConfig.builder();
+        KinesisDataStreamsSinkConfig<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)
                         .setMaxTimeInBufferMS(10000)
@@ -58,9 +60,10 @@ public class SinkIntoKinesis {
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
                         .setMaxBufferedRequests(1000)
+                        .setStreamName("your_stream_name")
                         .build();
 
-        fromGen.sinkTo(kdsSink);
+        fromGen.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
 
         env.execute("KDS Async Sink Example Program");
     }

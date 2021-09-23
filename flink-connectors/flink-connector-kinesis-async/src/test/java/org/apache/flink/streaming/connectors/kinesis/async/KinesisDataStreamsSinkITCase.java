@@ -85,8 +85,8 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 
 
 
-        KinesisDataStreamsSink.Builder<String> kdsSinkBuilder = KinesisDataStreamsSink.builder();
-        KinesisDataStreamsSink<String> kdsSink =
+        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder = KinesisDataStreamsSinkConfig.builder();
+        KinesisDataStreamsSinkConfig<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)
                         .setMaxTimeInBufferMS(10000)
@@ -96,7 +96,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxBufferedRequests(1000)
                         .setStreamName("py-output")
                         .build();
-        stream.sinkTo(kdsSink);
+        stream.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
         env.execute("KDS Async Sink Example Program");
 
         System.out.println(kiness.listShards(ListShardsRequest.builder().streamName("py-output").build()).get().shards().stream().map(x -> x.toString()).collect(

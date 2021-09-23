@@ -19,7 +19,6 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
-import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -58,48 +57,24 @@ import java.util.Optional;
 @PublicEvolving
 public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
-    private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
-    private final int maxBatchSize;
-    private final int maxInFlightRequests;
-    private final int maxBufferedRequests;
-    private final long flushOnBufferSizeInBytes;
-    private final long maxTimeInBufferMS;
-    private final String streamName;
+    private final KinesisDataStreamsSinkConfig<InputT> config;
 
-    KinesisDataStreamsSink(
-            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
-            int maxBatchSize,
-            int maxInFlightRequests,
-            int maxBufferedRequests,
-            long flushOnBufferSizeInBytes,
-            long maxTimeInBufferMS,
-            String streamName) {
-        this.elementConverter = elementConverter;
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-        this.maxTimeInBufferMS = maxTimeInBufferMS;
-        this.streamName = streamName;
-    }
-
-    /**
-     * Create a {@link Builder} to construct a new {@link
-     * KinesisDataStreamsSink}.
-     *
-     * @param <InputT> type of incoming records
-     * @return {@link Builder}
-     */
-    public static <InputT> Builder<InputT> builder() {
-        return new Builder<>();
+    public KinesisDataStreamsSink(KinesisDataStreamsSinkConfig<InputT> config){
+        this.config = config;
     }
 
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
-        return new KinesisDataStreamsSinkWriter<>(elementConverter, context, maxBatchSize,
-                maxInFlightRequests, maxBufferedRequests, flushOnBufferSizeInBytes,
-                maxTimeInBufferMS, streamName);
+        return new KinesisDataStreamsSinkWriter<>(
+                config.getElementConverter(),
+                context,
+                config.getMaxBatchSize(),
+                config.getMaxInFlightRequests(),
+                config.getMaxBufferedRequests(),
+                config.getFlushOnBufferSizeInBytes(),
+                config.getMaxTimeInBufferMS(),
+                config.getStreamName());
     }
 
     @Override
@@ -108,63 +83,4 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
         return Optional.empty();
     }
 
-    //todo: sanity check variables! at both set() time and build() time
-    public static class Builder<InputT> {
-
-        private ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
-        private int maxBatchSize;
-        private int maxInFlightRequests;
-        private int maxBufferedRequests;
-        private long flushOnBufferSizeInBytes;
-        private long maxTimeInBufferMS;
-        private String streamName;
-
-        public Builder<InputT> setElementConverter(
-                ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
-            this.elementConverter = elementConverter;
-            return this;
-        }
-
-        public Builder<InputT> setMaxBatchSize(int maxBatchSize) {
-            this.maxBatchSize = maxBatchSize;
-            return this;
-        }
-
-        public Builder<InputT> setMaxInFlightRequests(int maxInFlightRequests) {
-            this.maxInFlightRequests = maxInFlightRequests;
-            return this;
-        }
-
-        public Builder<InputT> setMaxBufferedRequests(int maxBufferedRequests) {
-            this.maxBufferedRequests = maxBufferedRequests;
-            return this;
-        }
-
-        public Builder<InputT> setFlushOnBufferSizeInBytes(
-                long flushOnBufferSizeInBytes) {
-            this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-            return this;
-        }
-
-        public Builder<InputT> setMaxTimeInBufferMS(long maxTimeInBufferMS) {
-            this.maxTimeInBufferMS = maxTimeInBufferMS;
-            return this;
-        }
-
-        public Builder<InputT> setStreamName(String streamName) {
-            this.streamName = streamName;
-            return this;
-        }
-
-        public KinesisDataStreamsSink<InputT> build() {
-            return new KinesisDataStreamsSink<>(
-                    elementConverter,
-                    maxBatchSize,
-                    maxInFlightRequests,
-                    maxBufferedRequests,
-                    flushOnBufferSizeInBytes,
-                    maxTimeInBufferMS,
-                    streamName);
-        }
-    }
 }

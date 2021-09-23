@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 /**
  *  Sink writer created by {@link KinesisDataStreamsSink} to write to Kinesis Data Streams. More
@@ -54,7 +53,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
     private static final KinesisAsyncClient client = KinesisAsyncClient.create();
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
-    public KinesisDataStreamsSinkWriter(
+    KinesisDataStreamsSinkWriter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
             Sink.InitContext context,
             int maxBatchSize,
