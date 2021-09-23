@@ -25,6 +25,9 @@ import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteC
 import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
 
+import org.apache.flink.shaded.curator4.org.apache.curator.shaded.com.google.common.base.Preconditions;
+
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.testcontainers.utility.DockerImageName;
@@ -36,15 +39,12 @@ import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest;
 import software.amazon.awssdk.services.kinesis.model.DescribeStreamResponse;
 import software.amazon.awssdk.services.kinesis.model.GetRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
-import software.amazon.awssdk.services.kinesis.model.ListShardsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
-import software.amazon.awssdk.services.kinesis.model.Shard;
 import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -66,16 +66,18 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public static KinesaliteContainer kinesalite =
             new KinesaliteContainer(DockerImageName.parse(DockerImageVersions.KINESALITE));
 
-    @Test
-    public void testStopWithSavepoint() throws Exception {
+    private StreamExecutionEnvironment env;
+    private KinesisAsyncClient kinesisClient;
 
+    @Before
+    public void setUp() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
         System.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
 
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        KinesisAsyncClient kinesisClient = kinesalite.getNewClient();
+        kinesisClient = kinesalite.getNewClient();
         setFinalStatic(KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
 
         kinesisClient.createStream(CreateStreamRequest.builder().streamName(TEST_STREAM_NAME).shardCount(1).build()).get();
@@ -85,14 +87,18 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         while(describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE){
             describeStream = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
         }
+    }
 
-        DataStream<String> stream = env.addSource(new ExampleSource());
+    @Test
+    public void atest() throws Exception {
+
+        DataStream<String> stream = env.addSource(new ExampleSource(1, 2, 10, 969));
 
         KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder = KinesisDataStreamsSinkConfig.builder();
         KinesisDataStreamsSinkConfig<String> sinkConfig =
                 sinkConfigBuilder
                         .setElementConverter(elementConverter)
-                        .setMaxTimeInBufferMS(10000)
+                        .setMaxTimeInBufferMS(5)
                         .setFlushOnBufferSizeInBytes(409600)
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
@@ -101,16 +107,19 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .build();
         stream.sinkTo(new KinesisDataStreamsSink<>(sinkConfig));
 
+
         env.execute("KDS Async Sink Example Program");
 
-        System.out.println(kinesisClient.listShards(ListShardsRequest.builder().streamName(TEST_STREAM_NAME).build()).get().shards().stream().map(
-                Shard::toString).collect(
-                Collectors.toList()));
+        String shardIterator = kinesisClient.getShardIterator(
+                GetShardIteratorRequest.builder()
+                        .shardId(DEFAULT_FIRST_SHARD_NAME)
+                        .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
+                        .streamName(TEST_STREAM_NAME).build()
+        ).get().shardIterator();
 
-        String shardIterator = kinesisClient.getShardIterator(GetShardIteratorRequest.builder().shardId(DEFAULT_FIRST_SHARD_NAME).shardIteratorType(
-                ShardIteratorType.TRIM_HORIZON).streamName(TEST_STREAM_NAME).build()).get().shardIterator();
 
-        assertEquals(100,
+
+        assertEquals(2,
                 kinesisClient.getRecords(
                         GetRecordsRequest.builder().shardIterator(shardIterator).build()).get().records().size());
     }
@@ -128,25 +137,44 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public static class ExampleSource extends RichSourceFunction<String> {
         private static final long serialVersionUID = 1L;
         private volatile boolean running = true;
-        private int emittedCount = 0;
+        private int emittedCount = 1;
+        private final int numToCountTo;
+        private final int timeBetweenHitsMS;
+        private final int keepAliveTimeAfterMS;
+        private final String payload;
 
+        public ExampleSource(int numToCountTo, int timeBetweenHitsMS, int keepAliveTimeAfterMS, int sizeOfEachMessageBytes){
+            this.numToCountTo = numToCountTo;
+            this.timeBetweenHitsMS = timeBetweenHitsMS;
+            this.keepAliveTimeAfterMS = keepAliveTimeAfterMS;
+            Preconditions.checkArgument(sizeOfEachMessageBytes >= 25, "The minimum size of the message should be 25 bytes, i.e. that is "
+                    + "the size of the message with an empty payload. Additional data in the payload is 1 byte per character.");
+            payload = new String(new char[sizeOfEachMessageBytes - 25]).replace('\0', '*');
+        }
+
+        @Override
         public void run(SourceContext<String> ctx) throws Exception {
-            for (; this.running; Thread.sleep(5L)) {
+            for (; this.running; Thread.sleep(timeBetweenHitsMS)) {
                 synchronized (ctx.getCheckpointLock()) {
-                    ctx.collect(
-                            "{\"time\":" + this.emittedCount + ",\"woo\":45}");
+                    ctx.collect(emittedMessage());
                 }
 
-                if (this.emittedCount < 100) {
+                if (this.emittedCount < numToCountTo) {
                     ++this.emittedCount;
                 } else {
+                    Thread.sleep(keepAliveTimeAfterMS);
                     return;
                 }
             }
         }
 
+        @Override
         public void cancel() {
             this.running = false;
+        }
+
+        private String emittedMessage(){
+            return String.format("{\"%s\":%d, \"%s\":\"%s\"}", "count", this.emittedCount, "payload", payload);
         }
     }
 }

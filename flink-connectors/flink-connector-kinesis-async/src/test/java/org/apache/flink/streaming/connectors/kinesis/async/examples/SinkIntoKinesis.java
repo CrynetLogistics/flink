@@ -55,11 +55,6 @@ public class SinkIntoKinesis {
         KinesisDataStreamsSinkConfig<String> kdsSink =
                 kdsSinkBuilder
                         .setElementConverter(elementConverter)
-                        .setMaxTimeInBufferMS(10000)
-                        .setFlushOnBufferSizeInBytes(1024)
-                        .setMaxInFlightRequests(1)
-                        .setMaxBatchSize(100)
-                        .setMaxBufferedRequests(1000)
                         .setStreamName("your_stream_name")
                         .build();
 
