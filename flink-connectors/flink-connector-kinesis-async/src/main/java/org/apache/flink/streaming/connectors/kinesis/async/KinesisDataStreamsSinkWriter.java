@@ -21,6 +21,8 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.MetricGroup;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +53,15 @@ import java.util.function.Consumer;
 public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
+    private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC = "totalFullySuccessfulFlushes";
+    private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC = "totalPartiallySuccessfulFlushes";
+    private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
+    private transient Counter totalFullySuccessfulFlushesCounter;
+    private transient Counter totalPartiallySuccessfulFlushesCounter;
+    private transient Counter totalFullyFailedFlushesCounter;
+
     private final String streamName;
+    private final MetricGroup metrics;
     private static final KinesisAsyncClient client = KinesisAsyncClient.create();
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
@@ -73,6 +83,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 flushOnBufferSizeInBytes,
                 maxTimeInBufferMS);
         this.streamName = streamName;
+        this.metrics = context.metricGroup();
+        initMetricsGroup();
     }
 
     @Override
@@ -93,6 +105,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         LOG.warn(
                                 "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
                                 requestEntries.size());
+                        totalFullyFailedFlushesCounter.inc();
+
                         requestResult.accept(requestEntries);
                         return;
                     }
@@ -101,6 +115,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         LOG.warn(
                                 "KDS Sink failed to persist {} entries to KDS, retrying a partial batch",
                                 response.failedRecordCount());
+                        totalPartiallySuccessfulFlushesCounter.inc();
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
@@ -114,6 +129,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
 
                         requestResult.accept(failedRequestEntries);
                     } else {
+                        totalFullySuccessfulFlushesCounter.inc();
                         requestResult.accept(Collections.emptyList());
                     }
                 });
@@ -122,5 +138,11 @@ public class KinesisDataStreamsSinkWriter<InputT>
     @Override
     protected long getSizeInBytes(PutRecordsRequestEntry requestEntry) {
         return requestEntry.data().asByteArrayUnsafe().length;
+    }
+
+    private void initMetricsGroup(){
+        totalFullySuccessfulFlushesCounter = metrics.counter(TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC);
+        totalPartiallySuccessfulFlushesCounter = metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
+        totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
     }
 }
