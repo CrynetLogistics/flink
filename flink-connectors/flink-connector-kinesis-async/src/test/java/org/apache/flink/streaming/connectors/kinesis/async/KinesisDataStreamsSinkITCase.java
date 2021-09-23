@@ -75,21 +75,22 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        KinesisAsyncClient kiness = kinesalite.getNewClient();
-        setFinalStatic(KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kiness);
-        kiness.createStream(CreateStreamRequest.builder().streamName(TEST_STREAM_NAME).shardCount(1).build()).get();
-        DescribeStreamResponse res = kiness.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
-        System.out.println(res);
-        while(res.streamDescription().streamStatus() != StreamStatus.ACTIVE){
-            res = kiness.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
+        KinesisAsyncClient kinesisClient = kinesalite.getNewClient();
+        setFinalStatic(KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
+
+        kinesisClient.createStream(CreateStreamRequest.builder().streamName(TEST_STREAM_NAME).shardCount(1).build()).get();
+
+        DescribeStreamResponse describeStream = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
+
+        while(describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE){
+            describeStream = kinesisClient.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
         }
-        System.out.println(res);
 
         DataStream<String> stream = env.addSource(new ExampleSource());
 
-        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder = KinesisDataStreamsSinkConfig.builder();
-        KinesisDataStreamsSinkConfig<String> kdsSink =
-                kdsSinkBuilder
+        KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder = KinesisDataStreamsSinkConfig.builder();
+        KinesisDataStreamsSinkConfig<String> sinkConfig =
+                sinkConfigBuilder
                         .setElementConverter(elementConverter)
                         .setMaxTimeInBufferMS(10000)
                         .setFlushOnBufferSizeInBytes(409600)
@@ -98,18 +99,19 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxBufferedRequests(1000)
                         .setStreamName(TEST_STREAM_NAME)
                         .build();
-        stream.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
+        stream.sinkTo(new KinesisDataStreamsSink<>(sinkConfig));
+
         env.execute("KDS Async Sink Example Program");
 
-        System.out.println(kiness.listShards(ListShardsRequest.builder().streamName(TEST_STREAM_NAME).build()).get().shards().stream().map(
+        System.out.println(kinesisClient.listShards(ListShardsRequest.builder().streamName(TEST_STREAM_NAME).build()).get().shards().stream().map(
                 Shard::toString).collect(
                 Collectors.toList()));
 
-        String shardIterator = kiness.getShardIterator(GetShardIteratorRequest.builder().shardId(DEFAULT_FIRST_SHARD_NAME).shardIteratorType(
+        String shardIterator = kinesisClient.getShardIterator(GetShardIteratorRequest.builder().shardId(DEFAULT_FIRST_SHARD_NAME).shardIteratorType(
                 ShardIteratorType.TRIM_HORIZON).streamName(TEST_STREAM_NAME).build()).get().shardIterator();
 
         assertEquals(100,
-                kiness.getRecords(
+                kinesisClient.getRecords(
                         GetRecordsRequest.builder().shardIterator(shardIterator).build()).get().records().size());
     }
 
