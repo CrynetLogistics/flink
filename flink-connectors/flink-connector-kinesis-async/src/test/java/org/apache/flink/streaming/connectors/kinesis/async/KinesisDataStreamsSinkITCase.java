@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
-/** IT cases for using Kinesis consumer/producer based on Kinesalite. */
+/** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
 public class KinesisDataStreamsSinkITCase extends TestLogger {
 
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
@@ -100,8 +100,6 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
 
         System.out.println(kiness.listShards(ListShardsRequest.builder().streamName("py-output").build()).get().shards().stream().map(x -> x.toString()).collect(
                 Collectors.toList()));
-
-        Thread.sleep(3000);
 
         String shardIterator = kiness.getShardIterator(GetShardIteratorRequest.builder().shardId("shardId-000000000000").shardIteratorType(
                 ShardIteratorType.TRIM_HORIZON).streamName("py-output").build()).get().shardIterator();

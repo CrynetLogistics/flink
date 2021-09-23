@@ -39,12 +39,14 @@ import static com.amazonaws.SDKGlobalConfiguration.ACCESS_KEY_ENV_VAR;
 import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_ENV_VAR;
 
 /**
- * A testcontainer based on Kinesalite.
+ * A {@code org.testcontainers} based on Kinesalite.
  *
  * <p>Note that the more obvious localstack container with Kinesis took 1 minute to start vs 10
  * seconds of Kinesalite.
  */
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
+
+    private static final int KINESALITE_PORT = 4567;
 
     private SdkAsyncHttpClient buildSdkAsyncHttpClient() {
         return NettyNioAsyncHttpClient.builder()
@@ -63,7 +65,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
         withEnv(ACCESS_KEY_ENV_VAR, ACCESS_KEY);
         withEnv(SECRET_KEY_ENV_VAR, SECRET_KEY);
-        withExposedPorts(4567);
+        withExposedPorts(KINESALITE_PORT);
         waitingFor(new ListStreamsWaitStrategy());
         withCreateContainerCmdModifier(
                 cmd ->
@@ -77,7 +79,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     }
 
     public String getHostEndpointUrl() {
-        return String.format("https://%s:%s", getHost(), getMappedPort(4567));
+        return String.format("https://%s:%s", getHost(), getMappedPort(KINESALITE_PORT));
     }
 
     public String getAccessKey() {
