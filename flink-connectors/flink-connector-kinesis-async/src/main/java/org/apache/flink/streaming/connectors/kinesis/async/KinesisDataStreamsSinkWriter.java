@@ -56,9 +56,11 @@ public class KinesisDataStreamsSinkWriter<InputT>
     private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC = "totalFullySuccessfulFlushes";
     private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC = "totalPartiallySuccessfulFlushes";
     private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
+    private static final String TOTAL_FAILED_ELEMENTS_METRIC = "totalFailedElements";
     private transient Counter totalFullySuccessfulFlushesCounter;
     private transient Counter totalPartiallySuccessfulFlushesCounter;
     private transient Counter totalFullyFailedFlushesCounter;
+    private transient Counter totalFailedElementsCounter;
 
     private final String streamName;
     private final MetricGroup metrics;
@@ -106,6 +108,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                                 "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
                                 requestEntries.size());
                         totalFullyFailedFlushesCounter.inc();
+                        totalFailedElementsCounter.inc(requestEntries.size());
 
                         requestResult.accept(requestEntries);
                         return;
@@ -116,6 +119,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                                 "KDS Sink failed to persist {} entries to KDS, retrying a partial batch",
                                 response.failedRecordCount());
                         totalPartiallySuccessfulFlushesCounter.inc();
+                        totalFailedElementsCounter.inc(response.failedRecordCount());
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
@@ -144,5 +148,6 @@ public class KinesisDataStreamsSinkWriter<InputT>
         totalFullySuccessfulFlushesCounter = metrics.counter(TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC);
         totalPartiallySuccessfulFlushesCounter = metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
+        totalFailedElementsCounter = metrics.counter(TOTAL_FAILED_ELEMENTS_METRIC);
     }
 }
