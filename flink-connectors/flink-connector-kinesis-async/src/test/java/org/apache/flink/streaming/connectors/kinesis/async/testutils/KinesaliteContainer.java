@@ -47,16 +47,6 @@ import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_ENV_VAR;
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
     private static final int KINESALITE_PORT = 4567;
-
-    private SdkAsyncHttpClient buildSdkAsyncHttpClient() {
-        return NettyNioAsyncHttpClient.builder()
-                .buildWithDefaults(
-                        AttributeMap.builder()
-                                .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-                                .build()
-                );
-    }
-
     private static final String ACCESS_KEY = "access key";
     private static final String SECRET_KEY = "secret key";
 
@@ -112,5 +102,14 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
         private ListStreamsResponse tryList() throws URISyntaxException, ExecutionException, InterruptedException {
             return getNewClient().listStreams().get();
         }
+    }
+
+    private SdkAsyncHttpClient buildSdkAsyncHttpClient() {
+        return NettyNioAsyncHttpClient.builder()
+                .buildWithDefaults(
+                        AttributeMap.builder()
+                                .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+                                .build()
+                );
     }
 }
