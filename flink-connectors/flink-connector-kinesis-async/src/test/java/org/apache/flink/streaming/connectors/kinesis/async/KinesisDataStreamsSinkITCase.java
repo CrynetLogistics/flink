@@ -38,6 +38,7 @@ import software.amazon.awssdk.services.kinesis.model.GetRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
 import software.amazon.awssdk.services.kinesis.model.ListShardsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.kinesis.model.Shard;
 import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
@@ -49,6 +50,10 @@ import static org.junit.Assert.assertEquals;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
 public class KinesisDataStreamsSinkITCase extends TestLogger {
+
+    private static final String TEST_STREAM_NAME = "test-stream-name";
+    private static final String DEFAULT_FIRST_SHARD_NAME = "shardId-000000000000";
+    private static final String AWS_REGION_SYSTEM_PROP_NAME = "aws.region";
 
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
@@ -65,25 +70,22 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public void testStopWithSavepoint() throws Exception {
 
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty("aws.region", kinesalite.getRegion().toString());
+        System.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
         KinesisAsyncClient kiness = kinesalite.getNewClient();
         setFinalStatic(KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kiness);
-        kiness.createStream(CreateStreamRequest.builder().streamName("py-output").shardCount(1).build()).get();
-        DescribeStreamResponse res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
+        kiness.createStream(CreateStreamRequest.builder().streamName(TEST_STREAM_NAME).shardCount(1).build()).get();
+        DescribeStreamResponse res = kiness.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
         System.out.println(res);
         while(res.streamDescription().streamStatus() != StreamStatus.ACTIVE){
-            res = kiness.describeStream(DescribeStreamRequest.builder().streamName("py-output").build()).get();
+            res = kiness.describeStream(DescribeStreamRequest.builder().streamName(TEST_STREAM_NAME).build()).get();
         }
         System.out.println(res);
 
-
         DataStream<String> stream = env.addSource(new ExampleSource());
-
-
 
         KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder = KinesisDataStreamsSinkConfig.builder();
         KinesisDataStreamsSinkConfig<String> kdsSink =
@@ -94,16 +96,17 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
                         .setMaxBufferedRequests(1000)
-                        .setStreamName("py-output")
+                        .setStreamName(TEST_STREAM_NAME)
                         .build();
         stream.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
         env.execute("KDS Async Sink Example Program");
 
-        System.out.println(kiness.listShards(ListShardsRequest.builder().streamName("py-output").build()).get().shards().stream().map(x -> x.toString()).collect(
+        System.out.println(kiness.listShards(ListShardsRequest.builder().streamName(TEST_STREAM_NAME).build()).get().shards().stream().map(
+                Shard::toString).collect(
                 Collectors.toList()));
 
-        String shardIterator = kiness.getShardIterator(GetShardIteratorRequest.builder().shardId("shardId-000000000000").shardIteratorType(
-                ShardIteratorType.TRIM_HORIZON).streamName("py-output").build()).get().shardIterator();
+        String shardIterator = kiness.getShardIterator(GetShardIteratorRequest.builder().shardId(DEFAULT_FIRST_SHARD_NAME).shardIteratorType(
+                ShardIteratorType.TRIM_HORIZON).streamName(TEST_STREAM_NAME).build()).get().shardIterator();
 
         assertEquals(100,
                 kiness.getRecords(
