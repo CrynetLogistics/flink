@@ -53,8 +53,10 @@ import java.util.function.Consumer;
 public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
-    private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC = "totalFullySuccessfulFlushes";
-    private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC = "totalPartiallySuccessfulFlushes";
+    private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC =
+            "totalFullySuccessfulFlushes";
+    private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC =
+            "totalPartiallySuccessfulFlushes";
     private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
     private static final String TOTAL_FAILED_ELEMENTS_METRIC = "totalFailedElements";
     private transient Counter totalFullySuccessfulFlushesCounter;
@@ -144,9 +146,10 @@ public class KinesisDataStreamsSinkWriter<InputT>
         return requestEntry.data().asByteArrayUnsafe().length;
     }
 
-    private void initMetricsGroup(){
+    private void initMetricsGroup() {
         totalFullySuccessfulFlushesCounter = metrics.counter(TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC);
-        totalPartiallySuccessfulFlushesCounter = metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
+        totalPartiallySuccessfulFlushesCounter =
+                metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
         totalFailedElementsCounter = metrics.counter(TOTAL_FAILED_ELEMENTS_METRIC);
     }
