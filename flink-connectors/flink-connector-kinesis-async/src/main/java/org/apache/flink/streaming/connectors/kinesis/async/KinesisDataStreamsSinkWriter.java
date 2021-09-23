@@ -21,6 +21,8 @@ import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  *  Sink writer created by {@link KinesisDataStreamsSink} to write to Kinesis Data Streams. More
@@ -47,7 +50,9 @@ import java.util.function.Consumer;
 public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
+    private final String streamName;
     private static final KinesisAsyncClient client = KinesisAsyncClient.create();
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
     public KinesisDataStreamsSinkWriter(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
@@ -56,7 +61,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
             int maxInFlightRequests,
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
-            long maxTimeInBufferMS) {
+            long maxTimeInBufferMS,
+            String streamName) {
         super(
                 elementConverter,
                 context,
@@ -65,6 +71,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 maxBufferedRequests,
                 flushOnBufferSizeInBytes,
                 maxTimeInBufferMS);
+        this.streamName = streamName;
     }
 
     @Override
@@ -72,29 +79,23 @@ public class KinesisDataStreamsSinkWriter<InputT>
             List<PutRecordsRequestEntry> requestEntries,
             Consumer<Collection<PutRecordsRequestEntry>> requestResult) {
 
-        // create a batch request
         PutRecordsRequest batchRequest =
-                PutRecordsRequest.builder().records(requestEntries).streamName("py-output").build();
+                PutRecordsRequest.builder().records(requestEntries).streamName(streamName).build();
 
-        System.out.println("submitRequestEntries: putRecords");
+        LOG.trace("Request to submit {} entries to KDS using KDS Sink.", requestEntries.size());
 
-        // call api with batch request
         CompletableFuture<PutRecordsResponse> future = client.putRecords(batchRequest);
 
-        // re-queue elements of failed requests
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        System.out.printf("kinesis:PutRecords request failed: %s", err);
-
+                        LOG.warn("KDS Sink failed to persist {} entries to KDS, retrying whole batch", requestEntries.size());
                         requestResult.accept(requestEntries);
-
                         return;
                     }
 
                     if (response.failedRecordCount() > 0) {
-                        System.out.printf(
-                                "Re-queueing {} messages%s", response.failedRecordCount());
+                        LOG.warn("KDS Sink failed to persist {} entries to KDS, retrying a partial batch", response.failedRecordCount());
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());

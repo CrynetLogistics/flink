@@ -64,6 +64,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
     private final int maxBufferedRequests;
     private final long flushOnBufferSizeInBytes;
     private final long maxTimeInBufferMS;
+    private final String streamName;
 
     KinesisDataStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
@@ -71,13 +72,15 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             int maxInFlightRequests,
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
-            long maxTimeInBufferMS) {
+            long maxTimeInBufferMS,
+            String streamName) {
         this.elementConverter = elementConverter;
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
         this.maxBufferedRequests = maxBufferedRequests;
         this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
+        this.streamName = streamName;
     }
 
     /**
@@ -96,7 +99,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
         return new KinesisDataStreamsSinkWriter<>(elementConverter, context, maxBatchSize,
                 maxInFlightRequests, maxBufferedRequests, flushOnBufferSizeInBytes,
-                maxTimeInBufferMS);
+                maxTimeInBufferMS, streamName);
     }
 
     @Override
@@ -114,6 +117,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
         private int maxBufferedRequests;
         private long flushOnBufferSizeInBytes;
         private long maxTimeInBufferMS;
+        private String streamName;
 
         public Builder<InputT> setElementConverter(
                 ElementConverter<InputT, PutRecordsRequestEntry> elementConverter) {
@@ -147,6 +151,11 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             return this;
         }
 
+        public Builder<InputT> setStreamName(String streamName) {
+            this.streamName = streamName;
+            return this;
+        }
+
         public KinesisDataStreamsSink<InputT> build() {
             return new KinesisDataStreamsSink<>(
                     elementConverter,
@@ -154,7 +163,8 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                     maxInFlightRequests,
                     maxBufferedRequests,
                     flushOnBufferSizeInBytes,
-                    maxTimeInBufferMS);
+                    maxTimeInBufferMS,
+                    streamName);
         }
     }
 }

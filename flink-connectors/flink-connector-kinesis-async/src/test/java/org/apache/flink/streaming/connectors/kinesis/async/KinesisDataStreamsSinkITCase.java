@@ -94,6 +94,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
                         .setMaxBufferedRequests(1000)
+                        .setStreamName("py-output")
                         .build();
         stream.sinkTo(kdsSink);
         env.execute("KDS Async Sink Example Program");
@@ -109,7 +110,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         GetRecordsRequest.builder().shardIterator(shardIterator).build()).get().records().size());
     }
 
-    static void setFinalStatic(Field field, Object newValue) throws Exception {
+    private static void setFinalStatic(Field field, Object newValue) throws Exception {
         field.setAccessible(true);
 
         Field modifiersField = Field.class.getDeclaredField("modifiers");
