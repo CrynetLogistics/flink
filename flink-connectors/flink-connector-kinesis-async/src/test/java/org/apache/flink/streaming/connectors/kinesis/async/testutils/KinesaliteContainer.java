@@ -41,7 +41,7 @@ import static com.amazonaws.SDKGlobalConfiguration.SECRET_KEY_ENV_VAR;
 /**
  * A {@code org.testcontainers} based on Kinesalite.
  *
- * <p>Note that the more obvious localstack container with Kinesis took 1 minute to start vs 10
+ * <p>Note that the more obvious localstack container with Kinesis took 1 minute to start vs 3
  * seconds of Kinesalite.
  */
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
