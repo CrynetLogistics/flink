@@ -65,7 +65,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public void testStopWithSavepoint() throws Exception {
 
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty("aws.region", "us-east-1");
+        System.setProperty("aws.region", kinesalite.getRegion().toString());
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);

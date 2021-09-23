@@ -49,6 +49,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     private static final int KINESALITE_PORT = 4567;
     private static final String ACCESS_KEY = "access key";
     private static final String SECRET_KEY = "secret key";
+    private static final Region REGION = Region.US_EAST_1;
 
     public KinesaliteContainer(DockerImageName imageName) {
         super(imageName);
@@ -80,11 +81,15 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
         return SECRET_KEY;
     }
 
+    public Region getRegion() {
+        return REGION;
+    }
+
     public KinesisAsyncClient getNewClient() throws URISyntaxException {
         return KinesisAsyncClient
                 .builder()
                 .endpointOverride(new URI(getHostEndpointUrl()))
-                .region(Region.US_EAST_1)
+                .region(REGION)
                 .credentialsProvider(() -> AwsBasicCredentials.create(getAccessKey(), getSecretKey()))
                 .httpClient(buildSdkAsyncHttpClient())
                 .build();
