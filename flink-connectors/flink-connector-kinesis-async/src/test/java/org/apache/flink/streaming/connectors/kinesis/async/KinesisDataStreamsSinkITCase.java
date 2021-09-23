@@ -20,12 +20,10 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.source.RichSourceFunction;
+import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
 import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
-
-import org.apache.flink.shaded.curator4.org.apache.curator.shaded.com.google.common.base.Preconditions;
 
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -111,14 +109,14 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Test
     public void atest() throws Exception {
 
-        DataStream<String> stream = env.addSource(new ExampleSource(1, 2, 10, 969));
+        DataStream<String> stream = env.addSource(new ExampleSource(1, 2, 1000, 969));
 
         KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder =
                 KinesisDataStreamsSinkConfig.builder();
         KinesisDataStreamsSinkConfig<String> sinkConfig =
                 sinkConfigBuilder
                         .setElementConverter(elementConverter)
-                        .setMaxTimeInBufferMS(5)
+                        .setMaxTimeInBufferMS(90)
                         .setFlushOnBufferSizeInBytes(409600)
                         .setMaxInFlightRequests(1)
                         .setMaxBatchSize(100)
@@ -141,7 +139,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .shardIterator();
 
         assertEquals(
-                2,
+                1,
                 kinesisClient
                         .getRecords(
                                 GetRecordsRequest.builder().shardIterator(shardIterator).build())
@@ -158,56 +156,5 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
 
         field.set(KinesisDataStreamsSinkWriter.class, newValue);
-    }
-
-    public static class ExampleSource extends RichSourceFunction<String> {
-        private static final long serialVersionUID = 1L;
-        private volatile boolean running = true;
-        private int emittedCount = 1;
-        private final int numToCountTo;
-        private final int timeBetweenHitsMS;
-        private final int keepAliveTimeAfterMS;
-        private final String payload;
-
-        public ExampleSource(
-                int numToCountTo,
-                int timeBetweenHitsMS,
-                int keepAliveTimeAfterMS,
-                int sizeOfEachMessageBytes) {
-            this.numToCountTo = numToCountTo;
-            this.timeBetweenHitsMS = timeBetweenHitsMS;
-            this.keepAliveTimeAfterMS = keepAliveTimeAfterMS;
-            Preconditions.checkArgument(
-                    sizeOfEachMessageBytes >= 25,
-                    "The minimum size of the message should be 25 bytes, i.e. that is "
-                            + "the size of the message with an empty payload. Additional data in the payload is 1 byte per character.");
-            payload = new String(new char[sizeOfEachMessageBytes - 25]).replace('\0', '*');
-        }
-
-        @Override
-        public void run(SourceContext<String> ctx) throws Exception {
-            for (; this.running; Thread.sleep(timeBetweenHitsMS)) {
-                synchronized (ctx.getCheckpointLock()) {
-                    ctx.collect(emittedMessage());
-                }
-
-                if (this.emittedCount < numToCountTo) {
-                    ++this.emittedCount;
-                } else {
-                    Thread.sleep(keepAliveTimeAfterMS);
-                    return;
-                }
-            }
-        }
-
-        @Override
-        public void cancel() {
-            this.running = false;
-        }
-
-        private String emittedMessage() {
-            return String.format(
-                    "{\"%s\":%d, \"%s\":\"%s\"}", "count", this.emittedCount, "payload", payload);
-        }
     }
 }
