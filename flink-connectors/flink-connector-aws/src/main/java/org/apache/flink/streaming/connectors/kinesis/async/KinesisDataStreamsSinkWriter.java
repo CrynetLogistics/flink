@@ -17,15 +17,20 @@
 
 package org.apache.flink.streaming.connectors.kinesis.async;
 
-import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
-import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
+import org.apache.flink.streaming.connectors.kinesis.async.util.AwsV2Util;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.ClientConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -36,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -49,7 +55,7 @@ import java.util.function.Consumer;
  * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
-@PublicEvolving
+@Internal
 public class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
@@ -58,15 +64,14 @@ public class KinesisDataStreamsSinkWriter<InputT>
     private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC =
             "totalPartiallySuccessfulFlushes";
     private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
-    private static final String TOTAL_FAILED_ELEMENTS_METRIC = "totalFailedElements";
     private transient Counter totalFullySuccessfulFlushesCounter;
     private transient Counter totalPartiallySuccessfulFlushesCounter;
     private transient Counter totalFullyFailedFlushesCounter;
-    private transient Counter totalFailedElementsCounter;
+    private transient Counter numRecordsOutErrorsCounter;
 
     private final String streamName;
-    private final MetricGroup metrics;
-    private static final KinesisAsyncClient client = KinesisAsyncClient.create();
+    private final SinkWriterMetricGroup metrics;
+    private final KinesisAsyncClient client;
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
     KinesisDataStreamsSinkWriter(
@@ -77,7 +82,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
             long maxTimeInBufferMS,
-            String streamName) {
+            String streamName,
+            Properties kinesisClientProperties) {
         super(
                 elementConverter,
                 context,
@@ -89,6 +95,22 @@ public class KinesisDataStreamsSinkWriter<InputT>
         this.streamName = streamName;
         this.metrics = context.metricGroup();
         initMetricsGroup();
+        client = buildClient(kinesisClientProperties);
+    }
+
+    private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
+        final ClientConfiguration clientConfiguration =
+                new ClientConfigurationFactory().getConfig();
+        clientConfiguration.setUseTcpKeepAlive(true);
+
+        final SdkAsyncHttpClient httpClient =
+                AwsV2Util.createHttpClient(
+                        clientConfiguration,
+                        NettyNioAsyncHttpClient.builder(),
+                        kinesisClientProperties);
+
+        return AwsV2Util.createKinesisAsyncClient(
+                kinesisClientProperties, clientConfiguration, httpClient);
     }
 
     @Override
@@ -110,7 +132,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                                 "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
                                 requestEntries.size());
                         totalFullyFailedFlushesCounter.inc();
-                        totalFailedElementsCounter.inc(requestEntries.size());
+                        numRecordsOutErrorsCounter.inc(requestEntries.size());
 
                         requestResult.accept(requestEntries);
                         return;
@@ -118,10 +140,10 @@ public class KinesisDataStreamsSinkWriter<InputT>
 
                     if (response.failedRecordCount() > 0) {
                         LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS, retrying a partial batch",
+                                "KDS Sink failed to persist {} entries to KDS",
                                 response.failedRecordCount());
                         totalPartiallySuccessfulFlushesCounter.inc();
-                        totalFailedElementsCounter.inc(response.failedRecordCount());
+                        numRecordsOutErrorsCounter.inc(response.failedRecordCount());
 
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
@@ -151,6 +173,6 @@ public class KinesisDataStreamsSinkWriter<InputT>
         totalPartiallySuccessfulFlushesCounter =
                 metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
-        totalFailedElementsCounter = metrics.counter(TOTAL_FAILED_ELEMENTS_METRIC);
+        numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
     }
 }

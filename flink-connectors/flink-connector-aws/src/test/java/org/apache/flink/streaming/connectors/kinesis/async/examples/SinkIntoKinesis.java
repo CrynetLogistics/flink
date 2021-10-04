@@ -20,9 +20,9 @@ package org.apache.flink.streaming.connectors.kinesis.async.examples;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
+import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkConfig;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
@@ -38,6 +38,8 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
  */
 public class SinkIntoKinesis {
 
+    private static final String JSON_PAYLOAD_TEMPLATE = "{\"data\": \"%s\"}";
+
     private static final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
                     PutRecordsRequestEntry.builder()
@@ -49,17 +51,21 @@ public class SinkIntoKinesis {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
 
-        DataStream<String> fromGen = env.addSource(new ExampleSource(1_000_000, 5, 100, 50));
+        DataGeneratorSource<String> src =
+                new DataGeneratorSource<>(RandomGenerator.stringGenerator(10), 10, 10_000_000L);
 
-        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder =
-                KinesisDataStreamsSinkConfig.builder();
-        KinesisDataStreamsSinkConfig<String> kdsSink =
-                kdsSinkBuilder
+        DataStream<String> fromGen =
+                env.addSource(src)
+                        .returns(String.class)
+                        .map(data -> String.format(JSON_PAYLOAD_TEMPLATE, data));
+
+        KinesisDataStreamsSink<String> kdsSink =
+                KinesisDataStreamsSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setStreamName("your_stream_name")
                         .build();
 
-        fromGen.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
+        fromGen.sinkTo(kdsSink);
 
         env.execute("KDS Async Sink Example Program");
     }

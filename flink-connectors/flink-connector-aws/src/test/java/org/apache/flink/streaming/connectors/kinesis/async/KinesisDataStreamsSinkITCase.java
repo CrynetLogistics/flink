@@ -20,7 +20,8 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
+import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
+import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
 import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
@@ -41,17 +42,19 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_REGION;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
 import static org.junit.Assert.assertEquals;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
 public class KinesisDataStreamsSinkITCase extends TestLogger {
 
     private static final String DEFAULT_FIRST_SHARD_NAME = "shardId-000000000000";
-    private static final String AWS_REGION_SYSTEM_PROP_NAME = "aws.region";
-    private static final int TIME_MARGIN_OF_ERROR_MS = 1000;
 
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
@@ -70,52 +73,40 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Before
     public void setUp() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
+        System.setProperty(AWS_REGION, kinesalite.getRegion().toString());
 
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
         kinesisClient = kinesalite.getNewClient();
-        setFinalStatic(
-                KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
     }
 
     @Test
     public void elementsMaybeWrittenSuccessfullyToLocalInstanceWhenBatchSizeIsReached()
             throws Exception {
-        runScenario(50, 10, 25, 1000, 819200, 1, 50, 50, "test-stream-name-1");
+        runScenario(50, 25, 1000, 819200, 1, 50, 50, "test-stream-name-1");
     }
 
     @Test
     public void elementsBufferedAndTriggeredByTimeBasedFlushShouldBeFlushedIfSourcedIsKeptAlive()
             throws Exception {
         int timeBasedFlushingThresholdMS = 1000;
-        runScenario(
-                10,
-                timeBasedFlushingThresholdMS + TIME_MARGIN_OF_ERROR_MS,
-                25,
-                timeBasedFlushingThresholdMS,
-                819200,
-                1,
-                100,
-                10,
-                "test-stream-name-2");
+        runScenario(10, 25, timeBasedFlushingThresholdMS, 819200, 1, 100, 10, "test-stream-name-2");
     }
 
     @Test
     public void veryLargeMessagesSucceedInBeingPersisted() throws Exception {
-        runScenario(5, 3000, 2500, 1000, 8192, 1, 10, 5, "test-stream-name-3");
+        runScenario(5, 2500, 1000, 8192, 1, 10, 5, "test-stream-name-3");
     }
 
     @Test
     public void multipleInFlightRequestsResultsInCorrectNumberOfElementsPersisted()
             throws Exception {
-        runScenario(150, 1000, 2500, 1000, 8192, 10, 20, 150, "test-stream-name-4");
+        runScenario(150, 2500, 1000, 8192, 10, 20, 150, "test-stream-name-4");
     }
 
     private void runScenario(
             int numberOfElementsToSend,
-            int keepAliveAfterMS,
             int sizeOfMessageBytes,
             int bufferMaxTimeMS,
             int bufferMaxSizeBytes,
@@ -125,39 +116,25 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             String testStreamName)
             throws Exception {
 
-        kinesisClient
-                .createStream(
-                        CreateStreamRequest.builder()
-                                .streamName(testStreamName)
-                                .shardCount(1)
-                                .build())
-                .get();
-
-        DescribeStreamResponse describeStream =
-                kinesisClient
-                        .describeStream(
-                                DescribeStreamRequest.builder().streamName(testStreamName).build())
-                        .get();
-
-        while (describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE) {
-            describeStream =
-                    kinesisClient
-                            .describeStream(
-                                    DescribeStreamRequest.builder()
-                                            .streamName(testStreamName)
-                                            .build())
-                            .get();
-        }
+        prepareStream(testStreamName);
 
         DataStream<String> stream =
                 env.addSource(
-                        new ExampleSource(
-                                numberOfElementsToSend, 5, keepAliveAfterMS, sizeOfMessageBytes));
+                                new DataGeneratorSource<String>(
+                                        RandomGenerator.stringGenerator(sizeOfMessageBytes),
+                                        100,
+                                        (long) numberOfElementsToSend))
+                        .returns(String.class);
 
-        KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder =
-                KinesisDataStreamsSinkConfig.builder();
-        KinesisDataStreamsSinkConfig<String> sinkConfig =
-                sinkConfigBuilder
+        Properties prop = new Properties();
+        prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
+        prop.setProperty(AWS_ACCESS_KEY_ID, kinesalite.getAccessKey());
+        prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
+        prop.setProperty(AWS_REGION, kinesalite.getRegion().toString());
+        prop.setProperty("TRUST_ALL_CERTIFICATES", "true");
+
+        KinesisDataStreamsSink<String> kdsSink =
+                KinesisDataStreamsSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setMaxTimeInBufferMS(bufferMaxTimeMS)
                         .setFlushOnBufferSizeInBytes(bufferMaxSizeBytes)
@@ -165,8 +142,10 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxBatchSize(maxBatchSize)
                         .setMaxBufferedRequests(1000)
                         .setStreamName(testStreamName)
+                        .setKinesisClientProperties(prop)
                         .build();
-        stream.sinkTo(new KinesisDataStreamsSink<>(sinkConfig));
+
+        stream.sinkTo(kdsSink);
 
         env.execute("KDS Async Sink Example Program");
 
@@ -191,13 +170,30 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .size());
     }
 
-    private static void setFinalStatic(Field field, Object newValue) throws Exception {
-        field.setAccessible(true);
+    private void prepareStream(String testStreamName)
+            throws InterruptedException, ExecutionException {
+        kinesisClient
+                .createStream(
+                        CreateStreamRequest.builder()
+                                .streamName(testStreamName)
+                                .shardCount(1)
+                                .build())
+                .get();
 
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+        DescribeStreamResponse describeStream =
+                kinesisClient
+                        .describeStream(
+                                DescribeStreamRequest.builder().streamName(testStreamName).build())
+                        .get();
 
-        field.set(KinesisDataStreamsSinkWriter.class, newValue);
+        while (describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE) {
+            describeStream =
+                    kinesisClient
+                            .describeStream(
+                                    DescribeStreamRequest.builder()
+                                            .streamName(testStreamName)
+                                            .build())
+                            .get();
+        }
     }
 }

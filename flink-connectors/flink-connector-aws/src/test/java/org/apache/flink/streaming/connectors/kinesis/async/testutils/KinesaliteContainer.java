@@ -40,6 +40,12 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Note that the more obvious localstack container with Kinesis took 1 minute to start vs 3
  * seconds of Kinesalite.
+ *
+ * <p>TODO: THIS IMPLEMENTATION OCCASIONALLY FAILS ON THE BUILD SERVER. ***STOP*** FIX THIS BEFORE
+ * MERGING. THIS IMPLEMENTATION IS BASED ON THE KINESIS TEST CONTAINER AT {@code
+ * org.apache.flink.streaming.connectors.kinesis.testutils.KinesaliteContainer} WHICH IS ALSO BROKEN
+ * IN THE SAME WAY. TESTS USING THAT CONTAINER ARE CURRENTLY BEING IGNORED. THE FLINK TASK ASSIGNED
+ * TO THAT @IGNORE DOES NOT ADDRESS THIS ISSUE, BUT SOME OTHER ISSUE.
  */
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
