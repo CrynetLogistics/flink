@@ -15,18 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async;
+package org.apache.flink.streaming.connectors.kinesis.unified;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * A Kinesis Data Streams (KDS) Sink that performs async requests against a destination stream using
@@ -50,6 +53,8 @@ import java.util.Optional;
  *       buffer
  *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
  *       buffer, if any element reaches this age, the entire buffer will be flushed immediately
+ *   <li>{@code failOnError}: when an exception is encountered while persisting to Kinesis Data
+ *       Streams, the job will fail immediately if failOnError is set
  * </ul>
  *
  * <p>Please see the writer implementation in {@link KinesisDataStreamsSinkWriter}
@@ -59,24 +64,62 @@ import java.util.Optional;
 @PublicEvolving
 public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
-    private final KinesisDataStreamsSinkConfig<InputT> config;
+    private final boolean failOnError;
+    private final String streamName;
+    private final Properties kinesisClientProperties;
 
-    public KinesisDataStreamsSink(KinesisDataStreamsSinkConfig<InputT> config) {
-        this.config = config;
+    KinesisDataStreamsSink(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            Integer maxBatchSize,
+            Integer maxInFlightRequests,
+            Integer maxBufferedRequests,
+            Long flushOnBufferSizeInBytes,
+            Long maxTimeInBufferMS,
+            boolean failOnError,
+            String streamName,
+            Properties kinesisClientProperties) {
+        super(
+                elementConverter,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS);
+        Preconditions.checkNotNull(
+                streamName, "The stream name must not be null when initializing the KDS Sink.");
+        Preconditions.checkArgument(
+                !streamName.isEmpty(),
+                "The stream name must be set when initializing the KDS Sink.");
+        this.failOnError = failOnError;
+        this.streamName = streamName;
+        this.kinesisClientProperties = kinesisClientProperties;
+    }
+
+    /**
+     * Create a {@link KinesisDataStreamsSinkBuilder} to allow the fluent construction of a new
+     * {@code KinesisDataStreamsSink}.
+     *
+     * @param <InputT> type of incoming records
+     * @return {@link KinesisDataStreamsSinkBuilder}
+     */
+    public static <InputT> KinesisDataStreamsSinkBuilder<InputT> builder() {
+        return new KinesisDataStreamsSinkBuilder<>();
     }
 
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
         return new KinesisDataStreamsSinkWriter<>(
-                config.getElementConverter(),
+                elementConverter,
                 context,
-                config.getMaxBatchSize(),
-                config.getMaxInFlightRequests(),
-                config.getMaxBufferedRequests(),
-                config.getFlushOnBufferSizeInBytes(),
-                config.getMaxTimeInBufferMS(),
-                config.getStreamName());
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS,
+                failOnError,
+                streamName,
+                kinesisClientProperties);
     }
 
     @Override

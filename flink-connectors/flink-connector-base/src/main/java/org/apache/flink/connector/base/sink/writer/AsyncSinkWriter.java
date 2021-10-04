@@ -114,9 +114,38 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method is invoked with a set of request entries according to the buffering hints (and
      * the valid limits of the destination). The logic then needs to create and execute the request
-     * against the destination (ideally by batching together multiple request entries to increase
-     * efficiency). The logic also needs to identify individual request entries that were not
-     * persisted successfully and resubmit them using the {@code requeueFailedRequestEntry} method.
+     * asynchronously against the destination (ideally by batching together multiple request entries
+     * to increase efficiency). The logic also needs to identify individual request entries that
+     * were not persisted successfully and resubmit them using the {@code requestResult} callback.
+     *
+     * <p>From a threading perspective, the mailbox thread will call this method and initiate the
+     * asynchronous request to persist the {@code requestEntries}. NOTE: The client must support
+     * asynchronous requests and the method called to persist the records must asynchronously
+     * execute and return a future with the results of that request. A thread from the destination
+     * client thread pool should complete the request and submit the failed entries that should be
+     * retried. The {@code requestResult} will then trigger the mailbox thread to requeue the
+     * unsuccessful elements.
+     *
+     * <p>An example implementation of this method is included:
+     *
+     * <pre>{@code
+     * @Override
+     * protected void submitRequestEntries
+     *   (List<RequestEntryT> records, Consumer<Collection<RequestEntryT>> requestResult) {
+     *     Future<Response> response = destinationClient.putRecords(records);
+     *     response.whenComplete(
+     *         (response, error) -> {
+     *             if(error){
+     *                 List<RequestEntryT> retryableFailedRecords = getRetryableFailed(response);
+     *                 requestResult.accept(retryableFailedRecords);
+     *             }else{
+     *                 requestResult.accept(Collections.emptyList());
+     *             }
+     *         }
+     *     );
+     * }
+     *
+     * }</pre>
      *
      * <p>During checkpointing, the sink needs to ensure that there are no outstanding in-flight
      * requests.
@@ -127,9 +156,17 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *     difficulties in persisting should be re-queued through {@code requestResult} by including
      *     that element in the collection of {@code RequestEntryT}s passed to the {@code accept}
      *     method. All other elements are assumed to have been successfully persisted.
+     * @param fatalException the {@code accept} method should be called on this Consumer if the
+     *     processing of the {@code requestEntries} raises an exception that should not be retried.
+     *     Specifically, any action that we are sure will result in the same exception no matter how
+     *     many times we retry should raise a {@code RuntimeException} here. For example, wrong user
+     *     credentials. However, it is possible intermittent failures will recover, e.g. flaky
+     *     network connections, in which case, some other mechanism may be more appropriate.
      */
     protected abstract void submitRequestEntries(
-            List<RequestEntryT> requestEntries, Consumer<Collection<RequestEntryT>> requestResult);
+            List<RequestEntryT> requestEntries,
+            Consumer<Collection<RequestEntryT>> requestResult,
+            Consumer<Exception> fatalException);
 
     /**
      * This method allows the getting of the size of a {@code RequestEntryT} in bytes. The size in
@@ -236,8 +273,16 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                                 "Mark in-flight request as completed and requeue %d request entries",
                                 failedRequestEntries.size());
 
+        Consumer<Exception> fatalExceptionCons =
+                exception ->
+                        mailboxExecutor.execute(
+                                () -> {
+                                    throw exception;
+                                },
+                                "A fatal exception occurred in the sink that cannot be recovered from or should not be retried.");
+
         inFlightRequestsCount++;
-        submitRequestEntries(batch, requestResult);
+        submitRequestEntries(batch, requestResult, fatalExceptionCons);
     }
 
     /**
