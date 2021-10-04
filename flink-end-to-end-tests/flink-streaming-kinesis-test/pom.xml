@@ -66,6 +66,14 @@ under the License.
 		</dependency>
 
 		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-connector-aws</artifactId>
+			<version>${project.version}</version>
+			<type>test-jar</type>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
 			<scope>compile</scope>
