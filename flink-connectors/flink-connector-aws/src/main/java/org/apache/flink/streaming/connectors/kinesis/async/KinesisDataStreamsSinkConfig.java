@@ -31,7 +31,7 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 8;
     private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 1000;
     private static final long DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B = 64 * 1024 * 1024;
-    private static final long DEFAULT_MAX_TimeInBufferMS = 1000;
+    private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 1000;
 
     private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
     private final int maxBatchSize;
@@ -104,7 +104,7 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
         private int maxInFlightRequests = DEFAULT_MAX_IN_FLIGHT_REQUESTS;
         private int maxBufferedRequests = DEFAULT_MAX_BUFFERED_REQUESTS;
         private long flushOnBufferSizeInBytes = DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B;
-        private long maxTimeInBufferMS = DEFAULT_MAX_TimeInBufferMS;
+        private long maxTimeInBufferMS = DEFAULT_MAX_TIME_IN_BUFFER_MS;
         private String streamName;
 
         public Builder<InputT> setElementConverter(

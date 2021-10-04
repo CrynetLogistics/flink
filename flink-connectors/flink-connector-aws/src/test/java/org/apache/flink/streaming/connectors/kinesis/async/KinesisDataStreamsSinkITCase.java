@@ -34,7 +34,6 @@ import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest;
 import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest;
-import software.amazon.awssdk.services.kinesis.model.DescribeStreamResponse;
 import software.amazon.awssdk.services.kinesis.model.GetRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -43,6 +42,7 @@ import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -125,29 +125,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             String testStreamName)
             throws Exception {
 
-        kinesisClient
-                .createStream(
-                        CreateStreamRequest.builder()
-                                .streamName(testStreamName)
-                                .shardCount(1)
-                                .build())
-                .get();
-
-        DescribeStreamResponse describeStream =
-                kinesisClient
-                        .describeStream(
-                                DescribeStreamRequest.builder().streamName(testStreamName).build())
-                        .get();
-
-        while (describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE) {
-            describeStream =
-                    kinesisClient
-                            .describeStream(
-                                    DescribeStreamRequest.builder()
-                                            .streamName(testStreamName)
-                                            .build())
-                            .get();
-        }
+        prepareStream(testStreamName);
 
         DataStream<String> stream =
                 env.addSource(
@@ -189,6 +167,27 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .get()
                         .records()
                         .size());
+    }
+
+    private void prepareStream(String testStreamName)
+            throws InterruptedException, ExecutionException {
+        kinesisClient
+                .createStream(
+                        CreateStreamRequest.builder()
+                                .streamName(testStreamName)
+                                .shardCount(1)
+                                .build())
+                .get();
+
+        while (kinesisClient
+                        .describeStream(
+                                DescribeStreamRequest.builder().streamName(testStreamName).build())
+                        .get()
+                        .streamDescription()
+                        .streamStatus()
+                != StreamStatus.ACTIVE) {
+            Thread.sleep(50);
+        }
     }
 
     private static void setFinalStatic(Field field, Object newValue) throws Exception {
