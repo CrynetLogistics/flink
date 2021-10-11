@@ -34,6 +34,7 @@ import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.CreateStreamRequest;
 import software.amazon.awssdk.services.kinesis.model.DescribeStreamRequest;
+import software.amazon.awssdk.services.kinesis.model.DescribeStreamResponse;
 import software.amazon.awssdk.services.kinesis.model.GetRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.GetShardIteratorRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -179,14 +180,20 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                                 .build())
                 .get();
 
-        while (kinesisClient
+        DescribeStreamResponse describeStream =
+                kinesisClient
                         .describeStream(
                                 DescribeStreamRequest.builder().streamName(testStreamName).build())
-                        .get()
-                        .streamDescription()
-                        .streamStatus()
-                != StreamStatus.ACTIVE) {
-            Thread.sleep(50);
+                        .get();
+
+        while (describeStream.streamDescription().streamStatus() != StreamStatus.ACTIVE) {
+            describeStream =
+                    kinesisClient
+                            .describeStream(
+                                    DescribeStreamRequest.builder()
+                                            .streamName(testStreamName)
+                                            .build())
+                            .get();
         }
     }
 
