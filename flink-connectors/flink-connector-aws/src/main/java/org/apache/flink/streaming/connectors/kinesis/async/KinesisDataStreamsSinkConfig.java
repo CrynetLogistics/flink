@@ -17,6 +17,7 @@
 
 package org.apache.flink.streaming.connectors.kinesis.async;
 
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.util.Preconditions;
 
@@ -25,6 +26,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import java.io.Serializable;
 
 /** Configuration for {@link KinesisDataStreamsSink}. */
+@PublicEvolving
 public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 200;
