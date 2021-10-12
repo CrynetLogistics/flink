@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.base.sink.writer;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
  *
  * <p>There are configuration options to customize the buffer size etc.
  */
-@Internal
+@PublicEvolving
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, Collection<RequestEntryT>> {
 
