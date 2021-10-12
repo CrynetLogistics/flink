@@ -18,16 +18,16 @@
 package org.apache.flink.streaming.connectors.kinesis.async;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.base.sink.AsyncSinkBaseConfig;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
-import java.io.Serializable;
-
 /** Configuration for {@link KinesisDataStreamsSink}. */
 @PublicEvolving
-public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
+public class KinesisDataStreamsSinkConfig<InputT>
+        extends AsyncSinkBaseConfig<InputT, PutRecordsRequestEntry> {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 200;
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
@@ -35,12 +35,6 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
     private static final long DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B = 64 * 1024 * 1024;
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
 
-    private final ElementConverter<InputT, PutRecordsRequestEntry> elementConverter;
-    private final int maxBatchSize;
-    private final int maxInFlightRequests;
-    private final int maxBufferedRequests;
-    private final long flushOnBufferSizeInBytes;
-    private final long maxTimeInBufferMS;
     private final String streamName;
 
     public KinesisDataStreamsSinkConfig(
@@ -51,47 +45,30 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
             long flushOnBufferSizeInBytes,
             long maxTimeInBufferMS,
             String streamName) {
-        this.elementConverter = elementConverter;
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-        this.maxTimeInBufferMS = maxTimeInBufferMS;
+        super(
+                elementConverter,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS);
+
+        Preconditions.checkNotNull(
+                streamName,
+                "The stream name must be set and "
+                        + "set to a non null value when initializing the KDS Sink.");
         this.streamName = streamName;
     }
 
     /**
-     * Create a {@link Builder} to construct a new {@link KinesisDataStreamsSink}.
+     * Create a {@link KinesisDataStreamsSinkConfig.Builder} to allow the fluent and articulate
+     * construction of a new {@link KinesisDataStreamsSinkConfig}.
      *
      * @param <InputT> type of incoming records
-     * @return {@link Builder}
+     * @return {@link KinesisDataStreamsSinkConfig.Builder}
      */
-    public static <InputT> Builder<InputT> builder() {
-        return new Builder<>();
-    }
-
-    public ElementConverter<InputT, PutRecordsRequestEntry> getElementConverter() {
-        return elementConverter;
-    }
-
-    public int getMaxBatchSize() {
-        return maxBatchSize;
-    }
-
-    public int getMaxInFlightRequests() {
-        return maxInFlightRequests;
-    }
-
-    public int getMaxBufferedRequests() {
-        return maxBufferedRequests;
-    }
-
-    public long getFlushOnBufferSizeInBytes() {
-        return flushOnBufferSizeInBytes;
-    }
-
-    public long getMaxTimeInBufferMS() {
-        return maxTimeInBufferMS;
+    public static <InputT> KinesisDataStreamsSinkConfig.Builder<InputT> builder() {
+        return new KinesisDataStreamsSinkConfig.Builder<>();
     }
 
     public String getStreamName() {
@@ -147,14 +124,6 @@ public class KinesisDataStreamsSinkConfig<InputT> implements Serializable {
         }
 
         public KinesisDataStreamsSinkConfig<InputT> build() {
-            Preconditions.checkNotNull(
-                    streamName,
-                    "The stream name must be set and "
-                            + "set to a non null value when initializing the KDS Sink.");
-            Preconditions.checkNotNull(
-                    elementConverter,
-                    "A non-null element converter must be "
-                            + "provided when initializing the KDS Sink.");
             return new KinesisDataStreamsSinkConfig<>(
                     elementConverter,
                     maxBatchSize,
