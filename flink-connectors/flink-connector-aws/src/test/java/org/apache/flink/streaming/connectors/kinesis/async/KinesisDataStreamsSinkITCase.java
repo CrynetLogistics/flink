@@ -133,10 +133,8 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         new ExampleSource(
                                 numberOfElementsToSend, 5, keepAliveAfterMS, sizeOfMessageBytes));
 
-        KinesisDataStreamsSinkConfig.Builder<String> sinkConfigBuilder =
-                KinesisDataStreamsSinkConfig.builder();
-        KinesisDataStreamsSinkConfig<String> sinkConfig =
-                sinkConfigBuilder
+        KinesisDataStreamsSink<String> kdsSink =
+                KinesisDataStreamsSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setMaxTimeInBufferMS(bufferMaxTimeMS)
                         .setFlushOnBufferSizeInBytes(bufferMaxSizeBytes)
@@ -145,7 +143,8 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxBufferedRequests(1000)
                         .setStreamName(testStreamName)
                         .build();
-        stream.sinkTo(new KinesisDataStreamsSink<>(sinkConfig));
+
+        stream.sinkTo(kdsSink);
 
         env.execute("KDS Async Sink Example Program");
 

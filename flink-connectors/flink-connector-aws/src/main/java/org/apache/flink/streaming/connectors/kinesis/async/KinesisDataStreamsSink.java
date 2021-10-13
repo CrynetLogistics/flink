@@ -20,7 +20,9 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
+import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
@@ -59,24 +61,54 @@ import java.util.Optional;
 @PublicEvolving
 public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
-    private final KinesisDataStreamsSinkConfig<InputT> config;
+    private final String streamName;
 
-    public KinesisDataStreamsSink(KinesisDataStreamsSinkConfig<InputT> config) {
-        this.config = config;
+    KinesisDataStreamsSink(
+            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+            Integer maxBatchSize,
+            Integer maxInFlightRequests,
+            Integer maxBufferedRequests,
+            Long flushOnBufferSizeInBytes,
+            Long maxTimeInBufferMS,
+            String streamName) {
+        super(
+                elementConverter,
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS);
+        Preconditions.checkNotNull(
+                streamName, "The stream name must not be null when initializing the KDS Sink.");
+        Preconditions.checkArgument(
+                !streamName.isEmpty(),
+                "The stream name must be set when initializing the KDS Sink.");
+        this.streamName = streamName;
+    }
+
+    /**
+     * Create a {@link KinesisDataStreamsSinkBuilder} to allow the fluent construction of a new
+     * {@code KinesisDataStreamsSink}.
+     *
+     * @param <InputT> type of incoming records
+     * @return {@link KinesisDataStreamsSinkBuilder}
+     */
+    public static <InputT> KinesisDataStreamsSinkBuilder<InputT> builder() {
+        return new KinesisDataStreamsSinkBuilder<>();
     }
 
     @Override
     public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
             InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
         return new KinesisDataStreamsSinkWriter<>(
-                config.getElementConverter(),
+                elementConverter,
                 context,
-                config.getMaxBatchSize(),
-                config.getMaxInFlightRequests(),
-                config.getMaxBufferedRequests(),
-                config.getFlushOnBufferSizeInBytes(),
-                config.getMaxTimeInBufferMS(),
-                config.getStreamName());
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS,
+                streamName);
     }
 
     @Override

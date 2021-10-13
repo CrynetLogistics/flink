@@ -21,6 +21,7 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.Committer;
 import org.apache.flink.api.connector.sink.GlobalCommitter;
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 
 import java.io.Serializable;
@@ -48,6 +49,28 @@ import java.util.Optional;
 @PublicEvolving
 public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
         implements Sink<InputT, Void, Collection<RequestEntryT>, Void> {
+
+    protected final ElementConverter<InputT, RequestEntryT> elementConverter;
+    protected final Integer maxBatchSize;
+    protected final Integer maxInFlightRequests;
+    protected final Integer maxBufferedRequests;
+    protected final Long flushOnBufferSizeInBytes;
+    protected final Long maxTimeInBufferMS;
+
+    protected AsyncSinkBase(
+            ElementConverter<InputT, RequestEntryT> elementConverter,
+            Integer maxBatchSize,
+            Integer maxInFlightRequests,
+            Integer maxBufferedRequests,
+            Long flushOnBufferSizeInBytes,
+            Long maxTimeInBufferMS) {
+        this.elementConverter = elementConverter;
+        this.maxBatchSize = maxBatchSize;
+        this.maxInFlightRequests = maxInFlightRequests;
+        this.maxBufferedRequests = maxBufferedRequests;
+        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
+        this.maxTimeInBufferMS = maxTimeInBufferMS;
+    }
 
     @Override
     public Optional<Committer<Void>> createCommitter() {

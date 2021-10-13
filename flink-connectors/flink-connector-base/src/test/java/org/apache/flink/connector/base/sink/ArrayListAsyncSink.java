@@ -30,12 +30,6 @@ import java.util.function.Consumer;
 /** Dummy destination that records write events. */
 public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
 
-    private final int maxBatchSize;
-    private final int maxInFlightRequests;
-    private final int maxBufferedRequests;
-    private final long flushOnBufferSizeInBytes;
-    private final long maxTimeInBufferMS;
-
     public ArrayListAsyncSink() {
         this(25, 1, 100, 100000, 1000);
     }
@@ -46,11 +40,13 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
             long maxTimeInBufferMS) {
-        this.maxBatchSize = maxBatchSize;
-        this.maxInFlightRequests = maxInFlightRequests;
-        this.maxBufferedRequests = maxBufferedRequests;
-        this.flushOnBufferSizeInBytes = flushOnBufferSizeInBytes;
-        this.maxTimeInBufferMS = maxTimeInBufferMS;
+        super(
+                (element, x) -> Integer.parseInt(element),
+                maxBatchSize,
+                maxInFlightRequests,
+                maxBufferedRequests,
+                flushOnBufferSizeInBytes,
+                maxTimeInBufferMS);
     }
 
     @Override
@@ -59,8 +55,8 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
         /* SinkWriter implementing {@code submitRequestEntries} that is used to define the persistence
          * logic into {@code ArrayListDestination}.
          */
-        return new AsyncSinkWriter<String, Integer>(
-                (element, x) -> Integer.parseInt(element),
+        return new AsyncSinkWriter<>(
+                elementConverter,
                 context,
                 maxBatchSize,
                 maxInFlightRequests,

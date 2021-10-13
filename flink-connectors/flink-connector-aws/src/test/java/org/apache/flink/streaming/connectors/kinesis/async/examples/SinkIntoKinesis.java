@@ -21,7 +21,6 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSinkConfig;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 
 import software.amazon.awssdk.core.SdkBytes;
@@ -51,15 +50,13 @@ public class SinkIntoKinesis {
 
         DataStream<String> fromGen = env.addSource(new ExampleSource(1_000_000, 5, 100, 50));
 
-        KinesisDataStreamsSinkConfig.Builder<String> kdsSinkBuilder =
-                KinesisDataStreamsSinkConfig.builder();
-        KinesisDataStreamsSinkConfig<String> kdsSink =
-                kdsSinkBuilder
+        KinesisDataStreamsSink<String> kdsSink =
+                KinesisDataStreamsSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setStreamName("your_stream_name")
                         .build();
 
-        fromGen.sinkTo(new KinesisDataStreamsSink<>(kdsSink));
+        fromGen.sinkTo(kdsSink);
 
         env.execute("KDS Async Sink Example Program");
     }
