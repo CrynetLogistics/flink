@@ -24,10 +24,12 @@ import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
+import java.io.Serializable;
+
 /** Configuration for {@link KinesisDataStreamsSink}. */
 @PublicEvolving
 public class KinesisDataStreamsSinkConfig<InputT>
-        extends AsyncSinkBaseConfig<InputT, PutRecordsRequestEntry> {
+        extends AsyncSinkBaseConfig<InputT, PutRecordsRequestEntry> implements Serializable {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 200;
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
