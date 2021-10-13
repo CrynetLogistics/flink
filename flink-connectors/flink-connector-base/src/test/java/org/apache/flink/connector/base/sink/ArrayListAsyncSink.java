@@ -55,7 +55,7 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
         /* SinkWriter implementing {@code submitRequestEntries} that is used to define the persistence
          * logic into {@code ArrayListDestination}.
          */
-        return new AsyncSinkWriter<>(
+        return new AsyncSinkWriter<String, Integer>(
                 elementConverter,
                 context,
                 maxBatchSize,
