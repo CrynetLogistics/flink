@@ -49,6 +49,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     private static final Region REGION = Region.US_EAST_1;
     private static final String AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID";
     private static final String AWS_SECRET_KEY = "AWS_SECRET_KEY";
+    private static final int RETRY_TIME_LIMIT = 180;
 
     public KinesaliteContainer(DockerImageName imageName) {
         super(imageName);
@@ -98,7 +99,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
         @Override
         protected void waitUntilReady() {
             Unreliables.retryUntilSuccess(
-                    (int) this.startupTimeout.getSeconds(),
+                    RETRY_TIME_LIMIT,
                     TimeUnit.SECONDS,
                     () -> this.getRateLimiter().getWhenReady(this::tryList));
         }
