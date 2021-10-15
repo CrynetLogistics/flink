@@ -117,7 +117,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
 
                     if (response.failedRecordCount() > 0) {
                         LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS, retrying a partial batch",
+                                "KDS Sink failed to persist {} entries to KDS",
                                 response.failedRecordCount());
                         totalPartiallySuccessfulFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
