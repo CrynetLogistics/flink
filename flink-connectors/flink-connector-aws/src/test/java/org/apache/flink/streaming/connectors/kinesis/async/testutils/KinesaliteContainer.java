@@ -40,6 +40,12 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Note that the more obvious localstack container with Kinesis took 1 minute to start vs 3
  * seconds of Kinesalite.
+ *
+ * TODO: THIS IMPLEMENTATION OCCASIONALLY FAILS ON THE BUILD SERVER. ***STOP*** FIX THIS BEFORE
+ *  MERGING. THIS IMPLEMENTATION IS BASED ON THE KINESIS TEST CONTAINER AT
+ *  {@code org.apache.flink.streaming.connectors.kinesis.testutils.KinesaliteContainer} WHICH IS
+ *  ALSO BROKEN IN THE SAME WAY. TESTS USING THAT CONTAINER ARE CURRENTLY BEING IGNORED. THE FLINK
+ *  TASK ASSIGNED TO THAT @IGNORE DOES NOT ADDRESS THIS ISSUE, BUT SOME OTHER ISSUE.
  */
 public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
@@ -49,7 +55,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     private static final Region REGION = Region.US_EAST_1;
     private static final String AWS_ACCESS_KEY_ID = "AWS_ACCESS_KEY_ID";
     private static final String AWS_SECRET_KEY = "AWS_SECRET_KEY";
-    private static final int RETRY_TIME_LIMIT = 180;
+
 
     public KinesaliteContainer(DockerImageName imageName) {
         super(imageName);
@@ -99,7 +105,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
         @Override
         protected void waitUntilReady() {
             Unreliables.retryUntilSuccess(
-                    RETRY_TIME_LIMIT,
+                    (int) this.startupTimeout.getSeconds(),
                     TimeUnit.SECONDS,
                     () -> this.getRateLimiter().getWhenReady(this::tryList));
         }
