@@ -119,10 +119,31 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * were not persisted successfully and resubmit them using the {@code requestResult} callback.
      *
      * <p>From a threading perspective, the mailbox thread will call this method and initiate the
-     * asynchronous request to persist the {@code requestEntries}. A thread from the destination
+     * asynchronous request to persist the {@code requestEntries}. NOTE: The client must support
+     * asynchronous requests and the method called to persist the records must asynchronously
+     * execute and return a future with the results of that request. A thread from the destination
      * client thread pool should complete the request and submit the failed entries that should be
      * retried - i.e. the {@code requestResult} triggering the mailbox thread to requeue the
-     * unsuccessful elements.
+     * unsuccessful elements. An example implementation is included:
+     *
+     * <pre>{@code
+     * @Override
+     * protected void submitRequestEntries
+     *   (List<RequestEntryT> records, Consumer<Collection<RequestEntryT>> requestResult) {
+     *     Future<Response> response = destinationClient.putRecords(records);
+     *     response.whenComplete(
+     *         (response, error) -> {
+     *             if(error){
+     *                 List<RequestEntryT> retryableFailedRecords = getRetryableFailed(response);
+     *                 requestResult.accept(retryableFailedRecords);
+     *             }else{
+     *                 requestResult.accept(Collections.emptyList());
+     *             }
+     *         }
+     *     );
+     * }
+     *
+     * }</pre>
      *
      * <p>During checkpointing, the sink needs to ensure that there are no outstanding in-flight
      * requests.
