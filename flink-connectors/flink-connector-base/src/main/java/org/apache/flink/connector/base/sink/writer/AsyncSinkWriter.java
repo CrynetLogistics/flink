@@ -114,9 +114,15 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * <p>The method is invoked with a set of request entries according to the buffering hints (and
      * the valid limits of the destination). The logic then needs to create and execute the request
-     * against the destination (ideally by batching together multiple request entries to increase
-     * efficiency). The logic also needs to identify individual request entries that were not
-     * persisted successfully and resubmit them using the {@code requeueFailedRequestEntry} method.
+     * asynchronously against the destination (ideally by batching together multiple request entries
+     * to increase efficiency). The logic also needs to identify individual request entries that
+     * were not persisted successfully and resubmit them using the {@code requestResult} callback.
+     *
+     * <p>From a threading perspective, the mailbox thread will call this method and initiate the
+     * asynchronous request to persist the {@code requestEntries}. A thread from the destination
+     * client thread pool should complete the request and submit the failed entries that should be
+     * retried - i.e. the {@code requestResult} triggering the mailbox thread to requeue the
+     * unsuccessful elements.
      *
      * <p>During checkpointing, the sink needs to ensure that there are no outstanding in-flight
      * requests.
