@@ -123,8 +123,10 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * asynchronous requests and the method called to persist the records must asynchronously
      * execute and return a future with the results of that request. A thread from the destination
      * client thread pool should complete the request and submit the failed entries that should be
-     * retried - i.e. the {@code requestResult} triggering the mailbox thread to requeue the
-     * unsuccessful elements. An example implementation is included:
+     * retried. The {@code requestResult} will then trigger the mailbox thread to requeue the
+     * unsuccessful elements.
+     *
+     * <p>An example implementation of this method is included:
      *
      * <pre>{@code
      * @Override
