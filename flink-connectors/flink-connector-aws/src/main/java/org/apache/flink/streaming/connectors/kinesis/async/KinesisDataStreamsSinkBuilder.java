@@ -22,6 +22,8 @@ import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
+import java.util.Properties;
+
 /**
  * Builder to construct {@link KinesisDataStreamsSink}.
  *
@@ -60,6 +62,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
 
     private String streamName;
+    private Properties kinesisClientProperties;
 
     KinesisDataStreamsSinkBuilder() {}
 
@@ -76,6 +79,12 @@ public class KinesisDataStreamsSinkBuilder<InputT>
         return this;
     }
 
+    public KinesisDataStreamsSinkBuilder<InputT> setKinesisClientProperties(
+            Properties kinesisClientProperties) {
+        this.kinesisClientProperties = kinesisClientProperties;
+        return this;
+    }
+
     public KinesisDataStreamsSink<InputT> build() {
         return new KinesisDataStreamsSink<>(
                 elementConverter,
@@ -86,6 +95,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
                         ? DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B
                         : flushOnBufferSizeInBytes,
                 maxTimeInBufferMS == null ? DEFAULT_MAX_TIME_IN_BUFFER_MS : maxTimeInBufferMS,
-                streamName);
+                streamName,
+                kinesisClientProperties);
     }
 }

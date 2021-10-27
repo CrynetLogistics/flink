@@ -23,9 +23,16 @@ import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
+import org.apache.flink.streaming.connectors.kinesis.async.util.AwsV2Util;
+import org.apache.flink.util.Preconditions;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.ClientConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
@@ -36,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -65,7 +73,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
 
     private final String streamName;
     private final SinkWriterMetricGroup metrics;
-    private static final KinesisAsyncClient client = KinesisAsyncClient.create();
+    private final KinesisAsyncClient client;
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
     KinesisDataStreamsSinkWriter(
@@ -76,7 +84,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
             long maxTimeInBufferMS,
-            String streamName) {
+            String streamName,
+            Properties kinesisClientProperties) {
         super(
                 elementConverter,
                 context,
@@ -88,6 +97,25 @@ public class KinesisDataStreamsSinkWriter<InputT>
         this.streamName = streamName;
         this.metrics = context.metricGroup();
         initMetricsGroup();
+        client = buildClient(kinesisClientProperties);
+    }
+
+    private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
+        Preconditions.checkNotNull(kinesisClientProperties);
+
+        final ClientConfiguration clientConfiguration =
+                new ClientConfigurationFactory().getConfig();
+        clientConfiguration.setUseTcpKeepAlive(true);
+
+        final SdkAsyncHttpClient httpClient =
+                AwsV2Util.createHttpClient(
+                        clientConfiguration,
+                        NettyNioAsyncHttpClient.builder(),
+                        kinesisClientProperties);
+
+        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
+        return AwsV2Util.createKinesisAsyncClient(
+                kinesisClientProperties, clientConfiguration, httpClient);
     }
 
     @Override

@@ -29,6 +29,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Properties;
 
 /**
  * A Kinesis Data Streams (KDS) Sink that performs async requests against a destination stream using
@@ -62,6 +63,7 @@ import java.util.Optional;
 public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
     private final String streamName;
+    private final Properties kinesisClientProperties;
 
     KinesisDataStreamsSink(
             ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
@@ -70,7 +72,8 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             Integer maxBufferedRequests,
             Long flushOnBufferSizeInBytes,
             Long maxTimeInBufferMS,
-            String streamName) {
+            String streamName,
+            Properties kinesisClientProperties) {
         super(
                 elementConverter,
                 maxBatchSize,
@@ -80,10 +83,14 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 maxTimeInBufferMS);
         Preconditions.checkNotNull(
                 streamName, "The stream name must not be null when initializing the KDS Sink.");
+        Preconditions.checkNotNull(
+                kinesisClientProperties,
+                "The properties for constructing a Kinesis Client must not be null when initializing the KDS Sink.");
         Preconditions.checkArgument(
                 !streamName.isEmpty(),
                 "The stream name must be set when initializing the KDS Sink.");
         this.streamName = streamName;
+        this.kinesisClientProperties = kinesisClientProperties;
     }
 
     /**
@@ -108,7 +115,8 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 maxBufferedRequests,
                 flushOnBufferSizeInBytes,
                 maxTimeInBufferMS,
-                streamName);
+                streamName,
+                kinesisClientProperties);
     }
 
     @Override

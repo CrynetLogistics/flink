@@ -41,10 +41,12 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import software.amazon.awssdk.services.kinesis.model.ShardIteratorType;
 import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
 import static org.junit.Assert.assertEquals;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
@@ -77,8 +79,6 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         env.setParallelism(1);
 
         kinesisClient = kinesalite.getNewClient();
-        setFinalStatic(
-                KinesisDataStreamsSinkWriter.class.getDeclaredField("client"), kinesisClient);
     }
 
     @Test
@@ -133,6 +133,13 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         new ExampleSource(
                                 numberOfElementsToSend, 5, keepAliveAfterMS, sizeOfMessageBytes));
 
+        Properties prop = new Properties();
+        prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
+        prop.setProperty(AWS_ACCESS_KEY_ID, kinesalite.getAccessKey());
+        prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
+        prop.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
+        prop.setProperty("TRUST_ALL_CERTIFICATES", "true");
+
         KinesisDataStreamsSink<String> kdsSink =
                 KinesisDataStreamsSink.<String>builder()
                         .setElementConverter(elementConverter)
@@ -142,6 +149,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                         .setMaxBatchSize(maxBatchSize)
                         .setMaxBufferedRequests(1000)
                         .setStreamName(testStreamName)
+                        .setKinesisClientProperties(prop)
                         .build();
 
         stream.sinkTo(kdsSink);
@@ -194,15 +202,5 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                                             .build())
                             .get();
         }
-    }
-
-    private static void setFinalStatic(Field field, Object newValue) throws Exception {
-        field.setAccessible(true);
-
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-        field.set(KinesisDataStreamsSinkWriter.class, newValue);
     }
 }
