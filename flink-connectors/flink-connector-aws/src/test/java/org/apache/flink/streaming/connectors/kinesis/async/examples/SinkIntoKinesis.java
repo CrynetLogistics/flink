@@ -20,12 +20,15 @@ package org.apache.flink.streaming.connectors.kinesis.async.examples;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
+import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
 import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+
+import java.util.Properties;
 
 /**
  * An example application demonstrating how to use the {@link KinesisDataStreamsSink} to sink into
@@ -36,6 +39,8 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 public class SinkIntoKinesis {
+
+    private static final String JSON_PAYLOAD_TEMPLATE = "{\"data\": \"%s\"}";
 
     private static final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
@@ -48,7 +53,13 @@ public class SinkIntoKinesis {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
 
-        DataStream<String> fromGen = env.addSource(new ExampleSource(1_000_000, 5, 100, 50));
+        DataGeneratorSource<String> src =
+                new DataGeneratorSource<>(RandomGenerator.stringGenerator(10), 10, 10_000_000L);
+
+        DataStream<String> fromGen =
+                env.addSource(src)
+                        .returns(String.class)
+                        .map(data -> String.format(JSON_PAYLOAD_TEMPLATE, data));
 
         KinesisDataStreamsSink<String> kdsSink =
                 KinesisDataStreamsSink.<String>builder()
