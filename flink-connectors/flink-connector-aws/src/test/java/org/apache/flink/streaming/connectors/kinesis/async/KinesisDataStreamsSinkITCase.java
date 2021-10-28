@@ -22,7 +22,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
 import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
 import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
@@ -56,7 +55,6 @@ import static org.junit.Assert.assertEquals;
 public class KinesisDataStreamsSinkITCase extends TestLogger {
 
     private static final String DEFAULT_FIRST_SHARD_NAME = "shardId-000000000000";
-    private static final int TIME_MARGIN_OF_ERROR_MS = 1000;
 
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
             (element, context) ->
@@ -86,39 +84,29 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Test
     public void elementsMaybeWrittenSuccessfullyToLocalInstanceWhenBatchSizeIsReached()
             throws Exception {
-        runScenario(50, 10, 25, 1000, 819200, 1, 50, 50, "test-stream-name-1");
+        runScenario(50, 25, 1000, 819200, 1, 50, 50, "test-stream-name-1");
     }
 
     @Test
     public void elementsBufferedAndTriggeredByTimeBasedFlushShouldBeFlushedIfSourcedIsKeptAlive()
             throws Exception {
         int timeBasedFlushingThresholdMS = 1000;
-        runScenario(
-                10,
-                timeBasedFlushingThresholdMS + TIME_MARGIN_OF_ERROR_MS,
-                25,
-                timeBasedFlushingThresholdMS,
-                819200,
-                1,
-                100,
-                10,
-                "test-stream-name-2");
+        runScenario(10, 25, timeBasedFlushingThresholdMS, 819200, 1, 100, 10, "test-stream-name-2");
     }
 
     @Test
     public void veryLargeMessagesSucceedInBeingPersisted() throws Exception {
-        runScenario(5, 3000, 2500, 1000, 8192, 1, 10, 5, "test-stream-name-3");
+        runScenario(5, 2500, 1000, 8192, 1, 10, 5, "test-stream-name-3");
     }
 
     @Test
     public void multipleInFlightRequestsResultsInCorrectNumberOfElementsPersisted()
             throws Exception {
-        runScenario(150, 1000, 2500, 1000, 8192, 10, 20, 150, "test-stream-name-4");
+        runScenario(150, 2500, 1000, 8192, 10, 20, 150, "test-stream-name-4");
     }
 
     private void runScenario(
             int numberOfElementsToSend,
-            int keepAliveAfterMS,
             int sizeOfMessageBytes,
             int bufferMaxTimeMS,
             int bufferMaxSizeBytes,
@@ -131,7 +119,12 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         prepareStream(testStreamName);
 
         DataStream<String> stream =
-                env.addSource(new DataGeneratorSource<String>(RandomGenerator.stringGenerator(sizeOfMessageBytes), 100, (long)numberOfElementsToSend)).returns(String.class);
+                env.addSource(
+                                new DataGeneratorSource<String>(
+                                        RandomGenerator.stringGenerator(sizeOfMessageBytes),
+                                        100,
+                                        (long) numberOfElementsToSend))
+                        .returns(String.class);
 
         Properties prop = new Properties();
         prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());

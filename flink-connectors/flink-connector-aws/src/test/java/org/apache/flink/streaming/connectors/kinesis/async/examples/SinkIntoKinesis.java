@@ -28,8 +28,6 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
-import java.util.Properties;
-
 /**
  * An example application demonstrating how to use the {@link KinesisDataStreamsSink} to sink into
  * KDS.
