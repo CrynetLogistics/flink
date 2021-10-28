@@ -46,6 +46,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_REGION;
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
 import static org.junit.Assert.assertEquals;
 
@@ -53,7 +54,6 @@ import static org.junit.Assert.assertEquals;
 public class KinesisDataStreamsSinkITCase extends TestLogger {
 
     private static final String DEFAULT_FIRST_SHARD_NAME = "shardId-000000000000";
-    private static final String AWS_REGION_SYSTEM_PROP_NAME = "aws.region";
     private static final int TIME_MARGIN_OF_ERROR_MS = 1000;
 
     private final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
@@ -73,7 +73,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Before
     public void setUp() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
+        System.setProperty(AWS_REGION, kinesalite.getRegion().toString());
 
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
@@ -137,7 +137,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
         prop.setProperty(AWS_ACCESS_KEY_ID, kinesalite.getAccessKey());
         prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
-        prop.setProperty(AWS_REGION_SYSTEM_PROP_NAME, kinesalite.getRegion().toString());
+        prop.setProperty(AWS_REGION, kinesalite.getRegion().toString());
         prop.setProperty("TRUST_ALL_CERTIFICATES", "true");
 
         KinesisDataStreamsSink<String> kdsSink =
