@@ -41,8 +41,6 @@ import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
-import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
-import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
@@ -53,16 +51,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.DEFAULT_EFO_HTTP_CLIENT_READ_TIMEOUT;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.EFORegistrationType.EAGER;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.EFORegistrationType.NONE;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.EFO_HTTP_CLIENT_MAX_CONCURRENCY;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.EFO_HTTP_CLIENT_READ_TIMEOUT_MILLIS;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.EFO_REGISTRATION_TYPE;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.RECORD_PUBLISHER_TYPE;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.ConsumerConfigConstants.RecordPublisherType.EFO;
 
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal
@@ -101,20 +89,20 @@ public class AwsV2Util {
             final Properties consumerConfig) {
 
         int maxConcurrency =
-                Optional.ofNullable(consumerConfig.getProperty(EFO_HTTP_CLIENT_MAX_CONCURRENCY))
+                Optional.ofNullable(consumerConfig.getProperty("MAX_CCY"))
                         .map(Integer::parseInt)
-                        .orElse(DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY);
+                        .orElse(10_000);
 
         Duration readTimeout =
-                Optional.ofNullable(consumerConfig.getProperty(EFO_HTTP_CLIENT_READ_TIMEOUT_MILLIS))
+                Optional.ofNullable(consumerConfig.getProperty("HTTP_CLIENT_READ_TIMEOUT"))
                         .map(Integer::parseInt)
                         .map(Duration::ofMillis)
-                        .orElse(DEFAULT_EFO_HTTP_CLIENT_READ_TIMEOUT);
+                        .orElse(Duration.ofMinutes(6));
 
         boolean trustAllCerts =
                 Optional.ofNullable(consumerConfig.getProperty("TRUST_ALL_CERTIFICATES"))
                         .map(Boolean::parseBoolean)
-                        .orElse(true);
+                        .orElse(false);
 
         httpClientBuilder
                 .maxConcurrency(maxConcurrency)
@@ -339,27 +327,5 @@ public class AwsV2Util {
      */
     public static Region getRegion(final Properties configProps) {
         return Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION));
-    }
-
-    public static boolean isRecoverableException(Exception e) {
-        Throwable cause = e.getCause();
-        return cause instanceof LimitExceededException
-                || cause instanceof ProvisionedThroughputExceededException;
-    }
-
-    public static boolean isUsingEfoRecordPublisher(final Properties properties) {
-        return EFO.name().equals(properties.get(RECORD_PUBLISHER_TYPE));
-    }
-
-    public static boolean isEagerEfoRegistrationType(final Properties properties) {
-        return EAGER.name().equals(properties.get(EFO_REGISTRATION_TYPE));
-    }
-
-    public static boolean isLazyEfoRegistrationType(final Properties properties) {
-        return !isEagerEfoRegistrationType(properties) && !isNoneEfoRegistrationType(properties);
-    }
-
-    public static boolean isNoneEfoRegistrationType(final Properties properties) {
-        return NONE.name().equals(properties.get(EFO_REGISTRATION_TYPE));
     }
 }

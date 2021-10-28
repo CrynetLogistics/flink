@@ -101,8 +101,6 @@ public class KinesisDataStreamsSinkWriter<InputT>
     }
 
     private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
-        Preconditions.checkNotNull(kinesisClientProperties);
-
         final ClientConfiguration clientConfiguration =
                 new ClientConfigurationFactory().getConfig();
         clientConfiguration.setUseTcpKeepAlive(true);
@@ -113,7 +111,6 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         NettyNioAsyncHttpClient.builder(),
                         kinesisClientProperties);
 
-        System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
         return AwsV2Util.createKinesisAsyncClient(
                 kinesisClientProperties, clientConfiguration, httpClient);
     }
