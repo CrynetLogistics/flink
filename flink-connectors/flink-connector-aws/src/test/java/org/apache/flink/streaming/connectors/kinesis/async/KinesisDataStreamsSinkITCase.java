@@ -20,6 +20,8 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
+import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.ExampleSource;
 import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
 import org.apache.flink.util.DockerImageVersions;
@@ -129,9 +131,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         prepareStream(testStreamName);
 
         DataStream<String> stream =
-                env.addSource(
-                        new ExampleSource(
-                                numberOfElementsToSend, 5, keepAliveAfterMS, sizeOfMessageBytes));
+                env.addSource(new DataGeneratorSource<String>(RandomGenerator.stringGenerator(sizeOfMessageBytes), 100, (long)numberOfElementsToSend)).returns(String.class);
 
         Properties prop = new Properties();
         prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
