@@ -83,9 +83,6 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 maxTimeInBufferMS);
         Preconditions.checkNotNull(
                 streamName, "The stream name must not be null when initializing the KDS Sink.");
-        Preconditions.checkNotNull(
-                kinesisClientProperties,
-                "The properties for constructing a Kinesis Client must not be null when initializing the KDS Sink.");
         Preconditions.checkArgument(
                 !streamName.isEmpty(),
                 "The stream name must be set when initializing the KDS Sink.");

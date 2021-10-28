@@ -59,6 +59,7 @@ public class AwsV2Util {
     private static final int INITIAL_WINDOW_SIZE_BYTES = 512 * 1024; // 512 KB
     private static final Duration HEALTH_CHECK_PING_PERIOD = Duration.ofSeconds(60);
     private static final Duration CONNECTION_ACQUISITION_TIMEOUT = Duration.ofSeconds(60);
+    private static final String AWS_REGION_ENV_VAR = "AWS_REGION";
 
     /**
      * Creates an Amazon Kinesis Async Client from the provided properties. Configuration is copied
@@ -326,6 +327,10 @@ public class AwsV2Util {
      * @return the region specified by the properties
      */
     public static Region getRegion(final Properties configProps) {
-        return Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION));
+        String regionFromEnvVar = System.getenv(AWS_REGION_ENV_VAR);
+        String regionFromVars = regionFromEnvVar == null ? System.getProperty(AWSConfigConstants.AWS_REGION) : regionFromEnvVar;
+        return regionFromVars == null
+                ? Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION))
+                : Region.of(regionFromVars);
     }
 }

@@ -96,6 +96,6 @@ public class KinesisDataStreamsSinkBuilder<InputT>
                         : flushOnBufferSizeInBytes,
                 maxTimeInBufferMS == null ? DEFAULT_MAX_TIME_IN_BUFFER_MS : maxTimeInBufferMS,
                 streamName,
-                kinesisClientProperties);
+                kinesisClientProperties == null ? new Properties() : kinesisClientProperties);
     }
 }
