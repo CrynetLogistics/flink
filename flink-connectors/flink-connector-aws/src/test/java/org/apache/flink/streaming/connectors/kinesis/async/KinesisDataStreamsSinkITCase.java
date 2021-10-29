@@ -78,7 +78,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
 
-        kinesisClient = kinesalite.getNewClient();
+        kinesisClient = kinesalite.getV2Client();
     }
 
     @Test

@@ -109,6 +109,12 @@ under the License.
 			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-kinesis</artifactId>
+			<version>1.12.7</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -121,11 +127,6 @@ under the License.
 						<goals>
 							<goal>test-jar</goal>
 						</goals>
-						<configuration>
-							<includes>
-								<include>META-INF/NOTICE</include>
-							</includes>
-						</configuration>
 					</execution>
 				</executions>
 			</plugin>
