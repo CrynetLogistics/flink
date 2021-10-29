@@ -328,7 +328,10 @@ public class AwsV2Util {
      */
     public static Region getRegion(final Properties configProps) {
         String regionFromEnvVar = System.getenv(AWS_REGION_ENV_VAR);
-        String regionFromVars = regionFromEnvVar == null ? System.getProperty(AWSConfigConstants.AWS_REGION) : regionFromEnvVar;
+        String regionFromVars =
+                regionFromEnvVar == null
+                        ? System.getProperty(AWSConfigConstants.AWS_REGION)
+                        : regionFromEnvVar;
         return regionFromVars == null
                 ? Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION))
                 : Region.of(regionFromVars);
