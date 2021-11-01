@@ -156,6 +156,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *     difficulties in persisting should be re-queued through {@code requestResult} by including
      *     that element in the collection of {@code RequestEntryT}s passed to the {@code accept}
      *     method. All other elements are assumed to have been successfully persisted.
+     * @param fatalException the {@code accept} method should be called on this Consumer if the
+     *     processing of the {@code requestEntries} raises an exception that should not be retried.
+     *     Specifically, any action that we are sure will result in the same exception no matter how
+     *     many times we retry should raise a {@code RuntimeException} here. For example, wrong user
+     *     credentials. However, it is possible intermittent failures will recover, e.g. flaky
+     *     network connections, in which case, some other mechanism may be more appropriate.
      */
     protected abstract void submitRequestEntries(
             List<RequestEntryT> requestEntries,
