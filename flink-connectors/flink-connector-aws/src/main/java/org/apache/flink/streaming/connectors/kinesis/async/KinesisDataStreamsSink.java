@@ -53,6 +53,8 @@ import java.util.Properties;
  *       buffer
  *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
  *       buffer, if any element reaches this age, the entire buffer will be flushed immediately
+ *   <li>{@code failOnError}: when an exception is encountered while persisting to Kinesis Data
+ *       Streams, the job will fail immediately if failOnError is set
  * </ul>
  *
  * <p>Please see the writer implementation in {@link KinesisDataStreamsSinkWriter}

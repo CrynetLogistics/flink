@@ -161,8 +161,10 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         totalPartiallySuccessfulFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
 
-                        if(failOnError) {
-                            exceptionConsumer.accept(new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+                        if (failOnError) {
+                            exceptionConsumer.accept(
+                                    new KinesisDataStreamsException
+                                            .KinesisDataStreamsFailFastException());
                         }
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
@@ -195,13 +197,16 @@ public class KinesisDataStreamsSinkWriter<InputT>
         numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
     }
 
-    private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer){
-        if(failOnError){
-            exceptionConsumer.accept(new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+    private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
+        if (failOnError) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
             return false;
         }
-        if(err instanceof CompletionException && err.getCause() instanceof SdkClientException){
-            exceptionConsumer.accept(new KinesisDataStreamsException("Encountered an exception that may not be retried ", err));
+        if (err instanceof CompletionException && err.getCause() instanceof SdkClientException) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException(
+                            "Encountered an exception that may not be retried ", err));
             return false;
         }
 

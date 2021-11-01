@@ -20,7 +20,8 @@ package org.apache.flink.streaming.connectors.kinesis.async;
 import org.apache.flink.annotation.Internal;
 
 /**
- * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data Streams Sink.
+ * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
+ * Streams Sink.
  */
 @Internal
 public class KinesisDataStreamsException extends RuntimeException {
@@ -34,16 +35,15 @@ public class KinesisDataStreamsException extends RuntimeException {
     }
 
     /**
-     * When the flag {@code failOnError} is set in {@link KinesisDataStreamsSinkWriter}, this exception
-     * is raised as soon as any exception occurs when KDS is written to.
+     * When the flag {@code failOnError} is set in {@link KinesisDataStreamsSinkWriter}, this
+     * exception is raised as soon as any exception occurs when KDS is written to.
      */
     @Internal
     public static class KinesisDataStreamsFailFastException extends KinesisDataStreamsException {
 
         public KinesisDataStreamsFailFastException() {
-            super("Encountered an exception while persisting records, not retrying due to {failOnError} being set.");
+            super(
+                    "Encountered an exception while persisting records, not retrying due to {failOnError} being set.");
         }
-
     }
-
 }
