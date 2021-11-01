@@ -60,7 +60,9 @@ public class KinesisDataStreamsSinkBuilder<InputT>
     private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10000;
     private static final long DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B = 64 * 1024 * 1024;
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
+    private static final boolean DEFAULT_FAIL_ON_ERROR = false;
 
+    private Boolean failOnError;
     private String streamName;
     private Properties kinesisClientProperties;
 
@@ -76,6 +78,11 @@ public class KinesisDataStreamsSinkBuilder<InputT>
      */
     public KinesisDataStreamsSinkBuilder<InputT> setStreamName(String streamName) {
         this.streamName = streamName;
+        return this;
+    }
+
+    public KinesisDataStreamsSinkBuilder<InputT> setFailOnError(boolean failOnError) {
+        this.failOnError = failOnError;
         return this;
     }
 
@@ -95,6 +102,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
                         ? DEFAULT_FLUSH_ON_BUFFER_SIZE_IN_B
                         : flushOnBufferSizeInBytes,
                 maxTimeInBufferMS == null ? DEFAULT_MAX_TIME_IN_BUFFER_MS : maxTimeInBufferMS,
+                failOnError == null ? DEFAULT_FAIL_ON_ERROR : failOnError,
                 streamName,
                 kinesisClientProperties == null ? new Properties() : kinesisClientProperties);
     }

@@ -62,6 +62,7 @@ import java.util.Properties;
 @PublicEvolving
 public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
 
+    private final boolean failOnError;
     private final String streamName;
     private final Properties kinesisClientProperties;
 
@@ -72,6 +73,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             Integer maxBufferedRequests,
             Long flushOnBufferSizeInBytes,
             Long maxTimeInBufferMS,
+            boolean failOnError,
             String streamName,
             Properties kinesisClientProperties) {
         super(
@@ -86,6 +88,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
         Preconditions.checkArgument(
                 !streamName.isEmpty(),
                 "The stream name must be set when initializing the KDS Sink.");
+        this.failOnError = failOnError;
         this.streamName = streamName;
         this.kinesisClientProperties = kinesisClientProperties;
     }
@@ -112,6 +115,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 maxBufferedRequests,
                 flushOnBufferSizeInBytes,
                 maxTimeInBufferMS,
+                failOnError,
                 streamName,
                 kinesisClientProperties);
     }

@@ -29,6 +29,7 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 /**
@@ -69,9 +71,18 @@ public class KinesisDataStreamsSinkWriter<InputT>
     private transient Counter totalFullyFailedFlushesCounter;
     private transient Counter numRecordsOutErrorsCounter;
 
+    /* Name of the stream in Kinesis Data Streams */
     private final String streamName;
+
+    /* The sink writer metric group */
     private final SinkWriterMetricGroup metrics;
+
+    /* The asynchronous Kinesis client - construction is by kinesisClientProperties */
     private final KinesisAsyncClient client;
+
+    /* Flag to whether fatally fail any time we encounter an exception when persisting records */
+    private final boolean failOnError;
+
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataStreamsSinkWriter.class);
 
     KinesisDataStreamsSinkWriter(
@@ -82,6 +93,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
             int maxBufferedRequests,
             long flushOnBufferSizeInBytes,
             long maxTimeInBufferMS,
+            boolean failOnError,
             String streamName,
             Properties kinesisClientProperties) {
         super(
@@ -92,6 +104,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 maxBufferedRequests,
                 flushOnBufferSizeInBytes,
                 maxTimeInBufferMS);
+        this.failOnError = failOnError;
         this.streamName = streamName;
         this.metrics = context.metricGroup();
         initMetricsGroup();
@@ -129,14 +142,15 @@ public class KinesisDataStreamsSinkWriter<InputT>
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        exceptionConsumer.accept(new RuntimeException("Duck"));
                         LOG.warn(
                                 "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
                                 requestEntries.size());
                         totalFullyFailedFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
-                        requestResult.accept(requestEntries);
+                        if (isRetryable(err, exceptionConsumer)) {
+                            requestResult.accept(requestEntries);
+                        }
                         return;
                     }
 
@@ -147,6 +161,9 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         totalPartiallySuccessfulFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
 
+                        if(failOnError) {
+                            exceptionConsumer.accept(new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+                        }
                         ArrayList<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
                         List<PutRecordsResultEntry> records = response.records();
@@ -176,5 +193,18 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
         numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
+    }
+
+    private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer){
+        if(failOnError){
+            exceptionConsumer.accept(new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+            return false;
+        }
+        if(err instanceof CompletionException && err.getCause() instanceof SdkClientException){
+            exceptionConsumer.accept(new KinesisDataStreamsException("Encountered an exception that may not be retried ", err));
+            return false;
+        }
+
+        return true;
     }
 }
