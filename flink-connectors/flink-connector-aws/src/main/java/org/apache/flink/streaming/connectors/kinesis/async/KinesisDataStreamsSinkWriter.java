@@ -166,7 +166,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                                     new KinesisDataStreamsException
                                             .KinesisDataStreamsFailFastException());
                         }
-                        ArrayList<PutRecordsRequestEntry> failedRequestEntries =
+                        List<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
                         List<PutRecordsResultEntry> records = response.records();
 
