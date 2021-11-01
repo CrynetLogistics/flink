@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async.examples;
+package org.apache.flink.streaming.connectors.kinesis.unified.examples;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
 import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
-import org.apache.flink.streaming.connectors.kinesis.async.KinesisDataStreamsSink;
+import org.apache.flink.streaming.connectors.kinesis.unified.KinesisDataStreamsSink;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;

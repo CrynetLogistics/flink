@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async.util;
+package org.apache.flink.streaming.connectors.kinesis.unified.util;
 
 import org.apache.flink.annotation.PublicEvolving;
 

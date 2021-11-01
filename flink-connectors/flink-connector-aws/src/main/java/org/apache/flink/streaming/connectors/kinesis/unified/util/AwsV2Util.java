@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async.util;
+package org.apache.flink.streaming.connectors.kinesis.unified.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.runtime.util.EnvironmentInformation;
-import org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.CredentialProvider;
+import org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.CredentialProvider;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -52,7 +52,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal

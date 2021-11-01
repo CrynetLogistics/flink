@@ -19,7 +19,7 @@
 package org.apache.flink.streaming.kinesis.test;
 
 import org.apache.flink.api.common.time.Deadline;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
+import org.apache.flink.streaming.connectors.kinesis.unified.testutils.KinesaliteContainer;
 import org.apache.flink.streaming.connectors.kinesis.testutils.KinesisPubsubClient;
 import org.apache.flink.streaming.kinesis.test.model.Order;
 import org.apache.flink.tests.util.TestUtils;

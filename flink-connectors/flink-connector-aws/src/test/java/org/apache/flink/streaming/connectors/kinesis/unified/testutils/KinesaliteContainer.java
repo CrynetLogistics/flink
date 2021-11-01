@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async.testutils;
+package org.apache.flink.streaming.connectors.kinesis.unified.testutils;
 
-import org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants;
+import org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;

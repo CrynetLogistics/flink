@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.async;
+package org.apache.flink.streaming.connectors.kinesis.unified;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
 import org.apache.flink.streaming.api.functions.source.datagen.RandomGenerator;
-import org.apache.flink.streaming.connectors.kinesis.async.testutils.KinesaliteContainer;
+import org.apache.flink.streaming.connectors.kinesis.unified.testutils.KinesaliteContainer;
 import org.apache.flink.util.DockerImageVersions;
 import org.apache.flink.util.TestLogger;
 
@@ -45,11 +45,11 @@ import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ENDPOINT;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_REGION;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
-import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_REGION;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
+import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.junit.Assert.assertEquals;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
