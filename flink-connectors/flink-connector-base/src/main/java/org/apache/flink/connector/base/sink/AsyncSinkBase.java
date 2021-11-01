@@ -51,19 +51,19 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
         implements Sink<InputT, Void, Collection<RequestEntryT>, Void> {
 
     protected final ElementConverter<InputT, RequestEntryT> elementConverter;
-    protected final Integer maxBatchSize;
-    protected final Integer maxInFlightRequests;
-    protected final Integer maxBufferedRequests;
-    protected final Long flushOnBufferSizeInBytes;
-    protected final Long maxTimeInBufferMS;
+    protected final int maxBatchSize;
+    protected final int maxInFlightRequests;
+    protected final int maxBufferedRequests;
+    protected final long flushOnBufferSizeInBytes;
+    protected final long maxTimeInBufferMS;
 
     protected AsyncSinkBase(
             ElementConverter<InputT, RequestEntryT> elementConverter,
-            Integer maxBatchSize,
-            Integer maxInFlightRequests,
-            Integer maxBufferedRequests,
-            Long flushOnBufferSizeInBytes,
-            Long maxTimeInBufferMS) {
+            int maxBatchSize,
+            int maxInFlightRequests,
+            int maxBufferedRequests,
+            long flushOnBufferSizeInBytes,
+            long maxTimeInBufferMS) {
         this.elementConverter = elementConverter;
         this.maxBatchSize = maxBatchSize;
         this.maxInFlightRequests = maxInFlightRequests;
