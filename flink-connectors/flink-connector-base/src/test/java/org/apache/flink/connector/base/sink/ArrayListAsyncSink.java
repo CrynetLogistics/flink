@@ -66,7 +66,9 @@ public class ArrayListAsyncSink extends AsyncSinkBase<String, Integer> {
 
             @Override
             protected void submitRequestEntries(
-                    List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
+                    List<Integer> requestEntries,
+                    Consumer<Collection<Integer>> requestResult,
+                    Consumer<Exception> exceptionConsumer) {
                 ArrayListDestination.putRecords(requestEntries);
                 requestResult.accept(Arrays.asList());
             }

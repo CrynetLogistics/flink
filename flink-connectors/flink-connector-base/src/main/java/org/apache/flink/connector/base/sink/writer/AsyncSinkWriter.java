@@ -158,7 +158,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *     method. All other elements are assumed to have been successfully persisted.
      */
     protected abstract void submitRequestEntries(
-            List<RequestEntryT> requestEntries, Consumer<Collection<RequestEntryT>> requestResult);
+            List<RequestEntryT> requestEntries,
+            Consumer<Collection<RequestEntryT>> requestResult,
+            Consumer<Exception> fatalException);
 
     /**
      * This method allows the getting of the size of a {@code RequestEntryT} in bytes. The size in
@@ -265,8 +267,16 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                                 "Mark in-flight request as completed and requeue %d request entries",
                                 failedRequestEntries.size());
 
+        Consumer<Exception> fatalExceptionCons =
+                exception ->
+                        mailboxExecutor.execute(
+                                () -> {
+                                    throw exception;
+                                },
+                                "A fatal exception occurred in the sink that cannot be recovered from or should not be retried.");
+
         inFlightRequestsCount++;
-        submitRequestEntries(batch, requestResult);
+        submitRequestEntries(batch, requestResult, fatalExceptionCons);
     }
 
     /**

@@ -580,7 +580,9 @@ public class AsyncSinkWriterTest {
          */
         @Override
         protected void submitRequestEntries(
-                List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
+                List<Integer> requestEntries,
+                Consumer<Collection<Integer>> requestResult,
+                Consumer<Exception> exceptionConsumer) {
             if (requestEntries.stream().anyMatch(val -> val > 100 && val <= 200)) {
                 throw new RuntimeException(
                         "Deliberate runtime exception occurred in SinkWriterImplementation.");
@@ -734,7 +736,9 @@ public class AsyncSinkWriterTest {
 
         @Override
         protected void submitRequestEntries(
-                List<Integer> requestEntries, Consumer<Collection<Integer>> requestResult) {
+                List<Integer> requestEntries,
+                Consumer<Collection<Integer>> requestResult,
+                Consumer<Exception> exceptionConsumer) {
             if (requestEntries.size() == 3) {
                 try {
                     delayedStartLatch.countDown();

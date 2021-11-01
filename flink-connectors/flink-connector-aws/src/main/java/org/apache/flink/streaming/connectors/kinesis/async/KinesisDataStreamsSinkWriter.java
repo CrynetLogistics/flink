@@ -116,7 +116,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
     @Override
     protected void submitRequestEntries(
             List<PutRecordsRequestEntry> requestEntries,
-            Consumer<Collection<PutRecordsRequestEntry>> requestResult) {
+            Consumer<Collection<PutRecordsRequestEntry>> requestResult,
+            Consumer<Exception> exceptionConsumer) {
 
         PutRecordsRequest batchRequest =
                 PutRecordsRequest.builder().records(requestEntries).streamName(streamName).build();
@@ -128,6 +129,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
+                        exceptionConsumer.accept(new RuntimeException("Duck"));
                         LOG.warn(
                                 "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
                                 requestEntries.size());
