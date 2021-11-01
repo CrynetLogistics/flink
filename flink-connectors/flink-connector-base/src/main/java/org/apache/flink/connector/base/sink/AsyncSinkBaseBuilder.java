@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.base.sink;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 import java.io.Serializable;
@@ -30,7 +30,7 @@ import java.io.Serializable;
  *     required to submit a single element to the destination
  * @param <ConcreteBuilderT> type of concrete implementation of this builder class
  */
-@Internal
+@PublicEvolving
 public abstract class AsyncSinkBaseBuilder<
         InputT,
         RequestEntryT extends Serializable,
