@@ -91,26 +91,13 @@ public class AwsV2Util {
             final NettyNioAsyncHttpClient.Builder httpClientBuilder,
             final Properties consumerConfig) {
 
-        int maxConcurrency =
-                Optional.ofNullable(consumerConfig.getProperty("MAX_CCY"))
-                        .map(Integer::parseInt)
-                        .orElse(10_000);
-
-        Duration readTimeout =
-                Optional.ofNullable(consumerConfig.getProperty("HTTP_CLIENT_READ_TIMEOUT"))
-                        .map(Integer::parseInt)
-                        .map(Duration::ofMillis)
-                        .orElse(Duration.ofMinutes(6));
-
         boolean trustAllCerts =
                 Optional.ofNullable(consumerConfig.getProperty(TRUST_ALL_CERTIFICATES))
                         .map(Boolean::parseBoolean)
                         .orElse(false);
 
         httpClientBuilder
-                .maxConcurrency(maxConcurrency)
                 .connectionTimeout(Duration.ofMillis(config.getConnectionTimeout()))
-                .readTimeout(readTimeout)
                 .tcpKeepAlive(config.useTcpKeepAlive())
                 .writeTimeout(Duration.ofMillis(config.getSocketTimeout()))
                 .connectionMaxIdleTime(Duration.ofMillis(config.getConnectionMaxIdleMillis()))
