@@ -29,7 +29,6 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
@@ -44,7 +43,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 /**
@@ -149,7 +147,11 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         totalFullyFailedFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
-                        if (isRetryable(err, exceptionConsumer)) {
+                        if (failOnError) {
+                            exceptionConsumer.accept(
+                                    new KinesisDataStreamsException
+                                            .KinesisDataStreamsFailFastException());
+                        } else {
                             requestResult.accept(requestEntries);
                         }
                         return;
@@ -166,6 +168,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                             exceptionConsumer.accept(
                                     new KinesisDataStreamsException
                                             .KinesisDataStreamsFailFastException());
+                            return;
                         }
                         List<PutRecordsRequestEntry> failedRequestEntries =
                                 new ArrayList<>(response.failedRecordCount());
@@ -196,21 +199,5 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
         numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
-    }
-
-    private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
-        if (failOnError) {
-            exceptionConsumer.accept(
-                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
-            return false;
-        }
-        if (err instanceof CompletionException && err.getCause() instanceof SdkClientException) {
-            exceptionConsumer.accept(
-                    new KinesisDataStreamsException(
-                            "Encountered an exception that may not be retried ", err));
-            return false;
-        }
-
-        return true;
     }
 }
