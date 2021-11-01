@@ -126,6 +126,9 @@ public class AWSConfigConstants {
     /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
     public static final String AWS_ENDPOINT = "aws.endpoint";
 
+    /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
+    public static final String TRUST_ALL_CERTIFICATES = "trust.all.certificates";
+
     public static String accessKeyId(String prefix) {
         return prefix + ".basic.accesskeyid";
     }

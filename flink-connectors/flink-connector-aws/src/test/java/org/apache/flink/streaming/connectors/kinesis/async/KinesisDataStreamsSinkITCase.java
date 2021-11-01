@@ -49,6 +49,7 @@ import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfig
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_ENDPOINT;
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_REGION;
 import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.junit.Assert.assertEquals;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
@@ -83,90 +84,168 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Test
     public void elementsMaybeWrittenSuccessfullyToLocalInstanceWhenBatchSizeIsReached()
             throws Exception {
-        runScenario(50, 25, 1000, 819200, 1, 50, 50, "test-stream-name-1");
+        new Scenario()
+                .withNumberOfElementsToSend(50)
+                .withSizeOfMessageBytes(25)
+                .withBufferMaxTimeMS(1000)
+                .withBufferMaxSizeBytes(819200)
+                .withMaxInflightReqs(1)
+                .withMaxBatchSize(50)
+                .withExpectedElements(50)
+                .withTestStreamName("test-stream-name-1")
+                .runScenario();
     }
 
     @Test
     public void elementsBufferedAndTriggeredByTimeBasedFlushShouldBeFlushedIfSourcedIsKeptAlive()
             throws Exception {
-        int timeBasedFlushingThresholdMS = 1000;
-        runScenario(10, 25, timeBasedFlushingThresholdMS, 819200, 1, 100, 10, "test-stream-name-2");
+        new Scenario()
+                .withNumberOfElementsToSend(10)
+                .withSizeOfMessageBytes(25)
+                .withBufferMaxTimeMS(1000)
+                .withBufferMaxSizeBytes(819200)
+                .withMaxInflightReqs(1)
+                .withMaxBatchSize(100)
+                .withExpectedElements(10)
+                .withTestStreamName("test-stream-name-2")
+                .runScenario();
     }
 
     @Test
     public void veryLargeMessagesSucceedInBeingPersisted() throws Exception {
-        runScenario(5, 2500, 1000, 8192, 1, 10, 5, "test-stream-name-3");
+        new Scenario()
+                .withNumberOfElementsToSend(5)
+                .withSizeOfMessageBytes(2500)
+                .withBufferMaxTimeMS(1000)
+                .withBufferMaxSizeBytes(8192)
+                .withMaxInflightReqs(1)
+                .withMaxBatchSize(10)
+                .withExpectedElements(5)
+                .withTestStreamName("test-stream-name-3")
+                .runScenario();
     }
 
     @Test
     public void multipleInFlightRequestsResultsInCorrectNumberOfElementsPersisted()
             throws Exception {
-        runScenario(150, 2500, 1000, 8192, 10, 20, 150, "test-stream-name-4");
+        new Scenario()
+                .withNumberOfElementsToSend(150)
+                .withSizeOfMessageBytes(2500)
+                .withBufferMaxTimeMS(1000)
+                .withBufferMaxSizeBytes(8192)
+                .withMaxInflightReqs(10)
+                .withMaxBatchSize(20)
+                .withExpectedElements(150)
+                .withTestStreamName("test-stream-name-4")
+                .runScenario();
     }
 
-    private void runScenario(
-            int numberOfElementsToSend,
-            int sizeOfMessageBytes,
-            int bufferMaxTimeMS,
-            int bufferMaxSizeBytes,
-            int maxInflightReqs,
-            int maxBatchSize,
-            int expectedElements,
-            String testStreamName)
-            throws Exception {
+    private class Scenario {
+        private int numberOfElementsToSend;
+        private int sizeOfMessageBytes;
+        private int bufferMaxTimeMS;
+        private int bufferMaxSizeBytes;
+        private int maxInflightReqs;
+        private int maxBatchSize;
+        private int expectedElements;
+        private String testStreamName;
 
-        prepareStream(testStreamName);
+        public void runScenario() throws Exception {
+            prepareStream(testStreamName);
 
-        DataStream<String> stream =
-                env.addSource(
-                                new DataGeneratorSource<String>(
-                                        RandomGenerator.stringGenerator(sizeOfMessageBytes),
-                                        100,
-                                        (long) numberOfElementsToSend))
-                        .returns(String.class);
+            DataStream<String> stream =
+                    env.addSource(
+                                    new DataGeneratorSource<String>(
+                                            RandomGenerator.stringGenerator(sizeOfMessageBytes),
+                                            100,
+                                            (long) numberOfElementsToSend))
+                            .returns(String.class);
 
-        Properties prop = new Properties();
-        prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
-        prop.setProperty(AWS_ACCESS_KEY_ID, kinesalite.getAccessKey());
-        prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
-        prop.setProperty(AWS_REGION, kinesalite.getRegion().toString());
-        prop.setProperty("TRUST_ALL_CERTIFICATES", "true");
+            Properties prop = new Properties();
+            prop.setProperty(AWS_ENDPOINT, kinesalite.getHostEndpointUrl());
+            prop.setProperty(AWS_ACCESS_KEY_ID, kinesalite.getAccessKey());
+            prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
+            prop.setProperty(AWS_REGION, kinesalite.getRegion().toString());
+            prop.setProperty(TRUST_ALL_CERTIFICATES, "true");
 
-        KinesisDataStreamsSink<String> kdsSink =
-                KinesisDataStreamsSink.<String>builder()
-                        .setElementConverter(elementConverter)
-                        .setMaxTimeInBufferMS(bufferMaxTimeMS)
-                        .setFlushOnBufferSizeInBytes(bufferMaxSizeBytes)
-                        .setMaxInFlightRequests(maxInflightReqs)
-                        .setMaxBatchSize(maxBatchSize)
-                        .setMaxBufferedRequests(1000)
-                        .setStreamName(testStreamName)
-                        .setKinesisClientProperties(prop)
-                        .build();
+            KinesisDataStreamsSink<String> kdsSink =
+                    KinesisDataStreamsSink.<String>builder()
+                            .setElementConverter(elementConverter)
+                            .setMaxTimeInBufferMS(bufferMaxTimeMS)
+                            .setFlushOnBufferSizeInBytes(bufferMaxSizeBytes)
+                            .setMaxInFlightRequests(maxInflightReqs)
+                            .setMaxBatchSize(maxBatchSize)
+                            .setMaxBufferedRequests(1000)
+                            .setStreamName(testStreamName)
+                            .setKinesisClientProperties(prop)
+                            .build();
 
-        stream.sinkTo(kdsSink);
+            stream.sinkTo(kdsSink);
 
-        env.execute("KDS Async Sink Example Program");
+            env.execute("KDS Async Sink Example Program");
 
-        String shardIterator =
-                kinesisClient
-                        .getShardIterator(
-                                GetShardIteratorRequest.builder()
-                                        .shardId(DEFAULT_FIRST_SHARD_NAME)
-                                        .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
-                                        .streamName(testStreamName)
-                                        .build())
-                        .get()
-                        .shardIterator();
+            String shardIterator =
+                    kinesisClient
+                            .getShardIterator(
+                                    GetShardIteratorRequest.builder()
+                                            .shardId(DEFAULT_FIRST_SHARD_NAME)
+                                            .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
+                                            .streamName(testStreamName)
+                                            .build())
+                            .get()
+                            .shardIterator();
 
-        assertEquals(
-                expectedElements,
-                kinesisClient
-                        .getRecords(
-                                GetRecordsRequest.builder().shardIterator(shardIterator).build())
-                        .get()
-                        .records()
-                        .size());
+            assertEquals(
+                    expectedElements,
+                    kinesisClient
+                            .getRecords(
+                                    GetRecordsRequest.builder()
+                                            .shardIterator(shardIterator)
+                                            .build())
+                            .get()
+                            .records()
+                            .size());
+        }
+
+        public Scenario withNumberOfElementsToSend(int numberOfElementsToSend) {
+            this.numberOfElementsToSend = numberOfElementsToSend;
+            return this;
+        }
+
+        public Scenario withSizeOfMessageBytes(int sizeOfMessageBytes) {
+            this.sizeOfMessageBytes = sizeOfMessageBytes;
+            return this;
+        }
+
+        public Scenario withBufferMaxTimeMS(int bufferMaxTimeMS) {
+            this.bufferMaxTimeMS = bufferMaxTimeMS;
+            return this;
+        }
+
+        public Scenario withBufferMaxSizeBytes(int bufferMaxSizeBytes) {
+            this.bufferMaxSizeBytes = bufferMaxSizeBytes;
+            return this;
+        }
+
+        public Scenario withMaxInflightReqs(int maxInflightReqs) {
+            this.maxInflightReqs = maxInflightReqs;
+            return this;
+        }
+
+        public Scenario withMaxBatchSize(int maxBatchSize) {
+            this.maxBatchSize = maxBatchSize;
+            return this;
+        }
+
+        public Scenario withExpectedElements(int expectedElements) {
+            this.expectedElements = expectedElements;
+            return this;
+        }
+
+        public Scenario withTestStreamName(String testStreamName) {
+            this.testStreamName = testStreamName;
+            return this;
+        }
     }
 
     private void prepareStream(String testStreamName)

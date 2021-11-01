@@ -52,6 +52,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
+import static org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal
 public class AwsV2Util {
@@ -101,7 +103,7 @@ public class AwsV2Util {
                         .orElse(Duration.ofMinutes(6));
 
         boolean trustAllCerts =
-                Optional.ofNullable(consumerConfig.getProperty("TRUST_ALL_CERTIFICATES"))
+                Optional.ofNullable(consumerConfig.getProperty(TRUST_ALL_CERTIFICATES))
                         .map(Boolean::parseBoolean)
                         .orElse(false);
 
