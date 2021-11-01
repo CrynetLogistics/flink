@@ -143,8 +143,9 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 (response, err) -> {
                     if (err != null) {
                         LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS, retrying whole batch",
-                                requestEntries.size());
+                                "KDS Sink failed to persist {} entries to KDS",
+                                requestEntries.size(),
+                                err);
                         totalFullyFailedFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
