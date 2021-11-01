@@ -73,7 +73,6 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     @Before
     public void setUp() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        System.setProperty(AWS_REGION, kinesalite.getRegion().toString());
 
         env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
