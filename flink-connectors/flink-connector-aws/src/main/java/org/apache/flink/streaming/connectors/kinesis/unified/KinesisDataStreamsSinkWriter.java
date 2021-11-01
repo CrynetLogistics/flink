@@ -200,7 +200,8 @@ public class KinesisDataStreamsSinkWriter<InputT>
     }
 
     private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
-        if (err instanceof CompletionException && err.getCause() instanceof ResourceNotFoundException) {
+        if (err instanceof CompletionException
+                && err.getCause() instanceof ResourceNotFoundException) {
             exceptionConsumer.accept(
                     new KinesisDataStreamsException(
                             "Encountered an exception that may not be retried ", err));

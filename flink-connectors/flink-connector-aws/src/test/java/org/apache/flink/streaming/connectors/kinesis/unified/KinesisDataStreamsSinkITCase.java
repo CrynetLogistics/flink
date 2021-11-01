@@ -53,7 +53,6 @@ import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConf
 import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
 public class KinesisDataStreamsSinkITCase extends TestLogger {
@@ -265,13 +264,20 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         }
     }
 
-    private void testJobFatalFailureTerminatesCorrectlyWithFailOnErrorFlagSetTo(boolean failOnError, String streamName){
-        Throwable thrown = assertThrows(JobExecutionException.class, () -> new Scenario()
-                .withKinesaliteStreamName(streamName)
-                .withSinkConnectionStreamName("non-existent-stream")
-                .withFailOnError(failOnError)
-                .runScenario());
-        assertEquals("Encountered an exception that may not be retried ", thrown.getCause().getCause().getMessage());
+    private void testJobFatalFailureTerminatesCorrectlyWithFailOnErrorFlagSetTo(
+            boolean failOnError, String streamName) {
+        Throwable thrown =
+                assertThrows(
+                        JobExecutionException.class,
+                        () ->
+                                new Scenario()
+                                        .withKinesaliteStreamName(streamName)
+                                        .withSinkConnectionStreamName("non-existent-stream")
+                                        .withFailOnError(failOnError)
+                                        .runScenario());
+        assertEquals(
+                "Encountered an exception that may not be retried ",
+                thrown.getCause().getCause().getMessage());
     }
 
     private void prepareStream(String testStreamName)
