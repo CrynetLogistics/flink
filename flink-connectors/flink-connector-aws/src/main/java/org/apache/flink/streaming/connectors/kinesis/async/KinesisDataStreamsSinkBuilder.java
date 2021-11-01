@@ -46,6 +46,7 @@ import java.util.Properties;
  *   <li>{@code maxBufferedRequests} will be 10000
  *   <li>{@code flushOnBufferSizeInBytes} will be 64MB i.e. {@code 64 * 1024 * 1024}
  *   <li>{@code maxTimeInBufferMS} will be 5000ms
+ *   <li>{@code failOnError} will be false
  * </ul>
  *
  * @param <InputT> type of elements that should be persisted in the destination
