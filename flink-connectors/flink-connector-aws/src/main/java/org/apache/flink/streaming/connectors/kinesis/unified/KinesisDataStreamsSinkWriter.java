@@ -36,6 +36,7 @@ import software.amazon.awssdk.services.kinesis.model.PutRecordsRequest;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResponse;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsResultEntry;
+import software.amazon.awssdk.services.kinesis.model.ResourceNotFoundException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +44,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 /**
@@ -147,11 +149,7 @@ public class KinesisDataStreamsSinkWriter<InputT>
                         totalFullyFailedFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
-                        if (failOnError) {
-                            exceptionConsumer.accept(
-                                    new KinesisDataStreamsException
-                                            .KinesisDataStreamsFailFastException());
-                        } else {
+                        if (isRetryable(err, exceptionConsumer)) {
                             requestResult.accept(requestEntries);
                         }
                         return;
@@ -199,5 +197,21 @@ public class KinesisDataStreamsSinkWriter<InputT>
                 metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
         totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
         numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
+    }
+
+    private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
+        if (err instanceof CompletionException && err.getCause() instanceof ResourceNotFoundException) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException(
+                            "Encountered an exception that may not be retried ", err));
+            return false;
+        }
+        if (failOnError) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+            return false;
+        }
+
+        return true;
     }
 }

@@ -18,6 +18,7 @@
 package org.apache.flink.streaming.connectors.kinesis.unified;
 
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.runtime.client.JobExecutionException;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.source.datagen.DataGeneratorSource;
@@ -51,6 +52,8 @@ import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConf
 import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
 import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** IT cases for using Kinesis Data Streams Sink based on Kinesalite. */
 public class KinesisDataStreamsSinkITCase extends TestLogger {
@@ -85,14 +88,8 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
     public void elementsMaybeWrittenSuccessfullyToLocalInstanceWhenBatchSizeIsReached()
             throws Exception {
         new Scenario()
-                .withNumberOfElementsToSend(50)
-                .withSizeOfMessageBytes(25)
-                .withBufferMaxTimeMS(1000)
-                .withBufferMaxSizeBytes(819200)
-                .withMaxInflightReqs(1)
-                .withMaxBatchSize(50)
-                .withExpectedElements(50)
-                .withTestStreamName("test-stream-name-1")
+                .withKinesaliteStreamName("test-stream-name-1")
+                .withSinkConnectionStreamName("test-stream-name-1")
                 .runScenario();
     }
 
@@ -101,13 +98,10 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             throws Exception {
         new Scenario()
                 .withNumberOfElementsToSend(10)
-                .withSizeOfMessageBytes(25)
-                .withBufferMaxTimeMS(1000)
-                .withBufferMaxSizeBytes(819200)
-                .withMaxInflightReqs(1)
                 .withMaxBatchSize(100)
                 .withExpectedElements(10)
-                .withTestStreamName("test-stream-name-2")
+                .withKinesaliteStreamName("test-stream-name-2")
+                .withSinkConnectionStreamName("test-stream-name-2")
                 .runScenario();
     }
 
@@ -116,12 +110,11 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         new Scenario()
                 .withNumberOfElementsToSend(5)
                 .withSizeOfMessageBytes(2500)
-                .withBufferMaxTimeMS(1000)
                 .withBufferMaxSizeBytes(8192)
-                .withMaxInflightReqs(1)
                 .withMaxBatchSize(10)
                 .withExpectedElements(5)
-                .withTestStreamName("test-stream-name-3")
+                .withKinesaliteStreamName("test-stream-name-3")
+                .withSinkConnectionStreamName("test-stream-name-3")
                 .runScenario();
     }
 
@@ -131,27 +124,40 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
         new Scenario()
                 .withNumberOfElementsToSend(150)
                 .withSizeOfMessageBytes(2500)
-                .withBufferMaxTimeMS(1000)
+                .withBufferMaxTimeMS(2000)
                 .withBufferMaxSizeBytes(8192)
                 .withMaxInflightReqs(10)
                 .withMaxBatchSize(20)
                 .withExpectedElements(150)
-                .withTestStreamName("test-stream-name-4")
+                .withKinesaliteStreamName("test-stream-name-4")
+                .withSinkConnectionStreamName("test-stream-name-4")
                 .runScenario();
     }
 
+    @Test
+    public void nonExistentStreamNameShouldResultInFailureInFailOnErrorIsOn() {
+        testJobFatalFailureTerminatesCorrectlyWithFailOnErrorFlagSetTo(true, "test-stream-name-5");
+    }
+
+    @Test
+    public void nonExistentStreamNameShouldResultInFailureInFailOnErrorIsOff() {
+        testJobFatalFailureTerminatesCorrectlyWithFailOnErrorFlagSetTo(false, "test-stream-name-6");
+    }
+
     private class Scenario {
-        private int numberOfElementsToSend;
-        private int sizeOfMessageBytes;
-        private int bufferMaxTimeMS;
-        private int bufferMaxSizeBytes;
-        private int maxInflightReqs;
-        private int maxBatchSize;
-        private int expectedElements;
-        private String testStreamName;
+        private int numberOfElementsToSend = 50;
+        private int sizeOfMessageBytes = 25;
+        private int bufferMaxTimeMS = 1000;
+        private int bufferMaxSizeBytes = 819200;
+        private int maxInflightReqs = 1;
+        private int maxBatchSize = 50;
+        private int expectedElements = 50;
+        private boolean failOnError = false;
+        private String kinesaliteStreamName;
+        private String sinkConnectionStreamName;
 
         public void runScenario() throws Exception {
-            prepareStream(testStreamName);
+            prepareStream(kinesaliteStreamName);
 
             DataStream<String> stream =
                     env.addSource(
@@ -175,8 +181,9 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                             .setFlushOnBufferSizeInBytes(bufferMaxSizeBytes)
                             .setMaxInFlightRequests(maxInflightReqs)
                             .setMaxBatchSize(maxBatchSize)
+                            .setFailOnError(failOnError)
                             .setMaxBufferedRequests(1000)
-                            .setStreamName(testStreamName)
+                            .setStreamName(sinkConnectionStreamName)
                             .setKinesisClientProperties(prop)
                             .build();
 
@@ -190,7 +197,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                                     GetShardIteratorRequest.builder()
                                             .shardId(DEFAULT_FIRST_SHARD_NAME)
                                             .shardIteratorType(ShardIteratorType.TRIM_HORIZON)
-                                            .streamName(testStreamName)
+                                            .streamName(kinesaliteStreamName)
                                             .build())
                             .get()
                             .shardIterator();
@@ -242,10 +249,29 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             return this;
         }
 
-        public Scenario withTestStreamName(String testStreamName) {
-            this.testStreamName = testStreamName;
+        public Scenario withFailOnError(boolean failOnError) {
+            this.failOnError = failOnError;
             return this;
         }
+
+        public Scenario withSinkConnectionStreamName(String sinkConnectionStreamName) {
+            this.sinkConnectionStreamName = sinkConnectionStreamName;
+            return this;
+        }
+
+        public Scenario withKinesaliteStreamName(String kinesaliteStreamName) {
+            this.kinesaliteStreamName = kinesaliteStreamName;
+            return this;
+        }
+    }
+
+    private void testJobFatalFailureTerminatesCorrectlyWithFailOnErrorFlagSetTo(boolean failOnError, String streamName){
+        Throwable thrown = assertThrows(JobExecutionException.class, () -> new Scenario()
+                .withKinesaliteStreamName(streamName)
+                .withSinkConnectionStreamName("non-existent-stream")
+                .withFailOnError(failOnError)
+                .runScenario());
+        assertEquals("Encountered an exception that may not be retried ", thrown.getCause().getCause().getMessage());
     }
 
     private void prepareStream(String testStreamName)
