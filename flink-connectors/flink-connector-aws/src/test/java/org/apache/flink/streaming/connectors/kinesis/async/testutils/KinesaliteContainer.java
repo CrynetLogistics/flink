@@ -17,6 +17,8 @@
 
 package org.apache.flink.streaming.connectors.kinesis.async.testutils;
 
+import com.amazonaws.services.kinesis.model.ListStreamsResult;
+
 import org.apache.flink.streaming.connectors.kinesis.async.util.AWSConfigConstants;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
@@ -59,6 +61,8 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
 
     public KinesaliteContainer(DockerImageName imageName) {
         super(imageName);
+
+        System.setProperty("com.amazonaws.sdk.disableCertChecking", "true");
 
         withEnv(ACCESS_KEY_ENV_VAR, ACCESS_KEY);
         withEnv(SECRET_KEY_ENV_VAR, ACCESS_KEY);
@@ -155,9 +159,8 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
                     () -> this.getRateLimiter().getWhenReady(() -> tryList()));
         }
 
-        private ListStreamsResponse tryList()
-                throws URISyntaxException, ExecutionException, InterruptedException {
-            return getV2Client().listStreams().get();
+        private ListStreamsResult tryList() {
+            return getContainerClient().listStreams();
         }
     }
 
