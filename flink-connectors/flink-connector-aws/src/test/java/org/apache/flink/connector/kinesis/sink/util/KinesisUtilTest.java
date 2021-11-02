@@ -47,7 +47,7 @@ import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AW
 import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.roleArn;
 import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.roleSessionName;
 import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.webIdentityTokenFile;
-import static org.apache.flink.connector.kinesis.sink.util.AwsV2Util.formatFlinkUserAgentPrefix;
+import static org.apache.flink.connector.kinesis.sink.util.KinesisUtil.formatFlinkUserAgentPrefix;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,14 +60,14 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Tests for {@link AwsV2Util}. */
-public class AwsV2UtilTest {
+/** Tests for {@link KinesisUtil}. */
+public class KinesisUtilTest {
 
     @Test
     public void testGetCredentialsProviderEnvironmentVariables() {
         Properties properties = properties(AWS_CREDENTIALS_PROVIDER, "ENV_VAR");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof EnvironmentVariableCredentialsProvider);
     }
@@ -76,7 +76,7 @@ public class AwsV2UtilTest {
     public void testGetCredentialsProviderSystemProperties() {
         Properties properties = properties(AWS_CREDENTIALS_PROVIDER, "SYS_PROP");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof SystemPropertyCredentialsProvider);
     }
@@ -85,7 +85,7 @@ public class AwsV2UtilTest {
     public void testGetCredentialsProviderWebIdentityTokenFileCredentialsProvider() {
         Properties properties = properties(AWS_CREDENTIALS_PROVIDER, "WEB_IDENTITY_TOKEN");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof WebIdentityTokenFileCredentialsProvider);
     }
@@ -99,7 +99,7 @@ public class AwsV2UtilTest {
         WebIdentityTokenFileCredentialsProvider.Builder builder =
                 mockWebIdentityTokenFileCredentialsProviderBuilder();
 
-        AwsV2Util.getWebIdentityTokenFileCredentialsProvider(
+        KinesisUtil.getWebIdentityTokenFileCredentialsProvider(
                 builder, properties, AWS_CREDENTIALS_PROVIDER);
 
         verify(builder).roleArn("roleArn");
@@ -116,7 +116,7 @@ public class AwsV2UtilTest {
         WebIdentityTokenFileCredentialsProvider.Builder builder =
                 mockWebIdentityTokenFileCredentialsProviderBuilder();
 
-        AwsV2Util.getWebIdentityTokenFileCredentialsProvider(
+        KinesisUtil.getWebIdentityTokenFileCredentialsProvider(
                 builder, properties, AWS_CREDENTIALS_PROVIDER);
 
         verify(builder).webIdentityTokenFile(Paths.get("webIdentityTokenFile"));
@@ -126,7 +126,7 @@ public class AwsV2UtilTest {
     public void testGetCredentialsProviderAuto() {
         Properties properties = properties(AWS_CREDENTIALS_PROVIDER, "AUTO");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof DefaultCredentialsProvider);
     }
@@ -136,7 +136,7 @@ public class AwsV2UtilTest {
         Properties properties = spy(properties(AWS_CREDENTIALS_PROVIDER, "ASSUME_ROLE"));
         properties.setProperty(AWS_REGION, "eu-west-2");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof StsAssumeRoleCredentialsProvider);
 
@@ -153,7 +153,7 @@ public class AwsV2UtilTest {
         properties.setProperty(AWSConfigConstants.secretKey(AWS_CREDENTIALS_PROVIDER), "sk");
 
         AwsCredentials credentials =
-                AwsV2Util.getCredentialsProvider(properties).resolveCredentials();
+                KinesisUtil.getCredentialsProvider(properties).resolveCredentials();
 
         assertEquals("ak", credentials.accessKeyId());
         assertEquals("sk", credentials.secretAccessKey());
@@ -167,7 +167,7 @@ public class AwsV2UtilTest {
                 AWSConfigConstants.profilePath(AWS_CREDENTIALS_PROVIDER),
                 "src/test/resources/profile");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof ProfileCredentialsProvider);
 
@@ -184,7 +184,7 @@ public class AwsV2UtilTest {
                 AWSConfigConstants.profilePath(AWS_CREDENTIALS_PROVIDER),
                 "src/test/resources/profile");
 
-        AwsCredentialsProvider credentialsProvider = AwsV2Util.getCredentialsProvider(properties);
+        AwsCredentialsProvider credentialsProvider = KinesisUtil.getCredentialsProvider(properties);
 
         assertTrue(credentialsProvider instanceof ProfileCredentialsProvider);
 
@@ -195,7 +195,7 @@ public class AwsV2UtilTest {
 
     @Test
     public void testGetRegion() {
-        Region region = AwsV2Util.getRegion(properties(AWS_REGION, "eu-west-2"));
+        Region region = KinesisUtil.getRegion(properties(AWS_REGION, "eu-west-2"));
 
         assertEquals(Region.EU_WEST_2, region);
     }
@@ -208,7 +208,7 @@ public class AwsV2UtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AwsV2Util.createKinesisAsyncClient(
+        KinesisUtil.createKinesisAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).overrideConfiguration(clientOverrideConfiguration);
@@ -229,7 +229,7 @@ public class AwsV2UtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AwsV2Util.createKinesisAsyncClient(
+        KinesisUtil.createKinesisAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).endpointOverride(URI.create("https://localhost"));
@@ -240,7 +240,7 @@ public class AwsV2UtilTest {
         ClientConfiguration clientConfiguration = new ClientConfigurationFactory().getConfig();
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).buildWithDefaults(any());
         verify(builder).connectionTimeout(Duration.ofSeconds(10));
@@ -258,7 +258,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).tcpKeepAlive(true);
     }
@@ -270,7 +270,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).connectionTimeout(Duration.ofSeconds(1));
     }
@@ -282,7 +282,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).writeTimeout(Duration.ofSeconds(3));
     }
@@ -294,7 +294,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).connectionMaxIdleTime(Duration.ofSeconds(2));
     }
@@ -306,7 +306,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).useIdleConnectionReaper(false);
     }
@@ -318,7 +318,7 @@ public class AwsV2UtilTest {
 
         NettyNioAsyncHttpClient.Builder builder = mockHttpClientBuilder();
 
-        AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
+        KinesisUtil.createHttpClient(clientConfiguration, builder, new Properties());
 
         verify(builder).connectionTimeToLive(Duration.ofSeconds(5));
     }
@@ -328,7 +328,7 @@ public class AwsV2UtilTest {
         ClientConfiguration clientConfiguration = new ClientConfigurationFactory().getConfig();
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AwsV2Util.createClientOverrideConfiguration(clientConfiguration, builder);
+        KinesisUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).build();
         verify(builder)
@@ -346,7 +346,7 @@ public class AwsV2UtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AwsV2Util.createClientOverrideConfiguration(clientConfiguration, builder);
+        KinesisUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, "suffix");
     }
@@ -358,7 +358,7 @@ public class AwsV2UtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AwsV2Util.createClientOverrideConfiguration(clientConfiguration, builder);
+        KinesisUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).apiCallAttemptTimeout(Duration.ofMillis(500));
     }
@@ -370,7 +370,7 @@ public class AwsV2UtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AwsV2Util.createClientOverrideConfiguration(clientConfiguration, builder);
+        KinesisUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
     }

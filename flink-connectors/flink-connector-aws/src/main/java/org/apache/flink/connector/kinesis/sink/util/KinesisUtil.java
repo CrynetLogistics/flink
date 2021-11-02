@@ -53,7 +53,7 @@ import java.util.Properties;
 
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal
-public class AwsV2Util {
+public class KinesisUtil {
 
     private static final int INITIAL_WINDOW_SIZE_BYTES = 512 * 1024; // 512 KB
     private static final Duration HEALTH_CHECK_PING_PERIOD = Duration.ofSeconds(60);
