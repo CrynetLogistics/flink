@@ -57,8 +57,7 @@ import java.util.function.Consumer;
  * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
-@Internal
-public class KinesisDataStreamsSinkWriter<InputT>
+class KinesisDataStreamsSinkWriter<InputT>
         extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
     private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC =
