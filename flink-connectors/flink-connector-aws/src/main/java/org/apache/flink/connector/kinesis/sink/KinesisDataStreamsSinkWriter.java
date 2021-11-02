@@ -58,15 +58,8 @@ import java.util.function.Consumer;
  */
 class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
-    private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC =
-            "totalFullySuccessfulFlushes";
-    private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC =
-            "totalPartiallySuccessfulFlushes";
-    private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
-    private Counter totalFullySuccessfulFlushesCounter;
-    private Counter totalPartiallySuccessfulFlushesCounter;
-    private Counter totalFullyFailedFlushesCounter;
-    private Counter numRecordsOutErrorsCounter;
+    /* A counter for the total number of records that have encountered an error during put */
+    private final Counter numRecordsOutErrorsCounter;
 
     /* Name of the stream in Kinesis Data Streams */
     private final String streamName;
@@ -104,7 +97,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         this.failOnError = failOnError;
         this.streamName = streamName;
         this.metrics = context.metricGroup();
-        initMetricsGroup();
+        this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
         this.client = buildClient(kinesisClientProperties);
     }
 
@@ -143,7 +136,6 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                                 "KDS Sink failed to persist {} entries to KDS",
                                 requestEntries.size(),
                                 err);
-                        totalFullyFailedFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(requestEntries.size());
 
                         if (isRetryable(err, exceptionConsumer)) {
@@ -156,7 +148,6 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                         LOG.warn(
                                 "KDS Sink failed to persist {} entries to KDS",
                                 response.failedRecordCount());
-                        totalPartiallySuccessfulFlushesCounter.inc();
                         numRecordsOutErrorsCounter.inc(response.failedRecordCount());
 
                         if (failOnError) {
@@ -177,7 +168,6 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
 
                         requestResult.accept(failedRequestEntries);
                     } else {
-                        totalFullySuccessfulFlushesCounter.inc();
                         requestResult.accept(Collections.emptyList());
                     }
                 });
@@ -186,14 +176,6 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
     @Override
     protected long getSizeInBytes(PutRecordsRequestEntry requestEntry) {
         return requestEntry.data().asByteArrayUnsafe().length;
-    }
-
-    private void initMetricsGroup() {
-        totalFullySuccessfulFlushesCounter = metrics.counter(TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC);
-        totalPartiallySuccessfulFlushesCounter =
-                metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
-        totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
-        numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
     }
 
     private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
