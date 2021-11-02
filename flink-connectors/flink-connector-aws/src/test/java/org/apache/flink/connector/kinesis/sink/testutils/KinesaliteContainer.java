@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.kinesis.sink.testutils;
 
-import org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -25,6 +25,8 @@ import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.kinesis.AmazonKinesis;
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder;
 import com.amazonaws.services.kinesis.model.ListStreamsResult;
+import org.rnorth.ducttape.ratelimits.RateLimiter;
+import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
@@ -65,15 +67,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
         withEnv(SECRET_KEY_ENV_VAR, ACCESS_KEY);
         withExposedPorts(4567);
         waitingFor(new ListStreamsWaitStrategy());
-        withCreateContainerCmdModifier(
-                cmd ->
-                        cmd.withEntrypoint(
-                                "/tini",
-                                "--",
-                                "/usr/src/app/node_modules/kinesalite/cli.js",
-                                "--path",
-                                "/var/lib/kinesalite",
-                                "--ssl"));
+        tryStartContainer();
     }
 
     /** Returns the endpoint url to access the container from outside the docker network. */
@@ -138,6 +132,18 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
                 .build();
     }
 
+    private void tryStartContainer() {
+        withCreateContainerCmdModifier(
+                cmd ->
+                        cmd.withEntrypoint(
+                                "/tini",
+                                "--",
+                                "/usr/src/app/node_modules/kinesalite/cli.js",
+                                "--path",
+                                "/var/lib/kinesalite",
+                                "--ssl"));
+    }
+
     private Properties getProperties(String endpointUrl) {
         Properties config = new Properties();
         config.setProperty(AWSConfigConstants.AWS_REGION, REGION.toString());
@@ -148,15 +154,22 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     }
 
     private class ListStreamsWaitStrategy extends AbstractWaitStrategy {
+        private final RateLimiter rateLimiter =
+                RateLimiterBuilder.newBuilder()
+                        .withRate(10, TimeUnit.SECONDS)
+                        .withConstantThroughput()
+                        .build();
+
         @Override
         protected void waitUntilReady() {
             Unreliables.retryUntilSuccess(
                     (int) this.startupTimeout.getSeconds(),
                     TimeUnit.SECONDS,
-                    () -> this.getRateLimiter().getWhenReady(() -> tryList()));
+                    () -> rateLimiter.getWhenReady(() -> tryList()));
         }
 
         private ListStreamsResult tryList() {
+            tryStartContainer();
             return getContainerClient().listStreams();
         }
     }

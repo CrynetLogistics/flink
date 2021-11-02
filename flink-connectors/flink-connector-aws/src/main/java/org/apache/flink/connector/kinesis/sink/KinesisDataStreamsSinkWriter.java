@@ -20,9 +20,9 @@ package org.apache.flink.connector.kinesis.sink;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.connector.kinesis.sink.util.AwsV2Util;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
+import org.apache.flink.streaming.connectors.kinesis.util.AwsV2Util;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
@@ -58,15 +58,8 @@ import java.util.function.Consumer;
  */
 class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
-    private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC =
-            "totalFullySuccessfulFlushes";
-    private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC =
-            "totalPartiallySuccessfulFlushes";
-    private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
-    private Counter totalFullySuccessfulFlushesCounter;
-    private Counter totalPartiallySuccessfulFlushesCounter;
-    private Counter totalFullyFailedFlushesCounter;
-    private Counter numRecordsOutErrorsCounter;
+    /* A counter for the total number of records that have encountered an error during put */
+    private final Counter numRecordsOutErrorsCounter;
 
     /* Name of the stream in Kinesis Data Streams */
     private final String streamName;
@@ -104,8 +97,8 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         this.failOnError = failOnError;
         this.streamName = streamName;
         this.metrics = context.metricGroup();
-        initMetricsGroup();
-        client = buildClient(kinesisClientProperties);
+        this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
+        this.client = buildClient(kinesisClientProperties);
     }
 
     private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
@@ -139,45 +132,12 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS",
-                                requestEntries.size(),
-                                err);
-                        totalFullyFailedFlushesCounter.inc();
-                        numRecordsOutErrorsCounter.inc(requestEntries.size());
-
-                        if (isRetryable(err, exceptionConsumer)) {
-                            requestResult.accept(requestEntries);
-                        }
-                        return;
-                    }
-
-                    if (response.failedRecordCount() > 0) {
-                        LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS",
-                                response.failedRecordCount());
-                        totalPartiallySuccessfulFlushesCounter.inc();
-                        numRecordsOutErrorsCounter.inc(response.failedRecordCount());
-
-                        if (failOnError) {
-                            exceptionConsumer.accept(
-                                    new KinesisDataStreamsException
-                                            .KinesisDataStreamsFailFastException());
-                            return;
-                        }
-                        List<PutRecordsRequestEntry> failedRequestEntries =
-                                new ArrayList<>(response.failedRecordCount());
-                        List<PutRecordsResultEntry> records = response.records();
-
-                        for (int i = 0; i < records.size(); i++) {
-                            if (records.get(i).errorCode() != null) {
-                                failedRequestEntries.add(requestEntries.get(i));
-                            }
-                        }
-
-                        requestResult.accept(failedRequestEntries);
+                        handleFullyFailedRequest(
+                                err, requestEntries, requestResult, exceptionConsumer);
+                    } else if (response.failedRecordCount() > 0) {
+                        handlePartiallyFailedRequest(
+                                response, requestEntries, requestResult, exceptionConsumer);
                     } else {
-                        totalFullySuccessfulFlushesCounter.inc();
                         requestResult.accept(Collections.emptyList());
                     }
                 });
@@ -188,25 +148,55 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         return requestEntry.data().asByteArrayUnsafe().length;
     }
 
-    private void initMetricsGroup() {
-        totalFullySuccessfulFlushesCounter = metrics.counter(TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC);
-        totalPartiallySuccessfulFlushesCounter =
-                metrics.counter(TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC);
-        totalFullyFailedFlushesCounter = metrics.counter(TOTAL_FULLY_FAILED_FLUSHES_METRIC);
-        numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
+    private void handleFullyFailedRequest(
+            Throwable err,
+            List<PutRecordsRequestEntry> requestEntries,
+            Consumer<Collection<PutRecordsRequestEntry>> requestResult,
+            Consumer<Exception> exceptionConsumer) {
+        LOG.warn("KDS Sink failed to persist {} entries to KDS", requestEntries.size(), err);
+        numRecordsOutErrorsCounter.inc(requestEntries.size());
+
+        if (isRetryable(err, exceptionConsumer)) {
+            requestResult.accept(requestEntries);
+        }
+    }
+
+    private void handlePartiallyFailedRequest(
+            PutRecordsResponse response,
+            List<PutRecordsRequestEntry> requestEntries,
+            Consumer<Collection<PutRecordsRequestEntry>> requestResult,
+            Consumer<Exception> exceptionConsumer) {
+        LOG.warn("KDS Sink failed to persist {} entries to KDS", response.failedRecordCount());
+        numRecordsOutErrorsCounter.inc(response.failedRecordCount());
+
+        if (failOnError) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+            return;
+        }
+        List<PutRecordsRequestEntry> failedRequestEntries =
+                new ArrayList<>(response.failedRecordCount());
+        List<PutRecordsResultEntry> records = response.records();
+
+        for (int i = 0; i < records.size(); i++) {
+            if (records.get(i).errorCode() != null) {
+                failedRequestEntries.add(requestEntries.get(i));
+            }
+        }
+
+        requestResult.accept(failedRequestEntries);
     }
 
     private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
         if (err instanceof CompletionException
                 && err.getCause() instanceof ResourceNotFoundException) {
             exceptionConsumer.accept(
-                    new KinesisDataStreamsException(
-                            "Encountered an exception that may not be retried ", err));
+                    new KinesisDataStreamsException("Encountered non-recoverable exception", err));
             return false;
         }
         if (failOnError) {
             exceptionConsumer.accept(
-                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException(err));
             return false;
         }
 

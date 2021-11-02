@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink.util;
+package org.apache.flink.streaming.connectors.kinesis.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
-import org.apache.flink.runtime.util.EnvironmentInformation;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.CredentialProvider;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -32,6 +33,7 @@ import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
+import software.amazon.awssdk.http.Protocol;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.Http2Configuration;
@@ -40,6 +42,8 @@ import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
+import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
+import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
@@ -51,6 +55,18 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.DEFAULT_EFO_HTTP_CLIENT_READ_TIMEOUT;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.DEFAULT_HTTP_PROTOCOL;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.DEFAULT_TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.EFORegistrationType.EAGER;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.EFORegistrationType.NONE;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.EFO_HTTP_CLIENT_MAX_CONCURRENCY;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.EFO_HTTP_CLIENT_READ_TIMEOUT_MILLIS;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.EFO_REGISTRATION_TYPE;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.RECORD_PUBLISHER_TYPE;
+import static org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants.RecordPublisherType.EFO;
+
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal
 public class AwsV2Util {
@@ -58,7 +74,6 @@ public class AwsV2Util {
     private static final int INITIAL_WINDOW_SIZE_BYTES = 512 * 1024; // 512 KB
     private static final Duration HEALTH_CHECK_PING_PERIOD = Duration.ofSeconds(60);
     private static final Duration CONNECTION_ACQUISITION_TIMEOUT = Duration.ofSeconds(60);
-    private static final String AWS_REGION_ENV_VAR = "AWS_REGION";
 
     /**
      * Creates an Amazon Kinesis Async Client from the provided properties. Configuration is copied
@@ -88,19 +103,40 @@ public class AwsV2Util {
             final NettyNioAsyncHttpClient.Builder httpClientBuilder,
             final Properties consumerConfig) {
 
+        int maxConcurrency =
+                Optional.ofNullable(consumerConfig.getProperty(EFO_HTTP_CLIENT_MAX_CONCURRENCY))
+                        .map(Integer::parseInt)
+                        .orElse(DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY);
+
+        Duration readTimeout =
+                Optional.ofNullable(consumerConfig.getProperty(EFO_HTTP_CLIENT_READ_TIMEOUT_MILLIS))
+                        .map(Integer::parseInt)
+                        .map(Duration::ofMillis)
+                        .orElse(DEFAULT_EFO_HTTP_CLIENT_READ_TIMEOUT);
+
         boolean trustAllCerts =
                 Optional.ofNullable(
                                 consumerConfig.getProperty(
                                         AWSConfigConstants.TRUST_ALL_CERTIFICATES))
                         .map(Boolean::parseBoolean)
-                        .orElse(false);
+                        .orElse(DEFAULT_TRUST_ALL_CERTIFICATES);
+
+        Protocol httpProtocolVersion =
+                Optional.ofNullable(
+                                consumerConfig.getProperty(
+                                        AWSConfigConstants.HTTP_PROTOCOL_VERSION))
+                        .map(Protocol::valueOf)
+                        .orElse(DEFAULT_HTTP_PROTOCOL);
 
         httpClientBuilder
+                .maxConcurrency(maxConcurrency)
                 .connectionTimeout(Duration.ofMillis(config.getConnectionTimeout()))
+                .readTimeout(readTimeout)
                 .tcpKeepAlive(config.useTcpKeepAlive())
                 .writeTimeout(Duration.ofMillis(config.getSocketTimeout()))
                 .connectionMaxIdleTime(Duration.ofMillis(config.getConnectionMaxIdleMillis()))
                 .useIdleConnectionReaper(config.useReaper())
+                .protocol(httpProtocolVersion)
                 .connectionAcquisitionTimeout(CONNECTION_ACQUISITION_TIMEOUT)
                 .http2Configuration(
                         Http2Configuration.builder()
@@ -118,13 +154,6 @@ public class AwsV2Util {
                         .build());
     }
 
-    public static String formatFlinkUserAgentPrefix() {
-        return String.format(
-                "Apache Flink %s (%s) Kinesis Connector",
-                EnvironmentInformation.getVersion(),
-                EnvironmentInformation.getRevisionInformation().commitId);
-    }
-
     @VisibleForTesting
     static ClientOverrideConfiguration createClientOverrideConfiguration(
             final ClientConfiguration config,
@@ -132,7 +161,8 @@ public class AwsV2Util {
 
         overrideConfigurationBuilder
                 .putAdvancedOption(
-                        SdkAdvancedClientOption.USER_AGENT_PREFIX, formatFlinkUserAgentPrefix())
+                        SdkAdvancedClientOption.USER_AGENT_PREFIX,
+                        AWSUtil.formatFlinkUserAgentPrefix())
                 .putAdvancedOption(
                         SdkAdvancedClientOption.USER_AGENT_SUFFIX, config.getUserAgentSuffix());
 
@@ -181,28 +211,10 @@ public class AwsV2Util {
         return getCredentialsProvider(configProps, AWSConfigConstants.AWS_CREDENTIALS_PROVIDER);
     }
 
-    private static AWSConfigConstants.CredentialProvider getCredentialProviderType(
-            final Properties configProps, final String configPrefix) {
-        if (!configProps.containsKey(configPrefix)) {
-            if (configProps.containsKey(AWSConfigConstants.accessKeyId(configPrefix))
-                    && configProps.containsKey(AWSConfigConstants.secretKey(configPrefix))) {
-                // if the credential provider type is not specified, but the Access Key ID and
-                // Secret Key are given, it will default to BASIC
-                return AWSConfigConstants.CredentialProvider.BASIC;
-            } else {
-                // if the credential provider type is not specified, it will default to AUTO
-                return AWSConfigConstants.CredentialProvider.AUTO;
-            }
-        } else {
-            return AWSConfigConstants.CredentialProvider.valueOf(
-                    configProps.getProperty(configPrefix));
-        }
-    }
-
     private static AwsCredentialsProvider getCredentialsProvider(
             final Properties configProps, final String configPrefix) {
-        AWSConfigConstants.CredentialProvider credentialProviderType =
-                getCredentialProviderType(configProps, configPrefix);
+        CredentialProvider credentialProviderType =
+                AWSUtil.getCredentialProviderType(configProps, configPrefix);
 
         switch (credentialProviderType) {
             case ENV_VAR:
@@ -316,13 +328,28 @@ public class AwsV2Util {
      * @return the region specified by the properties
      */
     public static Region getRegion(final Properties configProps) {
-        String regionFromEnvVar = System.getenv(AWS_REGION_ENV_VAR);
-        String regionFromVars =
-                regionFromEnvVar == null
-                        ? System.getProperty(AWSConfigConstants.AWS_REGION)
-                        : regionFromEnvVar;
-        return regionFromVars == null
-                ? Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION))
-                : Region.of(regionFromVars);
+        return Region.of(configProps.getProperty(AWSConfigConstants.AWS_REGION));
+    }
+
+    public static boolean isRecoverableException(Exception e) {
+        Throwable cause = e.getCause();
+        return cause instanceof LimitExceededException
+                || cause instanceof ProvisionedThroughputExceededException;
+    }
+
+    public static boolean isUsingEfoRecordPublisher(final Properties properties) {
+        return EFO.name().equals(properties.get(RECORD_PUBLISHER_TYPE));
+    }
+
+    public static boolean isEagerEfoRegistrationType(final Properties properties) {
+        return EAGER.name().equals(properties.get(EFO_REGISTRATION_TYPE));
+    }
+
+    public static boolean isLazyEfoRegistrationType(final Properties properties) {
+        return !isEagerEfoRegistrationType(properties) && !isNoneEfoRegistrationType(properties);
+    }
+
+    public static boolean isNoneEfoRegistrationType(final Properties properties) {
+        return NONE.name().equals(properties.get(EFO_REGISTRATION_TYPE));
     }
 }

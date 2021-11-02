@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink.util;
+package org.apache.flink.streaming.connectors.kinesis.config;
 
 import org.apache.flink.annotation.PublicEvolving;
 
@@ -126,8 +126,11 @@ public class AWSConfigConstants {
     /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
     public static final String AWS_ENDPOINT = "aws.endpoint";
 
-    /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
+    /** Whether to trust all SSL certificates. */
     public static final String TRUST_ALL_CERTIFICATES = "trust.all.certificates";
+
+    /** The HTTP protocol version to use. */
+    public static final String HTTP_PROTOCOL_VERSION = "http.protocol.version";
 
     public static String accessKeyId(String prefix) {
         return prefix + ".basic.accesskeyid";

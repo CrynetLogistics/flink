@@ -322,7 +322,8 @@ public class AWSUtil {
             // restart from shard position of step 1, and hence no records are lost.
             return StartingPosition.fromTimestamp(new Date());
         } else if (SENTINEL_AT_TIMESTAMP_SEQUENCE_NUM.get().equals(sequenceNumber)) {
-            Date timestamp = KinesisConfigUtil.parseStreamTimestampStartingPosition(configProps);
+            Date timestamp =
+                    KinesisConfigGeneralUtil.parseStreamTimestampStartingPosition(configProps);
             return StartingPosition.fromTimestamp(timestamp);
         } else {
             return StartingPosition.restartFromSequenceNumber(sequenceNumber);
