@@ -17,7 +17,6 @@
 
 package org.apache.flink.streaming.connectors.kinesis.unified;
 
-import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
@@ -57,18 +56,17 @@ import java.util.function.Consumer;
  * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
-class KinesisDataStreamsSinkWriter<InputT>
-        extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
+class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecordsRequestEntry> {
 
     private static final String TOTAL_FULLY_SUCCESSFUL_FLUSHES_METRIC =
             "totalFullySuccessfulFlushes";
     private static final String TOTAL_PARTIALLY_SUCCESSFUL_FLUSHES_METRIC =
             "totalPartiallySuccessfulFlushes";
     private static final String TOTAL_FULLY_FAILED_FLUSHES_METRIC = "totalFullyFailedFlushes";
-    private transient Counter totalFullySuccessfulFlushesCounter;
-    private transient Counter totalPartiallySuccessfulFlushesCounter;
-    private transient Counter totalFullyFailedFlushesCounter;
-    private transient Counter numRecordsOutErrorsCounter;
+    private Counter totalFullySuccessfulFlushesCounter;
+    private Counter totalPartiallySuccessfulFlushesCounter;
+    private Counter totalFullyFailedFlushesCounter;
+    private Counter numRecordsOutErrorsCounter;
 
     /* Name of the stream in Kinesis Data Streams */
     private final String streamName;
