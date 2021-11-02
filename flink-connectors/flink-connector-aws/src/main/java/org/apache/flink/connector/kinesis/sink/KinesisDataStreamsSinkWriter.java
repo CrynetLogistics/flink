@@ -105,7 +105,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         this.streamName = streamName;
         this.metrics = context.metricGroup();
         initMetricsGroup();
-        client = buildClient(kinesisClientProperties);
+        this.client = buildClient(kinesisClientProperties);
     }
 
     private KinesisAsyncClient buildClient(Properties kinesisClientProperties) {
