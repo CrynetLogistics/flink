@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.unified;
+package org.apache.flink.connector.kinesis.sink;
 
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.connector.kinesis.sink.util.AwsV2Util;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
-import org.apache.flink.streaming.connectors.kinesis.unified.util.AwsV2Util;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;

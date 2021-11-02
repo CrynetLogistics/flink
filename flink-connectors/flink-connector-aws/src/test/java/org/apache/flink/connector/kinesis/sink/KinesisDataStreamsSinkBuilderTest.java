@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.unified;
+package org.apache.flink.connector.kinesis.sink;
 
 import org.junit.jupiter.api.Test;
 

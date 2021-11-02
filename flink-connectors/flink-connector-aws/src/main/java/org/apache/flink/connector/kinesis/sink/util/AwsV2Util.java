@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.unified.util;
+package org.apache.flink.connector.kinesis.sink.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.runtime.util.EnvironmentInformation;
-import org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.CredentialProvider;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
@@ -51,8 +50,6 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
-
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 
 /** Utility methods specific to Amazon Web Service SDK v2.x. */
 @Internal
@@ -92,7 +89,9 @@ public class AwsV2Util {
             final Properties consumerConfig) {
 
         boolean trustAllCerts =
-                Optional.ofNullable(consumerConfig.getProperty(TRUST_ALL_CERTIFICATES))
+                Optional.ofNullable(
+                                consumerConfig.getProperty(
+                                        AWSConfigConstants.TRUST_ALL_CERTIFICATES))
                         .map(Boolean::parseBoolean)
                         .orElse(false);
 
@@ -182,26 +181,27 @@ public class AwsV2Util {
         return getCredentialsProvider(configProps, AWSConfigConstants.AWS_CREDENTIALS_PROVIDER);
     }
 
-    private static CredentialProvider getCredentialProviderType(
+    private static AWSConfigConstants.CredentialProvider getCredentialProviderType(
             final Properties configProps, final String configPrefix) {
         if (!configProps.containsKey(configPrefix)) {
             if (configProps.containsKey(AWSConfigConstants.accessKeyId(configPrefix))
                     && configProps.containsKey(AWSConfigConstants.secretKey(configPrefix))) {
                 // if the credential provider type is not specified, but the Access Key ID and
                 // Secret Key are given, it will default to BASIC
-                return CredentialProvider.BASIC;
+                return AWSConfigConstants.CredentialProvider.BASIC;
             } else {
                 // if the credential provider type is not specified, it will default to AUTO
-                return CredentialProvider.AUTO;
+                return AWSConfigConstants.CredentialProvider.AUTO;
             }
         } else {
-            return CredentialProvider.valueOf(configProps.getProperty(configPrefix));
+            return AWSConfigConstants.CredentialProvider.valueOf(
+                    configProps.getProperty(configPrefix));
         }
     }
 
     private static AwsCredentialsProvider getCredentialsProvider(
             final Properties configProps, final String configPrefix) {
-        CredentialProvider credentialProviderType =
+        AWSConfigConstants.CredentialProvider credentialProviderType =
                 getCredentialProviderType(configProps, configPrefix);
 
         switch (credentialProviderType) {

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.unified.util;
+package org.apache.flink.connector.kinesis.sink.util;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
@@ -41,13 +41,13 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Properties;
 
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_CREDENTIALS_PROVIDER;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_ENDPOINT;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.AWS_REGION;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.roleArn;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.roleSessionName;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AWSConfigConstants.webIdentityTokenFile;
-import static org.apache.flink.streaming.connectors.kinesis.unified.util.AwsV2Util.formatFlinkUserAgentPrefix;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_CREDENTIALS_PROVIDER;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_REGION;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.roleArn;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.roleSessionName;
+import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.webIdentityTokenFile;
+import static org.apache.flink.connector.kinesis.sink.util.AwsV2Util.formatFlinkUserAgentPrefix;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;

@@ -15,9 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.streaming.connectors.kinesis.unified;
-
-import org.apache.flink.annotation.Internal;
+package org.apache.flink.connector.kinesis.sink;
 
 /**
  * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
