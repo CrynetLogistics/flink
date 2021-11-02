@@ -19,6 +19,7 @@ package org.apache.flink.connector.base.sink.writer;
 
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.streaming.runtime.tasks.StreamTaskActionExecutor;
 import org.apache.flink.streaming.runtime.tasks.TestProcessingTimeService;
@@ -101,8 +102,8 @@ public class AsyncSinkWriterTest {
                         .getIOMetricGroup()
                         .getNumBytesOutCounter()
                         .getCount());
-        assertTrue(sinkInitContext.getCurrentSendTime() >= 0);
-        assertTrue(sinkInitContext.getCurrentSendTime() < 1000);
+        assertTrue(sinkInitContext.getCurrentSendTime().getValue() >= 0);
+        assertTrue(sinkInitContext.getCurrentSendTime().getValue() < 1000);
     }
 
     @Test
@@ -754,8 +755,8 @@ public class AsyncSinkWriterTest {
             return processingTimeService;
         }
 
-        long getCurrentSendTime() {
-            return metricGroup.getCurrentSendTimeGauge().getValue();
+        Gauge<Long> getCurrentSendTime() {
+            return metricGroup.getCurrentSendTimeGauge();
         }
     }
 
