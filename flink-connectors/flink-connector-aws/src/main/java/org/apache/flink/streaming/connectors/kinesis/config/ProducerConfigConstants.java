@@ -17,10 +17,8 @@
 
 package org.apache.flink.streaming.connectors.kinesis.config;
 
-import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
-
 /**
- * Optional producer specific configuration keys for {@link FlinkKinesisProducer}.
+ * Optional producer specific configuration keys for {@code FlinkKinesisProducer}.
  *
  * @deprecated This class is deprecated in favor of the official AWS Kinesis producer configuration
  *     keys. See <a

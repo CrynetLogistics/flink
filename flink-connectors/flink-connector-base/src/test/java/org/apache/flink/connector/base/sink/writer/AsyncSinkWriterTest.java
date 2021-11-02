@@ -19,6 +19,7 @@ package org.apache.flink.connector.base.sink.writer;
 
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.metrics.Gauge;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.streaming.runtime.tasks.StreamTaskActionExecutor;
 import org.apache.flink.streaming.runtime.tasks.TestProcessingTimeService;
@@ -60,21 +61,49 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class AsyncSinkWriterTest {
 
     private final List<Integer> res = new ArrayList<>();
-    private final SinkInitContext sinkInitContext = new SinkInitContext();
+    private SinkInitContext sinkInitContext;
 
     @Before
     public void before() {
         res.clear();
+        sinkInitContext = new SinkInitContext();
     }
 
-    @Test
-    public void testNumberOfRecordsIsAMultipleOfBatchSizeResultsInThatNumberOfRecordsBeingWritten()
+    private void performNormalWriteOfEightyRecordsToMock()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 10, 1, 100, false);
         for (int i = 0; i < 80; i++) {
             sink.write(String.valueOf(i));
         }
+    }
+
+    @Test
+    public void testNumberOfRecordsIsAMultipleOfBatchSizeResultsInThatNumberOfRecordsBeingWritten()
+            throws IOException, InterruptedException {
+        performNormalWriteOfEightyRecordsToMock();
         assertEquals(80, res.size());
+    }
+
+    @Test
+    public void testMetricsGroupHasLoggedNumberOfRecordsAndNumberOfBytesCorrectly()
+            throws IOException, InterruptedException {
+        performNormalWriteOfEightyRecordsToMock();
+        assertEquals(
+                80,
+                sinkInitContext
+                        .metricGroup()
+                        .getIOMetricGroup()
+                        .getNumRecordsOutCounter()
+                        .getCount());
+        assertEquals(
+                320,
+                sinkInitContext
+                        .metricGroup()
+                        .getIOMetricGroup()
+                        .getNumBytesOutCounter()
+                        .getCount());
+        assertTrue(sinkInitContext.getCurrentSendTime().getValue() >= 0);
+        assertTrue(sinkInitContext.getCurrentSendTime().getValue() < 1000);
     }
 
     @Test
@@ -123,8 +152,7 @@ public class AsyncSinkWriterTest {
         assertEquals(3, res.size());
     }
 
-    @Test
-    public void testThatSnapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualFlush()
+    public void writeFiveRecordsWithOneFailingThenCallPrepareCommitWithFlushing()
             throws IOException, InterruptedException {
         AsyncSinkWriterImpl sink = new AsyncSinkWriterImpl(sinkInitContext, 3, 1, 100, false);
         sink.write("25");
@@ -135,7 +163,33 @@ public class AsyncSinkWriterTest {
         assertEquals(Arrays.asList(95, 955), new ArrayList<>(sink.snapshotState().get(0)));
         sink.prepareCommit(true);
         assertEquals(Arrays.asList(), new ArrayList<>(sink.snapshotState().get(0)));
+    }
+
+    @Test
+    public void testThatSnapshotsAreTakenOfBufferCorrectlyBeforeAndAfterManualFlush()
+            throws IOException, InterruptedException {
+        writeFiveRecordsWithOneFailingThenCallPrepareCommitWithFlushing();
         assertEquals(5, res.size());
+    }
+
+    @Test
+    public void metricsAreLoggedEachTimeSubmitRequestEntriesIsCalled()
+            throws IOException, InterruptedException {
+        writeFiveRecordsWithOneFailingThenCallPrepareCommitWithFlushing();
+        assertEquals(
+                5,
+                sinkInitContext
+                        .metricGroup()
+                        .getIOMetricGroup()
+                        .getNumRecordsOutCounter()
+                        .getCount());
+        assertEquals(
+                20,
+                sinkInitContext
+                        .metricGroup()
+                        .getIOMetricGroup()
+                        .getNumBytesOutCounter()
+                        .getCount());
     }
 
     @Test
@@ -623,6 +677,7 @@ public class AsyncSinkWriterTest {
     private static class SinkInitContext implements Sink.InitContext {
 
         private static final TestProcessingTimeService processingTimeService;
+        private final SinkWriterMetricGroupMock metricGroup = new SinkWriterMetricGroupMock();
 
         static {
             processingTimeService = new TestProcessingTimeService();
@@ -688,7 +743,7 @@ public class AsyncSinkWriterTest {
 
         @Override
         public SinkWriterMetricGroup metricGroup() {
-            return null;
+            return metricGroup;
         }
 
         @Override
@@ -698,6 +753,10 @@ public class AsyncSinkWriterTest {
 
         public TestProcessingTimeService getTestProcessingTimeService() {
             return processingTimeService;
+        }
+
+        Gauge<Long> getCurrentSendTime() {
+            return metricGroup.getCurrentSendTimeGauge();
         }
     }
 

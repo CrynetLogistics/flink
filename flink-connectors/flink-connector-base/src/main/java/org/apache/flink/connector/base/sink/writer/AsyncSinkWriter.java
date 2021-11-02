@@ -21,6 +21,8 @@ import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.api.connector.sink.SinkWriter;
+import org.apache.flink.metrics.Counter;
+import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.Preconditions;
 
 import java.io.IOException;
@@ -53,6 +55,24 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
+
+    /* The amount of time taken to send the previous batch of records to KDS. */
+    private long lastSendDuration = 0;
+
+    /* The timestamp of the previous batch of records was sent from this sink. */
+    private long lastSendTimestamp = 0;
+
+    /* The timestamp of the response to the previous request from this sink. */
+    private long ackTime = Long.MAX_VALUE;
+
+    /* The sink writer metric group. */
+    private final SinkWriterMetricGroup metrics;
+
+    /* Counter for number of bytes this sink has attempted to send to the destination. */
+    private final Counter numBytesOutCounter;
+
+    /* Counter for number of records this sink has attempted to send to the destination. */
+    private final Counter numRecordsOutCounter;
 
     private final int maxBatchSize;
     private final int maxInFlightRequests;
@@ -209,6 +229,15 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         this.inFlightRequestsCount = 0;
         this.bufferedRequestEntriesTotalSizeInBytes = 0;
+
+        this.metrics = context.metricGroup();
+        this.metrics.setCurrentSendTimeGauge(
+                () -> {
+                    long time = this.ackTime - this.lastSendTimestamp;
+                    return time < 0 ? this.lastSendDuration : time;
+                });
+        this.numBytesOutCounter = this.metrics.getIOMetricGroup().getNumBytesOutCounter();
+        this.numRecordsOutCounter = this.metrics.getIOMetricGroup().getNumRecordsOutCounter();
     }
 
     private void registerCallback() {
@@ -256,10 +285,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         List<RequestEntryT> batch = new ArrayList<>(maxBatchSize);
 
         int batchSize = Math.min(maxBatchSize, bufferedRequestEntries.size());
+        int batchSizeBytes = 0;
         for (int i = 0; i < batchSize; i++) {
             RequestEntryWrapper<RequestEntryT> elem = bufferedRequestEntries.remove();
             batch.add(elem.getRequestEntry());
             bufferedRequestEntriesTotalSizeInBytes -= elem.getSize();
+            batchSizeBytes += elem.getSize();
         }
 
         if (batch.size() == 0) {
@@ -283,6 +314,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
         inFlightRequestsCount++;
         submitRequestEntries(batch, requestResult, fatalExceptionCons);
+        lastSendTimestamp = System.currentTimeMillis();
+        numRecordsOutCounter.inc(batchSize);
+        numBytesOutCounter.inc(batchSizeBytes);
     }
 
     /**
@@ -292,6 +326,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * @param failedRequestEntries requestEntries that need to be retried
      */
     private void completeRequest(Collection<RequestEntryT> failedRequestEntries) {
+        ackTime = System.currentTimeMillis();
+        lastSendDuration = ackTime - lastSendTimestamp;
         inFlightRequestsCount--;
         failedRequestEntries.forEach(failedEntry -> addEntryToBuffer(failedEntry, true));
     }
