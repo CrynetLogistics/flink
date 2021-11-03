@@ -132,41 +132,11 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         future.whenComplete(
                 (response, err) -> {
                     if (err != null) {
-                        LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS",
-                                requestEntries.size(),
-                                err);
-                        numRecordsOutErrorsCounter.inc(requestEntries.size());
-
-                        if (isRetryable(err, exceptionConsumer)) {
-                            requestResult.accept(requestEntries);
-                        }
-                        return;
-                    }
-
-                    if (response.failedRecordCount() > 0) {
-                        LOG.warn(
-                                "KDS Sink failed to persist {} entries to KDS",
-                                response.failedRecordCount());
-                        numRecordsOutErrorsCounter.inc(response.failedRecordCount());
-
-                        if (failOnError) {
-                            exceptionConsumer.accept(
-                                    new KinesisDataStreamsException
-                                            .KinesisDataStreamsFailFastException());
-                            return;
-                        }
-                        List<PutRecordsRequestEntry> failedRequestEntries =
-                                new ArrayList<>(response.failedRecordCount());
-                        List<PutRecordsResultEntry> records = response.records();
-
-                        for (int i = 0; i < records.size(); i++) {
-                            if (records.get(i).errorCode() != null) {
-                                failedRequestEntries.add(requestEntries.get(i));
-                            }
-                        }
-
-                        requestResult.accept(failedRequestEntries);
+                        handleFullyFailedRequest(
+                                err, requestEntries, requestResult, exceptionConsumer);
+                    } else if (response.failedRecordCount() > 0) {
+                        handlePartiallyFailedRequest(
+                                response, requestEntries, requestResult, exceptionConsumer);
                     } else {
                         requestResult.accept(Collections.emptyList());
                     }
@@ -176,6 +146,45 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
     @Override
     protected long getSizeInBytes(PutRecordsRequestEntry requestEntry) {
         return requestEntry.data().asByteArrayUnsafe().length;
+    }
+
+    private void handleFullyFailedRequest(
+            Throwable err,
+            List<PutRecordsRequestEntry> requestEntries,
+            Consumer<Collection<PutRecordsRequestEntry>> requestResult,
+            Consumer<Exception> exceptionConsumer) {
+        LOG.warn("KDS Sink failed to persist {} entries to KDS", requestEntries.size(), err);
+        numRecordsOutErrorsCounter.inc(requestEntries.size());
+
+        if (isRetryable(err, exceptionConsumer)) {
+            requestResult.accept(requestEntries);
+        }
+    }
+
+    private void handlePartiallyFailedRequest(
+            PutRecordsResponse response,
+            List<PutRecordsRequestEntry> requestEntries,
+            Consumer<Collection<PutRecordsRequestEntry>> requestResult,
+            Consumer<Exception> exceptionConsumer) {
+        LOG.warn("KDS Sink failed to persist {} entries to KDS", response.failedRecordCount());
+        numRecordsOutErrorsCounter.inc(response.failedRecordCount());
+
+        if (failOnError) {
+            exceptionConsumer.accept(
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+            return;
+        }
+        List<PutRecordsRequestEntry> failedRequestEntries =
+                new ArrayList<>(response.failedRecordCount());
+        List<PutRecordsResultEntry> records = response.records();
+
+        for (int i = 0; i < records.size(); i++) {
+            if (records.get(i).errorCode() != null) {
+                failedRequestEntries.add(requestEntries.get(i));
+            }
+        }
+
+        requestResult.accept(failedRequestEntries);
     }
 
     private boolean isRetryable(Throwable err, Consumer<Exception> exceptionConsumer) {
