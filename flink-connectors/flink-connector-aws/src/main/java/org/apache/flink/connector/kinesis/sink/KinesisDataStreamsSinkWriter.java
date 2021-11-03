@@ -196,7 +196,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         }
         if (failOnError) {
             exceptionConsumer.accept(
-                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException());
+                    new KinesisDataStreamsException.KinesisDataStreamsFailFastException(err));
             return false;
         }
 
