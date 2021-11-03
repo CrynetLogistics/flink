@@ -182,8 +182,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         if (err instanceof CompletionException
                 && err.getCause() instanceof ResourceNotFoundException) {
             exceptionConsumer.accept(
-                    new KinesisDataStreamsException(
-                            "Encountered non-recoverable exception", err));
+                    new KinesisDataStreamsException("Encountered non-recoverable exception", err));
             return false;
         }
         if (failOnError) {
