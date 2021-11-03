@@ -33,7 +33,9 @@ under the License.
 	<artifactId>flink-connector-aws</artifactId>
 	<name>Flink : Connectors : AWS</name>
 	<properties>
+		<aws.sdk.version>1.12.7</aws.sdk.version>
 		<aws.sdkv2.version>2.17.52</aws.sdkv2.version>
+		<aws.kinesis-kpl.version>0.14.1</aws.kinesis-kpl.version>
 	</properties>
 
 	<packaging>jar</packaging>
@@ -45,12 +47,43 @@ under the License.
 			<version>${project.version}</version>
 			<scope>provided</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-table-api-java-bridge</artifactId>
+			<artifactId>flink-connector-base</artifactId>
 			<version>${project.version}</version>
 			<scope>provided</scope>
-			<optional>true</optional>
+		</dependency>
+
+		<!-- Amazon AWS SDK v1.x dependencies -->
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-core</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-kinesis</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-sts</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>amazon-kinesis-producer</artifactId>
+			<version>${aws.kinesis-kpl.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.amazonaws</groupId>
+					<artifactId>aws-java-sdk-core</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Amazon AWS SDK v2.x dependencies -->
@@ -58,30 +91,6 @@ under the License.
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>kinesis</artifactId>
 			<version>${aws.sdkv2.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-core</artifactId>
-			<version>1.12.7</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-kinesis</artifactId>
-			<version>1.12.7</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>aws-java-sdk-sts</artifactId>
-			<version>1.12.7</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>amazon-kinesis-producer</artifactId>
-			<version>0.14.1</version>
 		</dependency>
 
 		<dependency>
@@ -99,27 +108,13 @@ under the License.
 		<!-- Test dependencies -->
 		<dependency>
 			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-core</artifactId>
+			<artifactId>flink-test-utils</artifactId>
 			<version>${project.version}</version>
 			<scope>test</scope>
-			<type>test-jar</type>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-runtime</artifactId>
-			<version>${project.version}</version>
-			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.flink</groupId>
-			<artifactId>flink-test-utils</artifactId>
-			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

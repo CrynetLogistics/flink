@@ -20,9 +20,9 @@ package org.apache.flink.connector.kinesis.sink;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.streaming.connectors.kinesis.util.AwsV2Util;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
+import org.apache.flink.streaming.connectors.kinesis.util.AwsV2Util;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.ClientConfigurationFactory;
@@ -183,7 +183,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                 && err.getCause() instanceof ResourceNotFoundException) {
             exceptionConsumer.accept(
                     new KinesisDataStreamsException(
-                            "Encountered an exception that may not be retried ", err));
+                            "Encountered non-recoverable exception", err));
             return false;
         }
         if (failOnError) {

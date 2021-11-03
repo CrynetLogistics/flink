@@ -263,9 +263,10 @@ public class AwsV2UtilTest {
 
         AwsV2Util.createHttpClient(clientConfiguration, builder, new Properties());
 
-        AttributeMap defaultCustomAttribute = AttributeMap.builder()
-                .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, false)
-                .build();
+        AttributeMap defaultCustomAttribute =
+                AttributeMap.builder()
+                        .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, false)
+                        .build();
 
         verify(builder).buildWithDefaults(defaultCustomAttribute);
         verify(builder).maxConcurrency(DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY);
@@ -385,9 +386,10 @@ public class AwsV2UtilTest {
         AwsV2Util.createHttpClient(
                 new ClientConfigurationFactory().getConfig(), builder, clientConfiguration);
 
-        AttributeMap defaultCustomAttribute = AttributeMap.builder()
-                .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-                .build();
+        AttributeMap defaultCustomAttribute =
+                AttributeMap.builder()
+                        .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+                        .build();
 
         verify(builder).buildWithDefaults(defaultCustomAttribute);
     }

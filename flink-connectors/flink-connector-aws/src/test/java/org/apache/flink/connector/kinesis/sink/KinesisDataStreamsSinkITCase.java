@@ -278,7 +278,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
                                         .withFailOnError(failOnError)
                                         .runScenario());
         assertEquals(
-                "Encountered an exception that may not be retried ",
+                "Encountered non-recoverable exception",
                 thrown.getCause().getCause().getMessage());
     }
 

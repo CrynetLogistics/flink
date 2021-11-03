@@ -121,9 +121,12 @@ public class AwsV2Util {
                         .map(Boolean::parseBoolean)
                         .orElse(DEFAULT_TRUST_ALL_CERTIFICATES);
 
-        Protocol httpProtocolVersion = Optional.ofNullable(consumerConfig.getProperty(AWSConfigConstants.HTTP_PROTOCOL_VERSION))
-                .map(Protocol::valueOf)
-                .orElse(DEFAULT_HTTP_PROTOCOL);
+        Protocol httpProtocolVersion =
+                Optional.ofNullable(
+                                consumerConfig.getProperty(
+                                        AWSConfigConstants.HTTP_PROTOCOL_VERSION))
+                        .map(Protocol::valueOf)
+                        .orElse(DEFAULT_HTTP_PROTOCOL);
 
         httpClientBuilder
                 .maxConcurrency(maxConcurrency)
