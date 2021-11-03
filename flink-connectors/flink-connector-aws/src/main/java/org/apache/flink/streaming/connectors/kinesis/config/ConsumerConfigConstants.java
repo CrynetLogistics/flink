@@ -20,6 +20,8 @@ package org.apache.flink.streaming.connectors.kinesis.config;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.streaming.connectors.kinesis.model.SentinelSequenceNumber;
 
+import software.amazon.awssdk.http.Protocol;
+
 import java.time.Duration;
 
 /**
@@ -405,6 +407,10 @@ public class ConsumerConfigConstants extends AWSConfigConstants {
     public static final int DEFAULT_EFO_HTTP_CLIENT_MAX_CONCURRENCY = 10_000;
 
     public static final Duration DEFAULT_EFO_HTTP_CLIENT_READ_TIMEOUT = Duration.ofMinutes(6);
+
+    public static final boolean DEFAULT_TRUST_ALL_CERTIFICATES = false;
+
+    public static final Protocol DEFAULT_HTTP_PROTOCOL = Protocol.HTTP2;
 
     /**
      * To avoid shard iterator expires in {@code ShardConsumer}s, the value for the configured

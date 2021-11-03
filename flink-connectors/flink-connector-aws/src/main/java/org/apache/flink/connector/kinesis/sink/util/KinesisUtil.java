@@ -44,6 +44,7 @@ import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.utils.AttributeMap;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 import java.net.URI;
 import java.nio.file.Paths;

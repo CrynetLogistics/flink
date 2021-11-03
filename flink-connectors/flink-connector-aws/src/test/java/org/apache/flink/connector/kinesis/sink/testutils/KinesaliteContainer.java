@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.kinesis.sink.testutils;
 
-import org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants;
+import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;

@@ -46,11 +46,12 @@ import software.amazon.awssdk.services.kinesis.model.StreamStatus;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_ACCESS_KEY_ID;
-import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_ENDPOINT;
-import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_REGION;
-import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
-import static org.apache.flink.connector.kinesis.sink.util.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_ACCESS_KEY_ID;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_REGION;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_SECRET_ACCESS_KEY;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.HTTP_PROTOCOL_VERSION;
+import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -172,6 +173,7 @@ public class KinesisDataStreamsSinkITCase extends TestLogger {
             prop.setProperty(AWS_SECRET_ACCESS_KEY, kinesalite.getSecretKey());
             prop.setProperty(AWS_REGION, kinesalite.getRegion().toString());
             prop.setProperty(TRUST_ALL_CERTIFICATES, "true");
+            prop.setProperty(HTTP_PROTOCOL_VERSION, "HTTP1_1");
 
             KinesisDataStreamsSink<String> kdsSink =
                     KinesisDataStreamsSink.<String>builder()

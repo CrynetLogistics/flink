@@ -20,7 +20,7 @@ package org.apache.flink.connector.kinesis.sink;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.connector.kinesis.sink.util.KinesisUtil;
+import org.apache.flink.streaming.connectors.kinesis.util.AwsV2Util;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 
@@ -107,12 +107,12 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         clientConfiguration.setUseTcpKeepAlive(true);
 
         final SdkAsyncHttpClient httpClient =
-                KinesisUtil.createHttpClient(
+                AwsV2Util.createHttpClient(
                         clientConfiguration,
                         NettyNioAsyncHttpClient.builder(),
                         kinesisClientProperties);
 
-        return KinesisUtil.createKinesisAsyncClient(
+        return AwsV2Util.createKinesisAsyncClient(
                 kinesisClientProperties, clientConfiguration, httpClient);
     }
 
