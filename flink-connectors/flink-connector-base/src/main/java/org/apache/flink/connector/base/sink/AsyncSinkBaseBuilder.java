@@ -111,5 +111,5 @@ public abstract class AsyncSinkBaseBuilder<
         return (ConcreteBuilderT) this;
     }
 
-    public abstract AsyncSinkBase<InputT, RequestEntryT> build();
+    protected abstract AsyncSinkBase<InputT, RequestEntryT> build();
 }
