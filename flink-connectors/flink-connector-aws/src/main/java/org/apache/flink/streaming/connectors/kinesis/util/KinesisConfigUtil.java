@@ -18,8 +18,6 @@
 package org.apache.flink.streaming.connectors.kinesis.util;
 
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisConsumer;
-import org.apache.flink.streaming.connectors.kinesis.FlinkKinesisProducer;
 import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.CredentialProvider;
 import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConstants;
@@ -84,12 +82,12 @@ public class KinesisConfigUtil {
     /** Default values for ThreadPoolSize. */
     protected static final int DEFAULT_THREAD_POOL_SIZE = 10;
 
-    /** Validate configuration properties for {@link FlinkKinesisConsumer}. */
+    /** Validate configuration properties for {@code FlinkKinesisConsumer}. */
     public static void validateConsumerConfiguration(Properties config) {
         validateConsumerConfiguration(config, Collections.emptyList());
     }
 
-    /** Validate configuration properties for {@link FlinkKinesisConsumer}. */
+    /** Validate configuration properties for {@code FlinkKinesisConsumer}. */
     public static void validateConsumerConfiguration(Properties config, List<String> streams) {
         checkNotNull(config, "config can not be null");
 
@@ -410,7 +408,7 @@ public class KinesisConfigUtil {
     }
 
     /**
-     * Replace deprecated configuration properties for {@link FlinkKinesisProducer}. This should be
+     * Replace deprecated configuration properties for {@code FlinkKinesisProducer}. This should be
      * remove along with deprecated keys
      */
     @SuppressWarnings("deprecation")
@@ -470,7 +468,7 @@ public class KinesisConfigUtil {
     }
 
     /**
-     * Validate configuration properties for {@link FlinkKinesisProducer}, and return a constructed
+     * Validate configuration properties for {@code FlinkKinesisProducer}, and return a constructed
      * KinesisProducerConfiguration.
      */
     public static KinesisProducerConfiguration getValidatedProducerConfiguration(

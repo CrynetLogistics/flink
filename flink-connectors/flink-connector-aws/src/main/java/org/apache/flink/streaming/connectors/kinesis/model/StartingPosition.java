@@ -25,11 +25,6 @@ import javax.annotation.Nullable;
 
 import java.util.Date;
 
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_SEQUENCE_NUMBER;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.AT_TIMESTAMP;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.LATEST;
-import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZON;
 import static org.apache.flink.streaming.connectors.kinesis.model.SentinelSequenceNumber.isSentinelSequenceNumber;
 
 /** The position in which to start consuming from a stream. */
@@ -56,7 +51,7 @@ public class StartingPosition {
     }
 
     public static StartingPosition fromTimestamp(final Date date) {
-        return new StartingPosition(AT_TIMESTAMP, date);
+        return new StartingPosition(ShardIteratorType.AT_TIMESTAMP, date);
     }
 
     /**
@@ -100,17 +95,17 @@ public class StartingPosition {
     private static ShardIteratorType getShardIteratorType(
             final SequenceNumber sequenceNumber, final boolean restart) {
         return restart && sequenceNumber.isAggregated()
-                ? AT_SEQUENCE_NUMBER
-                : AFTER_SEQUENCE_NUMBER;
+                ? ShardIteratorType.AT_SEQUENCE_NUMBER
+                : ShardIteratorType.AFTER_SEQUENCE_NUMBER;
     }
 
     private static ShardIteratorType fromSentinelSequenceNumber(
             final SequenceNumber sequenceNumber) {
         if (sequenceNumber.equals(SentinelSequenceNumber.SENTINEL_LATEST_SEQUENCE_NUM.get())) {
-            return LATEST;
+            return ShardIteratorType.LATEST;
         } else if (sequenceNumber.equals(
                 SentinelSequenceNumber.SENTINEL_EARLIEST_SEQUENCE_NUM.get())) {
-            return TRIM_HORIZON;
+            return ShardIteratorType.TRIM_HORIZON;
         } else {
             throw new IllegalArgumentException("Unexpected sentinel type: " + sequenceNumber);
         }
