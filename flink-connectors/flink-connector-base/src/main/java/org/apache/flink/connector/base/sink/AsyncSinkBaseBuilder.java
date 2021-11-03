@@ -110,4 +110,6 @@ public abstract class AsyncSinkBaseBuilder<
         this.maxTimeInBufferMS = maxTimeInBufferMS;
         return (ConcreteBuilderT) this;
     }
+
+    public abstract AsyncSinkBase<InputT, RequestEntryT> build();
 }

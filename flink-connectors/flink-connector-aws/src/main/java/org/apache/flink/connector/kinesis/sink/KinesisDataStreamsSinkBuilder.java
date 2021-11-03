@@ -93,6 +93,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
         return this;
     }
 
+    @Override
     public KinesisDataStreamsSink<InputT> build() {
         return new KinesisDataStreamsSink<>(
                 elementConverter,
