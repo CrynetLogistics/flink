@@ -27,7 +27,6 @@ import org.apache.flink.streaming.connectors.kinesis.config.ConsumerConfigConsta
 import org.apache.flink.streaming.connectors.kinesis.config.ProducerConfigConstants;
 
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.kinesis.producer.KinesisProducerConfiguration;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -49,7 +48,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** Utilities for Flink Kinesis connector configuration. */
 @Internal
-public class KinesisConfigUtil {
+public class KinesisConfigGeneralUtil {
 
     /** Maximum number of items to pack into an PutRecords request. */
     protected static final String COLLECTION_MAX_COUNT = "CollectionMaxCount";
@@ -74,10 +73,6 @@ public class KinesisConfigUtil {
 
     /** Default values for RateLimit. */
     protected static final long DEFAULT_RATE_LIMIT = 100L;
-
-    /** Default value for ThreadingModel. */
-    protected static final KinesisProducerConfiguration.ThreadingModel DEFAULT_THREADING_MODEL =
-            KinesisProducerConfiguration.ThreadingModel.POOLED;
 
     /** Default values for ThreadPoolSize. */
     protected static final int DEFAULT_THREAD_POOL_SIZE = 10;
@@ -465,48 +460,6 @@ public class KinesisConfigUtil {
             }
         }
         return configProps;
-    }
-
-    /**
-     * Validate configuration properties for {@code FlinkKinesisProducer}, and return a constructed
-     * KinesisProducerConfiguration.
-     */
-    public static KinesisProducerConfiguration getValidatedProducerConfiguration(
-            Properties config) {
-        checkNotNull(config, "config can not be null");
-
-        validateAwsConfiguration(config);
-
-        if (!config.containsKey(AWSConfigConstants.AWS_REGION)) {
-            // per requirement in Amazon Kinesis Producer Library
-            throw new IllegalArgumentException(
-                    String.format(
-                            "For FlinkKinesisProducer AWS region ('%s') must be set in the config.",
-                            AWSConfigConstants.AWS_REGION));
-        }
-
-        KinesisProducerConfiguration kpc = KinesisProducerConfiguration.fromProperties(config);
-        kpc.setRegion(config.getProperty(AWSConfigConstants.AWS_REGION));
-
-        kpc.setCredentialsProvider(AWSUtil.getCredentialsProvider(config));
-
-        // we explicitly lower the credential refresh delay (default is 5 seconds)
-        // to avoid an ignorable interruption warning that occurs when shutting down the
-        // KPL client. See https://github.com/awslabs/amazon-kinesis-producer/issues/10.
-        kpc.setCredentialsRefreshDelay(100);
-
-        // Override default values if they aren't specified by users
-        if (!config.containsKey(RATE_LIMIT)) {
-            kpc.setRateLimit(DEFAULT_RATE_LIMIT);
-        }
-        if (!config.containsKey(THREADING_MODEL)) {
-            kpc.setThreadingModel(DEFAULT_THREADING_MODEL);
-        }
-        if (!config.containsKey(THREAD_POOL_SIZE)) {
-            kpc.setThreadPoolSize(DEFAULT_THREAD_POOL_SIZE);
-        }
-
-        return kpc;
     }
 
     /** Validate configuration properties related to Amazon AWS service. */

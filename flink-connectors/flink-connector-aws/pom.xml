@@ -52,7 +52,6 @@ under the License.
 			<groupId>org.apache.flink</groupId>
 			<artifactId>flink-connector-base</artifactId>
 			<version>${project.version}</version>
-			<scope>provided</scope>
 		</dependency>
 
 		<!-- Amazon AWS SDK v1.x dependencies -->
@@ -72,18 +71,6 @@ under the License.
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-sts</artifactId>
 			<version>${aws.sdk.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.amazonaws</groupId>
-			<artifactId>amazon-kinesis-producer</artifactId>
-			<version>${aws.kinesis-kpl.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>com.amazonaws</groupId>
-					<artifactId>aws-java-sdk-core</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<!-- Amazon AWS SDK v2.x dependencies -->
