@@ -59,6 +59,10 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
                 .build();
     }
 
+    /**
+     * This is a serializable function whose {@code accept()} method specifies how to convert from
+     * an input element to the partition key, a string.
+     */
     @PublicEvolving
     public interface PartitionKeyGenerator<InputT> extends Function<InputT, String>, Serializable {}
 
@@ -66,6 +70,7 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
         return new Builder<>();
     }
 
+    /** A builder for the KinesisDataStreamsSinkElementConverter. */
     @PublicEvolving
     public static class Builder<InputT> {
 
