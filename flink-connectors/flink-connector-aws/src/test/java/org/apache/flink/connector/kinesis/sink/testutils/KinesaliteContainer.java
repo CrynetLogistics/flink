@@ -154,7 +154,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
     }
 
     private class ListStreamsWaitStrategy extends AbstractWaitStrategy {
-        private final RateLimiter RATE_LIMITER =
+        private final RateLimiter rateLimiter =
                 RateLimiterBuilder.newBuilder()
                         .withRate(10, TimeUnit.SECONDS)
                         .withConstantThroughput()
@@ -165,7 +165,7 @@ public class KinesaliteContainer extends GenericContainer<KinesaliteContainer> {
             Unreliables.retryUntilSuccess(
                     (int) this.startupTimeout.getSeconds(),
                     TimeUnit.SECONDS,
-                    () -> RATE_LIMITER.getWhenReady(() -> tryList()));
+                    () -> rateLimiter.getWhenReady(() -> tryList()));
         }
 
         private ListStreamsResult tryList() {
