@@ -19,6 +19,8 @@ package org.apache.flink.streaming.connectors.kinesis.config;
 
 import org.apache.flink.annotation.PublicEvolving;
 
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+
 /** Configuration keys for AWS service usage. */
 @PublicEvolving
 public class AWSConfigConstants extends org.apache.flink.connector.aws.config.AWSConfigConstants {
@@ -129,6 +131,9 @@ public class AWSConfigConstants extends org.apache.flink.connector.aws.config.AW
 
     /** The HTTP protocol version to use. */
     public static final String HTTP_PROTOCOL_VERSION = "aws.http.protocol.version";
+
+    /** The identifier of the legacy connector. */
+    public static final String LEGACY_CONNECTOR = "aws.kinesis.legacy";
 
     public static String accessKeyId(String prefix) {
         return prefix + ".basic.accesskeyid";
