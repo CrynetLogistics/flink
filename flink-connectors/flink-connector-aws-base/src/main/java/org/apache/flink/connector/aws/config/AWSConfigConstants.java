@@ -26,9 +26,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 public class AWSConfigConstants {
 
     /**
-     * Possible configuration values for the type of credential provider to use when accessing AWS
-     * Kinesis. Internally, a corresponding implementation of {@link AwsCredentialsProvider} will be
-     * used.
+     * Possible configuration values for the type of credential provider to use when accessing AWS.
+     * Internally, a corresponding implementation of {@link AwsCredentialsProvider} will be used.
      */
     public enum CredentialProvider {
 
@@ -72,7 +71,7 @@ public class AWSConfigConstants {
         AUTO,
     }
 
-    /** The AWS region of the Kinesis streams to be pulled ("us-east-1" is used if not set). */
+    /** The AWS region of the service ("us-east-1" is used if not set). */
     public static final String AWS_REGION = "aws.region";
 
     /**
@@ -123,7 +122,7 @@ public class AWSConfigConstants {
     public static final String AWS_ROLE_CREDENTIALS_PROVIDER =
             roleCredentialsProvider(AWS_CREDENTIALS_PROVIDER);
 
-    /** The AWS endpoint for Kinesis (derived from the AWS region setting if not set). */
+    /** The AWS endpoint for the service (derived from the AWS region setting if not set). */
     public static final String AWS_ENDPOINT = "aws.endpoint";
 
     /** Whether to trust all SSL certificates. */
@@ -131,9 +130,6 @@ public class AWSConfigConstants {
 
     /** The HTTP protocol version to use. */
     public static final String HTTP_PROTOCOL_VERSION = "aws.http.protocol.version";
-
-    /** The identifier of the legacy connector. */
-    public static final String LEGACY_CONNECTOR = "aws.kinesis.legacy";
 
     public static String accessKeyId(String prefix) {
         return prefix + ".basic.accesskeyid";
