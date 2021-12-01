@@ -72,35 +72,6 @@ under the License.
 					</execution>
 				</executions>
 			</plugin>
-
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>shade-flink</id>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<artifactSet>
-								<includes>
-									<include>software.amazon.awssdk:*</include>
-								</includes>
-							</artifactSet>
-							<filters>
-								<filter>
-									<artifact>software.amazon.awssdk:*</artifact>
-									<excludes>
-										<exclude>META-INF/services/**</exclude>
-									</excludes>
-								</filter>
-							</filters>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 </project>
