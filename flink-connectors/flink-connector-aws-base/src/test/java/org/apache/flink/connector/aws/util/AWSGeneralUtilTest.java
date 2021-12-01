@@ -243,11 +243,10 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientWithDefaults() throws Exception {
+    public void testCreateNettyAsyncHttpClientWithDefaults() throws Exception {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
-        SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(AttributeMap.empty(), builder);
+        SdkAsyncHttpClient httpClient = AWSGeneralUtil.createAsyncHttpClient(builder);
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -255,7 +254,7 @@ public class AWSGeneralUtilTest {
                 TestUtil.getNettyConfiguration(httpDefaultClient);
 
         assertEquals(
-                nettyDefaultConfiguration.connectionAcquireTimeoutMillis(),
+                AWSGeneralUtil.CONNECTION_ACQUISITION_TIMEOUT.toMillis(),
                 nettyConfiguration.connectionAcquireTimeoutMillis());
         assertEquals(
                 nettyDefaultConfiguration.connectionTtlMillis(),
@@ -267,12 +266,12 @@ public class AWSGeneralUtilTest {
                 nettyDefaultConfiguration.idleTimeoutMillis(),
                 nettyConfiguration.idleTimeoutMillis());
         assertEquals(
-                nettyDefaultConfiguration.maxConnections(), nettyConfiguration.maxConnections());
+                AWSGeneralUtil.HTTP_CLIENT_MAX_CONCURRENCY, nettyConfiguration.maxConnections());
         assertEquals(
                 nettyDefaultConfiguration.maxPendingConnectionAcquires(),
                 nettyConfiguration.maxPendingConnectionAcquires());
         assertEquals(
-                nettyDefaultConfiguration.readTimeoutMillis(),
+                AWSGeneralUtil.HTTP_CLIENT_READ_TIMEOUT.toMillis(),
                 nettyConfiguration.readTimeoutMillis());
         assertEquals(
                 nettyDefaultConfiguration.reapIdleConnections(),
@@ -285,15 +284,17 @@ public class AWSGeneralUtilTest {
                 nettyDefaultConfiguration.tlsTrustManagersProvider(),
                 nettyConfiguration.tlsTrustManagersProvider());
         assertEquals(
-                nettyDefaultConfiguration.trustAllCertificates(),
-                nettyConfiguration.trustAllCertificates());
+                AWSGeneralUtil.TRUST_ALL_CERTIFICATES, nettyConfiguration.trustAllCertificates());
         assertEquals(
                 nettyDefaultConfiguration.writeTimeoutMillis(),
                 nettyConfiguration.writeTimeoutMillis());
+        assertEquals(
+                AWSGeneralUtil.HTTP_PROTOCOL,
+                nettyConfiguration.attribute(SdkHttpConfigurationOption.PROTOCOL));
     }
 
     @Test
-    public void testCreateNettyHttpClientReadTimeout() throws Exception {
+    public void testCreateNettyAsyncHttpClientReadTimeout() throws Exception {
         Duration readTimeout = Duration.ofMillis(1234);
 
         AttributeMap clientConfiguration =
@@ -310,7 +311,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientTcpKeepAlive() throws Exception {
+    public void testCreateNettyAsyncHttpClientTcpKeepAlive() throws Exception {
         boolean tcpKeepAlive = true;
 
         AttributeMap clientConfiguration =
@@ -327,7 +328,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientConnectionTimeout() throws Exception {
+    public void testCreateNettyAsyncHttpClientConnectionTimeout() throws Exception {
         Duration connectionTimeout = Duration.ofMillis(1000);
 
         AttributeMap clientConfiguration =
@@ -344,7 +345,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientMaxConcurrency() throws Exception {
+    public void testCreateNettyAsyncHttpClientMaxConcurrency() throws Exception {
         int maxConnections = 123;
 
         AttributeMap clientConfiguration =
@@ -361,7 +362,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientWriteTimeout() throws Exception {
+    public void testCreateNettyAsyncHttpClientWriteTimeout() throws Exception {
         Duration writeTimeout = Duration.ofMillis(3000);
 
         AttributeMap clientConfiguration =
@@ -378,7 +379,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientConnectionMaxIdleTime() throws Exception {
+    public void testCreateNettyAsyncHttpClientConnectionMaxIdleTime() throws Exception {
         Duration maxIdleTime = Duration.ofMillis(2000);
 
         AttributeMap clientConfiguration =
@@ -395,7 +396,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientIdleConnectionReaper() throws Exception {
+    public void testCreateNettyAsyncHttpClientIdleConnectionReaper() throws Exception {
         boolean reapIdleConnections = false;
 
         AttributeMap clientConfiguration =
@@ -412,7 +413,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientIdleConnectionTtl() throws Exception {
+    public void testCreateNettyAsyncHttpClientIdleConnectionTtl() throws Exception {
         Duration connectionTtl = Duration.ofMillis(5000);
 
         AttributeMap clientConfiguration =
@@ -429,7 +430,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientTrustAllCertificates() throws Exception {
+    public void testCreateNettyAsyncHttpClientTrustAllCertificates() throws Exception {
         boolean trustAllCertificates = true;
 
         AttributeMap clientConfiguration =
@@ -448,7 +449,7 @@ public class AWSGeneralUtilTest {
     }
 
     @Test
-    public void testCreateNettyHttpClientHttpVersion() throws Exception {
+    public void testCreateNettyAsyncHttpClientHttpVersion() throws Exception {
         Protocol httpVersion = HTTP1_1;
 
         AttributeMap clientConfiguration =

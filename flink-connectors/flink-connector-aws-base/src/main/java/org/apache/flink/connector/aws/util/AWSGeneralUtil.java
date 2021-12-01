@@ -29,7 +29,10 @@ import software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsPro
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.SystemPropertyCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.WebIdentityTokenFileCredentialsProvider;
+import software.amazon.awssdk.http.Protocol;
+import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.Http2Configuration;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
@@ -39,12 +42,34 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import software.amazon.awssdk.utils.AttributeMap;
 
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
 /** Some general utilities specific to Amazon Web Service. */
 @Internal
 public class AWSGeneralUtil {
+    private static final int INITIAL_WINDOW_SIZE_BYTES = 512 * 1024; // 512 KB
+    private static final Duration HEALTH_CHECK_PING_PERIOD = Duration.ofSeconds(60);
+
+    @VisibleForTesting
+    static final Duration CONNECTION_ACQUISITION_TIMEOUT = Duration.ofSeconds(60);
+
+    @VisibleForTesting static final int HTTP_CLIENT_MAX_CONCURRENCY = 10_000;
+
+    @VisibleForTesting static final Duration HTTP_CLIENT_READ_TIMEOUT = Duration.ofMinutes(6);
+
+    @VisibleForTesting static final Protocol HTTP_PROTOCOL = Protocol.HTTP2;
+
+    @VisibleForTesting static final boolean TRUST_ALL_CERTIFICATES = false;
+
+    private static final AttributeMap HTTP_CLIENT_DEFAULTS =
+            AttributeMap.builder()
+                    .put(SdkHttpConfigurationOption.MAX_CONNECTIONS, HTTP_CLIENT_MAX_CONCURRENCY)
+                    .put(SdkHttpConfigurationOption.READ_TIMEOUT, HTTP_CLIENT_READ_TIMEOUT)
+                    .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, TRUST_ALL_CERTIFICATES)
+                    .put(SdkHttpConfigurationOption.PROTOCOL, HTTP_PROTOCOL)
+                    .build();
 
     /**
      * Determines and returns the credential provider type from the given properties.
@@ -191,8 +216,20 @@ public class AWSGeneralUtil {
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
+            final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
+        return createAsyncHttpClient(AttributeMap.empty(), httpClientBuilder);
+    }
+
+    public static SdkAsyncHttpClient createAsyncHttpClient(
             final AttributeMap config, final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
-        return httpClientBuilder.buildWithDefaults(config);
+        httpClientBuilder
+                .connectionAcquisitionTimeout(CONNECTION_ACQUISITION_TIMEOUT)
+                .http2Configuration(
+                        Http2Configuration.builder()
+                                .healthCheckPingPeriod(HEALTH_CHECK_PING_PERIOD)
+                                .initialWindowSize(INITIAL_WINDOW_SIZE_BYTES)
+                                .build());
+        return httpClientBuilder.buildWithDefaults(config.merge(HTTP_CLIENT_DEFAULTS));
     }
 
     /**
