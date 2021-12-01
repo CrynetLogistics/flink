@@ -18,12 +18,13 @@
 package org.apache.flink.connector.kinesis.sink;
 
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.kinesis.util.AWSKinesisDataStreamsUtil;
 import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,7 +148,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                                         SdkHttpConfigurationOption.PROTOCOL, protocol));
 
         final SdkAsyncHttpClient httpClient =
-                AWSKinesisDataStreamsUtil.createHttpClient(
+                AWSGeneralUtil.createAsyncHttpClient(
                         clientConfiguration.build(), NettyNioAsyncHttpClient.builder());
 
         return AWSKinesisDataStreamsUtil.createKinesisAsyncClient(

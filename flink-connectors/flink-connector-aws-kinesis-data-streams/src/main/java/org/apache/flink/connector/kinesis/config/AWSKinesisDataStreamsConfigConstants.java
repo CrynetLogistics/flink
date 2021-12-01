@@ -19,7 +19,7 @@ package org.apache.flink.connector.kinesis.config;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.kinesis.util.AWSKinesisDataStreamsUtil;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
 
 import software.amazon.awssdk.http.Protocol;
 
@@ -28,13 +28,9 @@ import java.time.Duration;
 /** Defaults for {@link AWSKinesisDataStreamsUtil}. */
 @PublicEvolving
 public class AWSKinesisDataStreamsConfigConstants extends AWSConfigConstants {
-    public static final int DEFAULT_HTTP_CLIENT_MAX_CONCURRENCY = 10_000;
-
-    public static final Duration DEFAULT_HTTP_CLIENT_READ_TIMEOUT = Duration.ofMinutes(6);
-
-    public static final boolean DEFAULT_TRUST_ALL_CERTIFICATES = false;
-
-    public static final Protocol DEFAULT_HTTP_PROTOCOL = Protocol.HTTP2;
 
     public static final boolean DEFAULT_LEGACY_CONNECTOR = false;
+
+    /** The identifier of the legacy connector. */
+    public static final String LEGACY_CONNECTOR = "aws.kinesis.legacy";
 }

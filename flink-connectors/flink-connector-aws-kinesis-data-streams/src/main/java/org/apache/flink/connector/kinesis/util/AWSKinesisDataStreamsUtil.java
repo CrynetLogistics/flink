@@ -19,33 +19,26 @@ package org.apache.flink.connector.kinesis.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.connector.aws.config.AWSConfigConstants;
+import org.apache.flink.connector.aws.util.AWSGeneralUtil;
+import org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants;
 import org.apache.flink.runtime.util.EnvironmentInformation;
-import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.client.config.SdkClientOption;
-import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.http.nio.netty.Http2Configuration;
-import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
 import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
 import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
-import software.amazon.awssdk.utils.AttributeMap;
 
 import java.net.URI;
-import java.time.Duration;
 import java.util.Optional;
 import java.util.Properties;
 
-import static org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants.DEFAULT_HTTP_CLIENT_MAX_CONCURRENCY;
-import static org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants.DEFAULT_HTTP_CLIENT_READ_TIMEOUT;
-import static org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants.DEFAULT_HTTP_PROTOCOL;
 import static org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants.DEFAULT_LEGACY_CONNECTOR;
-import static org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants.DEFAULT_TRUST_ALL_CERTIFICATES;
 
 /** Some utilities specific to Amazon Web Service. */
 @Internal
@@ -54,24 +47,6 @@ public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
     private static final String LEGACY_USER_AGENT_FORMAT = "Apache Flink %s (%s) Kinesis Connector";
 
     private static final String USER_AGENT_FORMAT = LEGACY_USER_AGENT_FORMAT + " V2";
-
-    private static final int INITIAL_WINDOW_SIZE_BYTES = 512 * 1024; // 512 KB
-    private static final Duration HEALTH_CHECK_PING_PERIOD = Duration.ofSeconds(60);
-
-    @VisibleForTesting
-    static final Duration CONNECTION_ACQUISITION_TIMEOUT = Duration.ofSeconds(60);
-
-    private static final AttributeMap HTTP_CLIENT_DEFAULTS =
-            AttributeMap.builder()
-                    .put(
-                            SdkHttpConfigurationOption.MAX_CONNECTIONS,
-                            DEFAULT_HTTP_CLIENT_MAX_CONCURRENCY)
-                    .put(SdkHttpConfigurationOption.READ_TIMEOUT, DEFAULT_HTTP_CLIENT_READ_TIMEOUT)
-                    .put(
-                            SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES,
-                            DEFAULT_TRUST_ALL_CERTIFICATES)
-                    .put(SdkHttpConfigurationOption.PROTOCOL, DEFAULT_HTTP_PROTOCOL)
-                    .build();
 
     /**
      * Creates a user agent prefix for Flink. This can be used by HTTP Clients.
@@ -84,24 +59,6 @@ public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
                 isLegacyConnector ? LEGACY_USER_AGENT_FORMAT : USER_AGENT_FORMAT,
                 EnvironmentInformation.getVersion(),
                 EnvironmentInformation.getRevisionInformation().commitId);
-    }
-
-    public static SdkAsyncHttpClient createHttpClient(
-            final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
-        return createHttpClient(AttributeMap.empty(), httpClientBuilder);
-    }
-
-    public static SdkAsyncHttpClient createHttpClient(
-            final AttributeMap config, final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
-        httpClientBuilder
-                .connectionAcquisitionTimeout(CONNECTION_ACQUISITION_TIMEOUT)
-                .http2Configuration(
-                        Http2Configuration.builder()
-                                .healthCheckPingPeriod(HEALTH_CHECK_PING_PERIOD)
-                                .initialWindowSize(INITIAL_WINDOW_SIZE_BYTES)
-                                .build());
-        return AWSGeneralUtil.createHttpClient(
-                config.merge(HTTP_CLIENT_DEFAULTS), httpClientBuilder);
     }
 
     /**
@@ -126,7 +83,7 @@ public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
             final SdkClientConfiguration clientConfiguration,
             final SdkAsyncHttpClient httpClient) {
         boolean isLegacyConnector =
-                Optional.ofNullable(configProps.getProperty(AWSConfigConstants.LEGACY_CONNECTOR))
+                Optional.ofNullable(configProps.getProperty(AWSKinesisDataStreamsConfigConstants.LEGACY_CONNECTOR))
                         .map(Boolean::parseBoolean)
                         .orElse(DEFAULT_LEGACY_CONNECTOR);
 

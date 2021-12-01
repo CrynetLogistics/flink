@@ -23,25 +23,20 @@ import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
 import software.amazon.awssdk.core.client.config.SdkClientOption;
-import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
-import software.amazon.awssdk.http.nio.netty.internal.NettyConfiguration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
 import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
+import org.apache.flink.connector.aws.util.TestUtil;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.connector.kinesis.config.AsyncProducerConfigConstants.DEFAULT_HTTP_CLIENT_MAX_CONCURRENCY;
-import static org.apache.flink.connector.kinesis.config.AsyncProducerConfigConstants.DEFAULT_HTTP_CLIENT_READ_TIMEOUT;
-import static org.apache.flink.connector.kinesis.config.AsyncProducerConfigConstants.DEFAULT_TRUST_ALL_CERTIFICATES;
-import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_ENDPOINT;
-import static org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants.AWS_REGION;
-import static org.junit.Assert.assertEquals;
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,7 +45,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static software.amazon.awssdk.http.Protocol.HTTP2;
 
 /** Tests for {@link AWSKinesisDataStreamsUtil}. */
 public class AWSKinesisDataStreamsUtilTest {
@@ -89,24 +83,6 @@ public class AWSKinesisDataStreamsUtilTest {
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).endpointOverride(URI.create("https://localhost"));
-    }
-
-    @Test
-    public void testCreateNettyHttpClientWithDefaults() throws Exception {
-        NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
-        SdkAsyncHttpClient httpClient = AWSKinesisDataStreamsUtil.createHttpClient(builder);
-        NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
-
-        assertEquals(DEFAULT_HTTP_CLIENT_MAX_CONCURRENCY, nettyConfiguration.maxConnections());
-        assertEquals(
-                DEFAULT_HTTP_CLIENT_READ_TIMEOUT.toMillis(),
-                nettyConfiguration.readTimeoutMillis());
-        assertEquals(
-                AWSKinesisDataStreamsUtil.CONNECTION_ACQUISITION_TIMEOUT.toMillis(),
-                nettyConfiguration.connectionAcquireTimeoutMillis());
-        assertEquals(HTTP2, nettyConfiguration.attribute(SdkHttpConfigurationOption.PROTOCOL));
-        assertEquals(DEFAULT_TRUST_ALL_CERTIFICATES, nettyConfiguration.trustAllCertificates());
-        assertEquals(0, nettyConfiguration.connectionTtlMillis());
     }
 
     @Test
