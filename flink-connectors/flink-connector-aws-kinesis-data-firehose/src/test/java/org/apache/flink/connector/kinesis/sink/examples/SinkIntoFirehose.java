@@ -20,13 +20,14 @@ package org.apache.flink.connector.kinesis.sink.examples;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSink;
-import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsSinkElementConverter;
+import org.apache.flink.connector.kinesis.sink.KinesisDataFirehoseSink;
+import org.apache.flink.connector.kinesis.sink.KinesisDataFirehoseSinkElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
+import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import software.amazon.awssdk.utils.ImmutableMap;
@@ -34,19 +35,18 @@ import software.amazon.awssdk.utils.ImmutableMap;
 import java.util.Properties;
 
 /**
- * An example application demonstrating how to use the {@link KinesisDataStreamsSink} to sink into
+ * An example application demonstrating how to use the {@link KinesisDataFirehoseSink} to sink into
  * KDS.
  *
  * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the AWS SDK
  * 2.x. e.g. the provision of {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY} through
  * environment variables etc.
  */
-public class SinkIntoKinesis {
+public class SinkIntoFirehose {
 
-    private static final ElementConverter<String, PutRecordsRequestEntry> elementConverter =
-            KinesisDataStreamsSinkElementConverter.<String>builder()
+    private static final ElementConverter<String, Record> elementConverter =
+            KinesisDataFirehoseSinkElementConverter.<String>builder()
                     .setSerializationSchema(new SimpleStringSchema())
-                    .setPartitionKeyGenerator(element -> String.valueOf(element.hashCode()))
                     .build();
 
     public static void main(String[] args) throws Exception {
@@ -61,18 +61,18 @@ public class SinkIntoKinesis {
                         .map(data -> mapper.writeValueAsString(ImmutableMap.of("data", data)));
 
         Properties sinkProperties = new Properties();
-        sinkProperties.put(AWSConfigConstants.AWS_REGION, "your-region-here");
+        sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
 
-        KinesisDataStreamsSink<String> kdsSink =
-                KinesisDataStreamsSink.<String>builder()
+        KinesisDataFirehoseSink<String> kdsSink =
+                KinesisDataFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
-                        .setStreamName("your-stream-name")
+                        .setStreamName("test-deliv")
                         .setMaxBatchSize(20)
                         .setKinesisClientProperties(sinkProperties)
                         .build();
 
         fromGen.sinkTo(kdsSink);
 
-        env.execute("KDS Async Sink Example Program");
+        env.execute("KDF Async Sink Example Program");
     }
 }

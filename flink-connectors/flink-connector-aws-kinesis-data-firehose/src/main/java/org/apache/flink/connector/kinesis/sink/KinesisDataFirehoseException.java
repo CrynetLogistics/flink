@@ -21,13 +21,13 @@ package org.apache.flink.connector.kinesis.sink;
  * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
  * Streams Sink.
  */
-class KinesisDataStreamsException extends RuntimeException {
+class KinesisDataFirehoseException extends RuntimeException {
 
-    public KinesisDataStreamsException(final String message) {
+    public KinesisDataFirehoseException(final String message) {
         super(message);
     }
 
-    public KinesisDataStreamsException(final String message, final Throwable cause) {
+    public KinesisDataFirehoseException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
@@ -35,7 +35,7 @@ class KinesisDataStreamsException extends RuntimeException {
      * When the flag {@code failOnError} is set in {@link KinesisDataFirehoseSinkWriter}, this
      * exception is raised as soon as any exception occurs when KDS is written to.
      */
-    static class KinesisDataStreamsFailFastException extends KinesisDataStreamsException {
+    static class KinesisDataStreamsFailFastException extends KinesisDataFirehoseException {
 
         public KinesisDataStreamsFailFastException() {
             super(

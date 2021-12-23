@@ -25,7 +25,7 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.util.Preconditions;
 
 import software.amazon.awssdk.core.SdkBytes;
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.firehose.model.Record;
 
 import java.io.Serializable;
 import java.util.function.Function;
@@ -36,30 +36,22 @@ import java.util.function.Function;
  * PartitionKeyGenerator} lambda to transform the input element into a String.
  */
 @PublicEvolving
-public class KinesisDataStreamsSinkElementConverter<InputT>
-        implements ElementConverter<InputT, PutRecordsRequestEntry> {
+public class KinesisDataFirehoseSinkElementConverter<InputT>
+        implements ElementConverter<InputT, Record> {
 
     /** A serialization schema to specify how the input element should be serialized. */
     private final SerializationSchema<InputT> serializationSchema;
 
-    /**
-     * A partition key generator functional interface that produces a string from the input element.
-     */
-    private final PartitionKeyGenerator<InputT> partitionKeyGenerator;
-
-    private KinesisDataStreamsSinkElementConverter(
-            SerializationSchema<InputT> serializationSchema,
-            PartitionKeyGenerator<InputT> partitionKeyGenerator) {
+    private KinesisDataFirehoseSinkElementConverter(
+            SerializationSchema<InputT> serializationSchema) {
         this.serializationSchema = serializationSchema;
-        this.partitionKeyGenerator = partitionKeyGenerator;
     }
 
     @Experimental
     @Override
-    public PutRecordsRequestEntry apply(InputT element, SinkWriter.Context context) {
-        return PutRecordsRequestEntry.builder()
+    public Record apply(InputT element, SinkWriter.Context context) {
+        return Record.builder()
                 .data(SdkBytes.fromByteArray(serializationSchema.serialize(element)))
-                .partitionKey(partitionKeyGenerator.apply(element))
                 .build();
     }
 
@@ -80,7 +72,6 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
     public static class Builder<InputT> {
 
         private SerializationSchema<InputT> serializationSchema;
-        private PartitionKeyGenerator<InputT> partitionKeyGenerator;
 
         public Builder<InputT> setSerializationSchema(
                 SerializationSchema<InputT> serializationSchema) {
@@ -88,24 +79,13 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
             return this;
         }
 
-        public Builder<InputT> setPartitionKeyGenerator(
-                PartitionKeyGenerator<InputT> partitionKeyGenerator) {
-            this.partitionKeyGenerator = partitionKeyGenerator;
-            return this;
-        }
-
         @Experimental
-        public KinesisDataStreamsSinkElementConverter<InputT> build() {
+        public KinesisDataFirehoseSinkElementConverter<InputT> build() {
             Preconditions.checkNotNull(
                     serializationSchema,
                     "No SerializationSchema was supplied to the "
                             + "KinesisDataStreamsSinkElementConverter builder.");
-            Preconditions.checkNotNull(
-                    partitionKeyGenerator,
-                    "No PartitionKeyGenerator lambda was supplied to the "
-                            + "KinesisDataStreamsSinkElementConverter builder.");
-            return new KinesisDataStreamsSinkElementConverter<>(
-                    serializationSchema, partitionKeyGenerator);
+            return new KinesisDataFirehoseSinkElementConverter<>(serializationSchema);
         }
     }
 }

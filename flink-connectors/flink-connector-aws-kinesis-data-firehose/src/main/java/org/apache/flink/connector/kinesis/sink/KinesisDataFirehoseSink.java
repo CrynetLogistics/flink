@@ -25,7 +25,7 @@ import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.util.Preconditions;
 
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.firehose.model.Record;
 
 import java.util.Collection;
 import java.util.List;
@@ -64,14 +64,14 @@ import java.util.Properties;
  * @param <InputT> Type of the elements handled by this sink
  */
 @PublicEvolving
-public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRecordsRequestEntry> {
+public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Record> {
 
     private final boolean failOnError;
     private final String streamName;
     private final Properties kinesisClientProperties;
 
-    KinesisDataStreamsSink(
-            ElementConverter<InputT, PutRecordsRequestEntry> elementConverter,
+    KinesisDataFirehoseSink(
+            ElementConverter<InputT, Record> elementConverter,
             Integer maxBatchSize,
             Integer maxInFlightRequests,
             Integer maxBufferedRequests,
@@ -101,20 +101,20 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
     }
 
     /**
-     * Create a {@link KinesisDataStreamsSinkBuilder} to allow the fluent construction of a new
+     * Create a {@link KinesisDataFirehoseSinkBuilder} to allow the fluent construction of a new
      * {@code KinesisDataStreamsSink}.
      *
      * @param <InputT> type of incoming records
-     * @return {@link KinesisDataStreamsSinkBuilder}
+     * @return {@link KinesisDataFirehoseSinkBuilder}
      */
-    public static <InputT> KinesisDataStreamsSinkBuilder<InputT> builder() {
-        return new KinesisDataStreamsSinkBuilder<>();
+    public static <InputT> KinesisDataFirehoseSinkBuilder<InputT> builder() {
+        return new KinesisDataFirehoseSinkBuilder<>();
     }
 
     @Experimental
     @Override
-    public SinkWriter<InputT, Void, Collection<PutRecordsRequestEntry>> createWriter(
-            InitContext context, List<Collection<PutRecordsRequestEntry>> states) {
+    public SinkWriter<InputT, Void, Collection<Record>> createWriter(
+            InitContext context, List<Collection<Record>> states) {
         return new KinesisDataFirehoseSinkWriter<>(
                 getElementConverter(),
                 context,
@@ -131,7 +131,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
 
     @Experimental
     @Override
-    public Optional<SimpleVersionedSerializer<Collection<PutRecordsRequestEntry>>>
+    public Optional<SimpleVersionedSerializer<Collection<Record>>>
             getWriterStateSerializer() {
         return Optional.empty();
     }

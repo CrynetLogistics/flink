@@ -20,15 +20,16 @@ package org.apache.flink.connector.kinesis.sink;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 
+import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Optional;
 import java.util.Properties;
 
 /**
- * Builder to construct {@link KinesisDataStreamsSink}.
+ * Builder to construct {@link KinesisDataFirehoseSink}.
  *
- * <p>The following example shows the minimum setup to create a {@link KinesisDataStreamsSink} that
+ * <p>The following example shows the minimum setup to create a {@link KinesisDataFirehoseSink} that
  * writes String values to a Kinesis Data Streams stream named your_stream_here.
  *
  * <pre>{@code
@@ -60,9 +61,8 @@ import java.util.Properties;
  * @param <InputT> type of elements that should be persisted in the destination
  */
 @PublicEvolving
-public class KinesisDataStreamsSinkBuilder<InputT>
-        extends AsyncSinkBaseBuilder<
-                InputT, PutRecordsRequestEntry, KinesisDataStreamsSinkBuilder<InputT>> {
+public class KinesisDataFirehoseSinkBuilder<InputT>
+        extends AsyncSinkBaseBuilder<InputT, Record, KinesisDataFirehoseSinkBuilder<InputT>> {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 500;
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
@@ -76,7 +76,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
     private String streamName;
     private Properties kinesisClientProperties;
 
-    KinesisDataStreamsSinkBuilder() {}
+    KinesisDataFirehoseSinkBuilder() {}
 
     /**
      * Sets the name of the KDS stream that the sink will connect to. There is no default for this
@@ -84,27 +84,27 @@ public class KinesisDataStreamsSinkBuilder<InputT>
      * fail.
      *
      * @param streamName the name of the stream
-     * @return {@link KinesisDataStreamsSinkBuilder} itself
+     * @return {@link KinesisDataFirehoseSinkBuilder} itself
      */
-    public KinesisDataStreamsSinkBuilder<InputT> setStreamName(String streamName) {
+    public KinesisDataFirehoseSinkBuilder<InputT> setStreamName(String streamName) {
         this.streamName = streamName;
         return this;
     }
 
-    public KinesisDataStreamsSinkBuilder<InputT> setFailOnError(boolean failOnError) {
+    public KinesisDataFirehoseSinkBuilder<InputT> setFailOnError(boolean failOnError) {
         this.failOnError = failOnError;
         return this;
     }
 
-    public KinesisDataStreamsSinkBuilder<InputT> setKinesisClientProperties(
+    public KinesisDataFirehoseSinkBuilder<InputT> setKinesisClientProperties(
             Properties kinesisClientProperties) {
         this.kinesisClientProperties = kinesisClientProperties;
         return this;
     }
 
     @Override
-    public KinesisDataStreamsSink<InputT> build() {
-        return new KinesisDataStreamsSink<>(
+    public KinesisDataFirehoseSink<InputT> build() {
+        return new KinesisDataFirehoseSink<>(
                 getElementConverter(),
                 Optional.ofNullable(getMaxBatchSize()).orElse(DEFAULT_MAX_BATCH_SIZE),
                 Optional.ofNullable(getMaxInFlightRequests())
