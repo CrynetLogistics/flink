@@ -31,8 +31,6 @@ import software.amazon.awssdk.core.client.config.SdkClientOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
-import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
-import software.amazon.awssdk.services.kinesis.model.ProvisionedThroughputExceededException;
 
 import java.net.URI;
 import java.util.Optional;
@@ -149,11 +147,5 @@ public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
                 .credentialsProvider(getCredentialsProvider(configProps))
                 .region(getRegion(configProps))
                 .build();
-    }
-
-    public static boolean isRecoverableException(Exception e) {
-        Throwable cause = e.getCause();
-        return cause instanceof LimitExceededException
-                || cause instanceof ProvisionedThroughputExceededException;
     }
 }
