@@ -30,17 +30,13 @@ import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
-import software.amazon.awssdk.services.kinesis.model.LimitExceededException;
 
 import java.net.URI;
 import java.time.Duration;
 import java.util.Properties;
-import java.util.concurrent.ExecutionException;
 
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -147,42 +143,6 @@ public class AWSKinesisDataStreamsUtilTest {
         AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
-    }
-
-    @Test
-    public void testIsRecoverableExceptionForRecoverable() {
-        Exception recoverable = LimitExceededException.builder().build();
-        assertTrue(
-                AWSKinesisDataStreamsUtil.isRecoverableException(
-                        new ExecutionException(recoverable)));
-    }
-
-    @Test
-    public void testIsRecoverableExceptionForNonRecoverable() {
-        Exception nonRecoverable = new IllegalArgumentException("abc");
-        assertFalse(
-                AWSKinesisDataStreamsUtil.isRecoverableException(
-                        new ExecutionException(nonRecoverable)));
-    }
-
-    @Test
-    public void testIsRecoverableExceptionForRuntimeExceptionWrappingRecoverable() {
-        Exception recoverable = LimitExceededException.builder().build();
-        Exception runtime = new RuntimeException("abc", recoverable);
-        assertTrue(AWSKinesisDataStreamsUtil.isRecoverableException(runtime));
-    }
-
-    @Test
-    public void testIsRecoverableExceptionForRuntimeExceptionWrappingNonRecoverable() {
-        Exception nonRecoverable = new IllegalArgumentException("abc");
-        Exception runtime = new RuntimeException("abc", nonRecoverable);
-        assertFalse(AWSKinesisDataStreamsUtil.isRecoverableException(runtime));
-    }
-
-    @Test
-    public void testIsRecoverableExceptionForNullCause() {
-        Exception nonRecoverable = new IllegalArgumentException("abc");
-        assertFalse(AWSKinesisDataStreamsUtil.isRecoverableException(nonRecoverable));
     }
 
     private KinesisAsyncClientBuilder mockKinesisAsyncClientBuilder() {
