@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.util;
+package org.apache.flink.connector.aws.util;
 
-import org.apache.flink.connector.aws.util.TestUtil;
-import org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants;
+import org.apache.flink.connector.aws.config.AWSKinesisDataStreamsConfigConstants;
 
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -44,7 +43,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Tests for {@link AWSKinesisDataStreamsUtil}. */
+/** Tests for {@link org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil}. */
 public class AWSKinesisDataStreamsUtilTest {
     private static final String DEFAULT_USER_AGENT_PREFIX_FORMAT =
             AWSKinesisDataStreamsConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
