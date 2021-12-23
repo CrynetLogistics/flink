@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.config;
+package org.apache.flink.connector.aws.config;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.kinesis.util.AWSKinesisDataStreamsUtil;
+import org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil;
 
 /** Defaults for {@link AWSKinesisDataStreamsUtil}. */
 @PublicEvolving

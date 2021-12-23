@@ -57,6 +57,12 @@ under the License.
 			<artifactId>sts</artifactId>
 			<version>${aws.sdk.version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>kinesis</artifactId>
+			<version>${aws.sdk.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>
