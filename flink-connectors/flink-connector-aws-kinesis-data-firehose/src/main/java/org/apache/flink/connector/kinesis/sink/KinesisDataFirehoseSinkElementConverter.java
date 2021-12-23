@@ -1,0 +1,91 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.flink.connector.kinesis.sink;
+
+import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.connector.sink.SinkWriter;
+import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.util.Preconditions;
+
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.firehose.model.Record;
+
+import java.io.Serializable;
+import java.util.function.Function;
+
+/**
+ * An implementation of the {@link ElementConverter} that uses the AWS Kinesis SDK v2. The user only
+ * needs to provide a {@link SerializationSchema} of the {@code InputT} and a {@link
+ * PartitionKeyGenerator} lambda to transform the input element into a String.
+ */
+@PublicEvolving
+public class KinesisDataFirehoseSinkElementConverter<InputT>
+        implements ElementConverter<InputT, Record> {
+
+    /** A serialization schema to specify how the input element should be serialized. */
+    private final SerializationSchema<InputT> serializationSchema;
+
+    private KinesisDataFirehoseSinkElementConverter(
+            SerializationSchema<InputT> serializationSchema) {
+        this.serializationSchema = serializationSchema;
+    }
+
+    @Experimental
+    @Override
+    public Record apply(InputT element, SinkWriter.Context context) {
+        return Record.builder()
+                .data(SdkBytes.fromByteArray(serializationSchema.serialize(element)))
+                .build();
+    }
+
+    /**
+     * This is a serializable function whose {@code accept()} method specifies how to convert from
+     * an input element to the partition key, a string.
+     */
+    @PublicEvolving
+    @FunctionalInterface
+    public interface PartitionKeyGenerator<InputT> extends Function<InputT, String>, Serializable {}
+
+    public static <InputT> Builder<InputT> builder() {
+        return new Builder<>();
+    }
+
+    /** A builder for the KinesisDataStreamsSinkElementConverter. */
+    @PublicEvolving
+    public static class Builder<InputT> {
+
+        private SerializationSchema<InputT> serializationSchema;
+
+        public Builder<InputT> setSerializationSchema(
+                SerializationSchema<InputT> serializationSchema) {
+            this.serializationSchema = serializationSchema;
+            return this;
+        }
+
+        @Experimental
+        public KinesisDataFirehoseSinkElementConverter<InputT> build() {
+            Preconditions.checkNotNull(
+                    serializationSchema,
+                    "No SerializationSchema was supplied to the "
+                            + "KinesisDataStreamsSinkElementConverter builder.");
+            return new KinesisDataFirehoseSinkElementConverter<>(serializationSchema);
+        }
+    }
+}

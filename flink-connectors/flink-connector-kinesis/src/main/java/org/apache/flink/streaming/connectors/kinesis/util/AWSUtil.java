@@ -19,8 +19,8 @@ package org.apache.flink.streaming.connectors.kinesis.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.aws.config.AWSConfigConstants.CredentialProvider;
-import org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants;
-import org.apache.flink.connector.kinesis.util.AWSKinesisDataStreamsUtil;
+import org.apache.flink.connector.aws.config.AWSKinesisDataStreamsConfigConstants;
+import org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil;
 import org.apache.flink.streaming.connectors.kinesis.config.AWSConfigConstants;
 import org.apache.flink.streaming.connectors.kinesis.model.SentinelSequenceNumber;
 import org.apache.flink.streaming.connectors.kinesis.model.SequenceNumber;
