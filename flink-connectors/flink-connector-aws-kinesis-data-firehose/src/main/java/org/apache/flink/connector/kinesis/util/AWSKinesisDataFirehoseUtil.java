@@ -21,7 +21,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.connector.kinesis.config.AWSKinesisDataStreamsConfigConstants;
+import org.apache.flink.connector.kinesis.config.AWSKinesisDataFirehoseConfigConstants;
 import org.apache.flink.runtime.util.EnvironmentInformation;
 
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -40,11 +40,11 @@ import java.util.Properties;
 
 /** Some utilities specific to Amazon Web Service. */
 @Internal
-public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
+public class AWSKinesisDataFirehoseUtil extends AWSGeneralUtil {
 
     /** Used for formatting Flink-specific user agent string when creating Kinesis client. */
     private static final String USER_AGENT_FORMAT =
-            AWSKinesisDataStreamsConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
+            AWSKinesisDataFirehoseConfigConstants.BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT + " V2";
 
     /**
      * Creates a user agent prefix for Flink. This can be used by HTTP Clients.
@@ -84,8 +84,8 @@ public class AWSKinesisDataStreamsUtil extends AWSGeneralUtil {
         String flinkUserAgentPrefix =
                 Optional.ofNullable(
                                 configProps.getProperty(
-                                        AWSKinesisDataStreamsConfigConstants
-                                                .KINESIS_CLIENT_USER_AGENT_PREFIX))
+                                        AWSKinesisDataFirehoseConfigConstants
+                                                .FIREHOSE_CLIENT_USER_AGENT_PREFIX))
                         .orElse(formatFlinkUserAgentPrefix(USER_AGENT_FORMAT));
 
         final ClientOverrideConfiguration overrideConfiguration =

@@ -35,14 +35,14 @@ class KinesisDataFirehoseException extends RuntimeException {
      * When the flag {@code failOnError} is set in {@link KinesisDataFirehoseSinkWriter}, this
      * exception is raised as soon as any exception occurs when KDS is written to.
      */
-    static class KinesisDataStreamsFailFastException extends KinesisDataFirehoseException {
+    static class KinesisDataFirehoseFailFastException extends KinesisDataFirehoseException {
 
-        public KinesisDataStreamsFailFastException() {
+        public KinesisDataFirehoseFailFastException() {
             super(
                     "Encountered an exception while persisting records, not retrying due to {failOnError} being set.");
         }
 
-        public KinesisDataStreamsFailFastException(final Throwable cause) {
+        public KinesisDataFirehoseFailFastException(final Throwable cause) {
             super(
                     "Encountered an exception while persisting records, not retrying due to {failOnError} being set.",
                     cause);

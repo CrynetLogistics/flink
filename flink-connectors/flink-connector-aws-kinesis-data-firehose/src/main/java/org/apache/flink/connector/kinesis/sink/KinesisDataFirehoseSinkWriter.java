@@ -165,7 +165,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
 
         if (failOnError) {
             getFatalExceptionCons()
-                    .accept(new KinesisDataFirehoseException.KinesisDataStreamsFailFastException());
+                    .accept(new KinesisDataFirehoseException.KinesisDataFirehoseFailFastException());
             return;
         }
         List<Record> failedRequestEntries =
@@ -193,7 +193,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
         if (failOnError) {
             getFatalExceptionCons()
                     .accept(
-                            new KinesisDataFirehoseException.KinesisDataStreamsFailFastException(
+                            new KinesisDataFirehoseException.KinesisDataFirehoseFailFastException(
                                     err));
             return false;
         }
