@@ -15,28 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink;
+package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
+import software.amazon.awssdk.services.firehose.model.Record;
 
-/** Covers construction, defaults and sanity checking of KinesisDataStreamsSinkBuilder. */
-public class KinesisDataStreamsSinkBuilderTest {
-    private static final ElementConverter<String, PutRecordsRequestEntry>
-            ELEMENT_CONVERTER_PLACEHOLDER =
-                    KinesisDataStreamsSinkElementConverter.<String>builder()
-                            .setSerializationSchema(new SimpleStringSchema())
-                            .setPartitionKeyGenerator(element -> String.valueOf(element.hashCode()))
-                            .build();
+/** Covers construction, defaults and sanity checking of {@link KinesisFirehoseSinkBuilder}. */
+public class KinesisFirehoseSinkBuilderTest {
+    private static final ElementConverter<String, Record> ELEMENT_CONVERTER_PLACEHOLDER =
+            KinesisFirehoseSinkElementConverter.<String>builder()
+                    .setSerializationSchema(new SimpleStringSchema())
+                    .build();
 
     @Test
     public void elementConverterOfSinkMustBeSetWhenBuilt() {
         Assertions.assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> KinesisDataStreamsSink.builder().setStreamName("stream").build())
+                .isThrownBy(
+                        () ->
+                                KinesisFirehoseSink.builder()
+                                        .setDeliveryStreamName("deliveryStream")
+                                        .build())
                 .withMessageContaining(
                         "ElementConverter must be not null when initializing the AsyncSinkBase.");
     }
@@ -46,11 +48,11 @@ public class KinesisDataStreamsSinkBuilderTest {
         Assertions.assertThatExceptionOfType(NullPointerException.class)
                 .isThrownBy(
                         () ->
-                                KinesisDataStreamsSink.<String>builder()
+                                KinesisFirehoseSink.<String>builder()
                                         .setElementConverter(ELEMENT_CONVERTER_PLACEHOLDER)
                                         .build())
                 .withMessageContaining(
-                        "The stream name must not be null when initializing the KDS Sink.");
+                        "The delivery stream name must not be null when initializing the KDF Sink.");
     }
 
     @Test
@@ -58,11 +60,11 @@ public class KinesisDataStreamsSinkBuilderTest {
         Assertions.assertThatExceptionOfType(IllegalArgumentException.class)
                 .isThrownBy(
                         () ->
-                                KinesisDataStreamsSink.<String>builder()
-                                        .setStreamName("")
+                                KinesisFirehoseSink.<String>builder()
+                                        .setDeliveryStreamName("")
                                         .setElementConverter(ELEMENT_CONVERTER_PLACEHOLDER)
                                         .build())
                 .withMessageContaining(
-                        "The stream name must be set when initializing the KDS Sink.");
+                        "The delivery stream name must be set when initializing the KDF Sink.");
     }
 }
