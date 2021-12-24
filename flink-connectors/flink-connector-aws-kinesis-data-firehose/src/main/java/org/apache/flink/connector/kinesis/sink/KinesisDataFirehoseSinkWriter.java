@@ -18,7 +18,9 @@
 package org.apache.flink.connector.kinesis.sink;
 
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
+import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
@@ -33,6 +35,7 @@ import software.amazon.awssdk.services.firehose.model.PutRecordBatchResponse;
 import software.amazon.awssdk.services.firehose.model.PutRecordBatchResponseEntry;
 import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.firehose.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,12 +103,16 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
     }
 
     private FirehoseAsyncClient buildClient(Properties kinesisClientProperties) {
-        //FirehoseAsyncClientBuilder builder = FirehoseAsyncClient.builder();
 
         final SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
 
-        return FirehoseAsyncClient.create();
+        return AWSUnifiedSinksUtil.createAwsAsyncClient(
+                kinesisClientProperties,
+                httpClient,
+                FirehoseAsyncClient.builder(),
+                AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT,
+                AWSUnifiedSinksConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX);
     }
 
     @Override
