@@ -18,16 +18,23 @@
 package org.apache.flink.connector.aws.config;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil;
+import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
-/** Defaults for {@link AWSKinesisDataStreamsUtil}. */
+/** Defaults for {@link AWSUnifiedSinksUtil}. */
 @PublicEvolving
-public class AWSKinesisDataStreamsConfigConstants {
+public class AWSUnifiedSinksConfigConstants {
 
     public static final String BASE_KINESIS_USER_AGENT_PREFIX_FORMAT =
             "Apache Flink %s (%s) Kinesis Connector";
 
-    /** Identifier for user agent prefix. */
+    /** Kinesis identifier for user agent prefix. */
     public static final String KINESIS_CLIENT_USER_AGENT_PREFIX =
             "aws.kinesis.client.user-agent-prefix";
+
+    public static final String BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT =
+            "Apache Flink %s (%s) Firehose Connector";
+
+    /** Firehose identifier for user agent prefix. */
+    public static final String FIREHOSE_CLIENT_USER_AGENT_PREFIX =
+            "aws.firehose.client.user-agent-prefix";
 }
