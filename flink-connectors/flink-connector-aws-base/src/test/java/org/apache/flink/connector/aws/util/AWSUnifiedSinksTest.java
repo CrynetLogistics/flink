@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.aws.util;
 
-import org.apache.flink.connector.aws.config.AWSKinesisDataStreamsConfigConstants;
+import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -36,6 +36,7 @@ import java.util.Properties;
 
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
+import static org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil.formatFlinkUserAgentPrefix;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
@@ -43,10 +44,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Tests for {@link org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil}. */
-public class AWSKinesisDataStreamsUtilTest {
+/** Tests for {@link AWSUnifiedSinksUtil}. */
+public class AWSUnifiedSinksTest {
     private static final String DEFAULT_USER_AGENT_PREFIX_FORMAT =
-            AWSKinesisDataStreamsConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
+            AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
 
     @Test
     public void testCreateKinesisAsyncClient() {
@@ -56,7 +57,7 @@ public class AWSKinesisDataStreamsUtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AWSKinesisDataStreamsUtil.createKinesisAsyncClient(
+        AWSUnifiedSinksUtil.createAwsAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).overrideConfiguration(clientOverrideConfiguration);
@@ -77,7 +78,7 @@ public class AWSKinesisDataStreamsUtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AWSKinesisDataStreamsUtil.createKinesisAsyncClient(
+        AWSUnifiedSinksUtil.createAwsAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).endpointOverride(URI.create("https://localhost"));
@@ -89,14 +90,18 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(
+                clientConfiguration,
+                builder,
+                formatFlinkUserAgentPrefix(
+                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                                + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).build();
         verify(builder)
                 .putAdvancedOption(
                         SdkAdvancedClientOption.USER_AGENT_PREFIX,
-                        AWSKinesisDataStreamsUtil.formatFlinkUserAgentPrefix(
-                                DEFAULT_USER_AGENT_PREFIX_FORMAT));
+                        formatFlinkUserAgentPrefix(DEFAULT_USER_AGENT_PREFIX_FORMAT));
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, null);
         verify(builder, never()).apiCallAttemptTimeout(any());
         verify(builder, never()).apiCallTimeout(any());
@@ -111,7 +116,12 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(
+                clientConfiguration,
+                builder,
+                formatFlinkUserAgentPrefix(
+                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                                + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, "suffix");
     }
@@ -125,7 +135,12 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(
+                clientConfiguration,
+                builder,
+                formatFlinkUserAgentPrefix(
+                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                                + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).apiCallAttemptTimeout(Duration.ofMillis(500));
     }
@@ -139,7 +154,12 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(
+                clientConfiguration,
+                builder,
+                formatFlinkUserAgentPrefix(
+                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                                + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
     }

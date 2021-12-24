@@ -18,8 +18,9 @@
 package org.apache.flink.connector.kinesis.sink;
 
 import org.apache.flink.api.connector.sink.Sink;
+import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil;
+import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
@@ -105,8 +106,12 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
         final SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
 
-        return AWSKinesisDataStreamsUtil.createKinesisAsyncClient(
-                kinesisClientProperties, httpClient);
+        return AWSUnifiedSinksUtil.createAwsAsyncClient(
+                kinesisClientProperties,
+                httpClient,
+                KinesisAsyncClient.builder(),
+                AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT,
+                AWSUnifiedSinksConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX);
     }
 
     @Override
