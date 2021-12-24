@@ -18,11 +18,11 @@
 package org.apache.flink.connector.aws.config;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil;
+import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
-/** Defaults for {@link AWSKinesisDataStreamsUtil}. */
+/** Defaults for {@link AWSUnifiedSinksUtil}. */
 @PublicEvolving
-public class AWSKinesisDataStreamsConfigConstants {
+public class AWSUnifiedSinksConfigConstants {
 
     public static final String BASE_KINESIS_USER_AGENT_PREFIX_FORMAT =
             "Apache Flink %s (%s) Kinesis Connector";

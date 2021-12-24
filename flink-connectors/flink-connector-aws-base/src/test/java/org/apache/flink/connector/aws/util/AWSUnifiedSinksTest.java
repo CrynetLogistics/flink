@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.aws.util;
 
-import org.apache.flink.connector.aws.config.AWSKinesisDataStreamsConfigConstants;
+import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
@@ -43,10 +43,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/** Tests for {@link org.apache.flink.connector.aws.util.AWSKinesisDataStreamsUtil}. */
-public class AWSKinesisDataStreamsUtilTest {
+/** Tests for {@link AWSUnifiedSinksUtil}. */
+public class AWSUnifiedSinksTest {
     private static final String DEFAULT_USER_AGENT_PREFIX_FORMAT =
-            AWSKinesisDataStreamsConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
+            AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
 
     @Test
     public void testCreateKinesisAsyncClient() {
@@ -56,7 +56,7 @@ public class AWSKinesisDataStreamsUtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AWSKinesisDataStreamsUtil.createKinesisAsyncClient(
+        AWSUnifiedSinksUtil.createKinesisAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).overrideConfiguration(clientOverrideConfiguration);
@@ -77,7 +77,7 @@ public class AWSKinesisDataStreamsUtilTest {
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
 
-        AWSKinesisDataStreamsUtil.createKinesisAsyncClient(
+        AWSUnifiedSinksUtil.createKinesisAsyncClient(
                 properties, builder, httpClient, clientOverrideConfiguration);
 
         verify(builder).endpointOverride(URI.create("https://localhost"));
@@ -89,13 +89,13 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).build();
         verify(builder)
                 .putAdvancedOption(
                         SdkAdvancedClientOption.USER_AGENT_PREFIX,
-                        AWSKinesisDataStreamsUtil.formatFlinkUserAgentPrefix(
+                        AWSUnifiedSinksUtil.formatFlinkUserAgentPrefix(
                                 DEFAULT_USER_AGENT_PREFIX_FORMAT));
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, null);
         verify(builder, never()).apiCallAttemptTimeout(any());
@@ -111,7 +111,7 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, "suffix");
     }
@@ -125,7 +125,7 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).apiCallAttemptTimeout(Duration.ofMillis(500));
     }
@@ -139,7 +139,7 @@ public class AWSKinesisDataStreamsUtilTest {
 
         ClientOverrideConfiguration.Builder builder = mockClientOverrideConfigurationBuilder();
 
-        AWSKinesisDataStreamsUtil.createClientOverrideConfiguration(clientConfiguration, builder);
+        AWSUnifiedSinksUtil.createClientOverrideConfiguration(clientConfiguration, builder);
 
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
     }
