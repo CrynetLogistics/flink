@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink;
+package org.apache.flink.connector.firehose.sink;
 
 /**
  * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
