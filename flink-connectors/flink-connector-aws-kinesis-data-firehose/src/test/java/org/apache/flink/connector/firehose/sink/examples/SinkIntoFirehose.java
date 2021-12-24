@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink.examples;
+package org.apache.flink.connector.firehose.sink.examples;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.connector.kinesis.sink.KinesisDataFirehoseSink;
-import org.apache.flink.connector.kinesis.sink.KinesisDataFirehoseSinkElementConverter;
+import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSink;
+import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSinkElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -29,7 +29,6 @@ import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMap
 
 import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.Properties;
@@ -66,7 +65,7 @@ public class SinkIntoFirehose {
         KinesisDataFirehoseSink<String> kdsSink =
                 KinesisDataFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
-                        .setStreamName("test-deliv")
+                        .setDeliveryStreamName("test-deliv")
                         .setMaxBatchSize(20)
                         .setKinesisClientProperties(sinkProperties)
                         .build();
