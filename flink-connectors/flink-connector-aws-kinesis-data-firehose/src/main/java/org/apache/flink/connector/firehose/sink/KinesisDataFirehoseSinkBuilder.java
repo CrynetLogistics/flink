@@ -51,9 +51,9 @@ import java.util.Properties;
  *   <li>{@code maxBatchSize} will be 500
  *   <li>{@code maxInFlightRequests} will be 16
  *   <li>{@code maxBufferedRequests} will be 10000
- *   <li>{@code maxBatchSizeInBytes} will be 5 MB i.e. {@code 5 * 1024 * 1024}
+ *   <li>{@code maxBatchSizeInBytes} will be 4 MB i.e. {@code 4 * 1024 * 1024}
  *   <li>{@code maxTimeInBufferMS} will be 5000ms
- *   <li>{@code maxRecordSizeInBytes} will be 1 MB i.e. {@code 1 * 1024 * 1024}
+ *   <li>{@code maxRecordSizeInBytes} will be 1000 KB i.e. {@code 1000 * 1024}
  *   <li>{@code failOnError} will be false
  * </ul>
  *
@@ -66,13 +66,13 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
     private static final int DEFAULT_MAX_BATCH_SIZE = 500;
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
     private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10000;
-    private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 5 * 1024 * 1024;
+    private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 4 * 1024 * 1024;
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
-    private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1 * 1024 * 1024;
+    private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1000 * 1024;
     private static final boolean DEFAULT_FAIL_ON_ERROR = false;
 
     private Boolean failOnError;
-    private String streamName;
+    private String deliveryStreamName;
     private Properties kinesisClientProperties;
 
     KinesisDataFirehoseSinkBuilder() {}
@@ -82,11 +82,11 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
      * parameter, therefore, this must be provided at sink creation time otherwise the build will
      * fail.
      *
-     * @param streamName the name of the stream
+     * @param deliveryStreamName the name of the stream
      * @return {@link KinesisDataFirehoseSinkBuilder} itself
      */
-    public KinesisDataFirehoseSinkBuilder<InputT> setStreamName(String streamName) {
-        this.streamName = streamName;
+    public KinesisDataFirehoseSinkBuilder<InputT> setDeliveryStreamName(String deliveryStreamName) {
+        this.deliveryStreamName = deliveryStreamName;
         return this;
     }
 
@@ -113,7 +113,7 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
                 Optional.ofNullable(getMaxTimeInBufferMS()).orElse(DEFAULT_MAX_TIME_IN_BUFFER_MS),
                 Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
                 Optional.ofNullable(failOnError).orElse(DEFAULT_FAIL_ON_ERROR),
-                streamName,
+                deliveryStreamName,
                 Optional.ofNullable(kinesisClientProperties).orElse(new Properties()));
     }
 }

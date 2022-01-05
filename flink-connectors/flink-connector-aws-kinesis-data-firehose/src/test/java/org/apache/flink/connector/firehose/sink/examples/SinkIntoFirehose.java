@@ -65,7 +65,7 @@ public class SinkIntoFirehose {
         KinesisDataFirehoseSink<String> kdsSink =
                 KinesisDataFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
-                        .setStreamName("test-deliv")
+                        .setDeliveryStreamName("test-deliv")
                         .setMaxBatchSize(20)
                         .setKinesisClientProperties(sinkProperties)
                         .build();
