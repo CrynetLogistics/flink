@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.config;
+package org.apache.flink.connector.firehose.config;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.kinesis.util.AWSKinesisDataFirehoseUtil;
+import org.apache.flink.connector.firehose.util.AWSKinesisDataFirehoseUtil;
 
 /** Defaults for {@link AWSKinesisDataFirehoseUtil}. */
 @PublicEvolving

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink;
+package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
@@ -35,7 +35,6 @@ import software.amazon.awssdk.services.firehose.model.PutRecordBatchResponse;
 import software.amazon.awssdk.services.firehose.model.PutRecordBatchResponseEntry;
 import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.firehose.model.ResourceNotFoundException;
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 
 import java.util.ArrayList;
 import java.util.Collection;

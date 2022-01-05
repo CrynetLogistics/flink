@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.sink;
+package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 
 import software.amazon.awssdk.services.firehose.model.Record;
-import software.amazon.awssdk.services.kinesis.model.PutRecordsRequestEntry;
 
 import java.util.Optional;
 import java.util.Properties;

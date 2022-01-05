@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.kinesis.util;
+package org.apache.flink.connector.firehose.util;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.connector.kinesis.config.AWSKinesisDataFirehoseConfigConstants;
+import org.apache.flink.connector.firehose.config.AWSKinesisDataFirehoseConfigConstants;
 import org.apache.flink.runtime.util.EnvironmentInformation;
 
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
