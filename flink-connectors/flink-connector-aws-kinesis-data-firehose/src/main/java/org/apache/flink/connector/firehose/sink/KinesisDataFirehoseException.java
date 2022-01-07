@@ -19,7 +19,7 @@ package org.apache.flink.connector.firehose.sink;
 
 /**
  * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
- * Streams Sink.
+ * Firehose Sink.
  */
 class KinesisDataFirehoseException extends RuntimeException {
 
@@ -33,7 +33,7 @@ class KinesisDataFirehoseException extends RuntimeException {
 
     /**
      * When the flag {@code failOnError} is set in {@link KinesisDataFirehoseSinkWriter}, this
-     * exception is raised as soon as any exception occurs when KDS is written to.
+     * exception is raised as soon as any exception occurs when writing to KDF.
      */
     static class KinesisDataFirehoseFailFastException extends KinesisDataFirehoseException {
 

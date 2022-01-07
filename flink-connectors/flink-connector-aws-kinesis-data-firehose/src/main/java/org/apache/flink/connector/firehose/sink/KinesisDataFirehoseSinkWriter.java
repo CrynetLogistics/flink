@@ -46,7 +46,7 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 /**
- * Sink writer created by {@link KinesisDataFirehoseSink} to write to Kinesis Data Streams. More
+ * Sink writer created by {@link KinesisDataFirehoseSink} to write to Kinesis Data Firehose. More
  * details on the operation of this sink writer may be found in the doc for {@link
  * KinesisDataFirehoseSink}. More details on the internals of this sink writer may be found in
  * {@link AsyncSinkWriter}.
@@ -61,8 +61,8 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
     /* A counter for the total number of records that have encountered an error during put */
     private final Counter numRecordsOutErrorsCounter;
 
-    /* Name of the stream in Kinesis Data Streams */
-    private final String streamName;
+    /* Name of the delivery stream in Kinesis Data Firehose */
+    private final String deliveryStreamName;
 
     /* The sink writer metric group */
     private final SinkWriterMetricGroup metrics;
@@ -83,7 +83,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
             boolean failOnError,
-            String streamName,
+            String deliveryStreamName,
             Properties kinesisClientProperties) {
         super(
                 elementConverter,
@@ -95,14 +95,13 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes);
         this.failOnError = failOnError;
-        this.streamName = streamName;
+        this.deliveryStreamName = deliveryStreamName;
         this.metrics = context.metricGroup();
         this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
         this.client = buildClient(kinesisClientProperties);
     }
 
     private FirehoseAsyncClient buildClient(Properties kinesisClientProperties) {
-
         final SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
 
@@ -121,10 +120,10 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
         PutRecordBatchRequest batchRequest =
                 PutRecordBatchRequest.builder()
                         .records(requestEntries)
-                        .deliveryStreamName(streamName)
+                        .deliveryStreamName(deliveryStreamName)
                         .build();
 
-        LOG.trace("Request to submit {} entries to KDS using KDS Sink.", requestEntries.size());
+        LOG.trace("Request to submit {} entries to KDF using KDF Sink.", requestEntries.size());
 
         CompletableFuture<PutRecordBatchResponse> future = client.putRecordBatch(batchRequest);
 
@@ -150,7 +149,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
             List<Record> requestEntries,
             Consumer<Collection<Record>> requestResult) {
         LOG.warn(
-                "KDS Sink failed to persist {} entries to KDS first request was {}",
+                "KDF Sink failed to persist {} entries to KDF first request was {}",
                 requestEntries.size(),
                 requestEntries.get(0).toString(),
                 err);
@@ -166,7 +165,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
             List<Record> requestEntries,
             Consumer<Collection<Record>> requestResult) {
         LOG.warn(
-                "KDS Sink failed to persist {} entries to KDS first request was {}",
+                "KDF Sink failed to persist {} entries to KDF first request was {}",
                 requestEntries.size(),
                 requestEntries.get(0).toString());
         numRecordsOutErrorsCounter.inc(response.failedPutCount());

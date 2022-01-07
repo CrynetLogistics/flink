@@ -33,30 +33,31 @@ import java.util.Optional;
 import java.util.Properties;
 
 /**
- * A Kinesis Data Streams (KDS) Sink that performs async requests against a destination stream using
- * the buffering protocol specified in {@link AsyncSinkBase}.
+ * A Kinesis Data Firehose (KDF) Sink that performs async requests against a destination delivery
+ * stream using the buffering protocol specified in {@link AsyncSinkBase}.
  *
- * <p>The sink internally uses a {@link software.amazon.awssdk.services.kinesis.KinesisAsyncClient}
- * to communicate with the AWS endpoint.
+ * <p>The sink internally uses a {@link
+ * software.amazon.awssdk.services.firehose.FirehoseAsyncClient} to communicate with the AWS
+ * endpoint.
  *
  * <p>The behaviour of the buffering may be specified by providing configuration during the sink
  * build time.
  *
  * <ul>
- *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to KDS
+ *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to KDF
  *   <li>{@code maxInFlightRequests}: the maximum number of in flight requests that may exist, if
  *       any more in flight requests need to be initiated once the maximum has been reached, then it
  *       will be blocked until some have completed
  *   <li>{@code maxBufferedRequests}: the maximum number of elements held in the buffer, requests to
  *       add elements will be blocked while the number of elements in the buffer is at the maximum
- *   <li>{@code maxBatchSizeInBytes}: the maximum size of a batch of entries that may be sent to KDS
+ *   <li>{@code maxBatchSizeInBytes}: the maximum size of a batch of entries that may be sent to KDF
  *       measured in bytes
  *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
  *       buffer, if any element reaches this age, the entire buffer will be flushed immediately
  *   <li>{@code maxRecordSizeInBytes}: the maximum size of a record the sink will accept into the
  *       buffer, a record of size larger than this will be rejected when passed to the sink
  *   <li>{@code failOnError}: when an exception is encountered while persisting to Kinesis Data
- *       Streams, the job will fail immediately if failOnError is set
+ *       Firehose, the job will fail immediately if failOnError is set
  * </ul>
  *
  * <p>Please see the writer implementation in {@link KinesisDataFirehoseSinkWriter}
@@ -67,7 +68,7 @@ import java.util.Properties;
 public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Record> {
 
     private final boolean failOnError;
-    private final String streamName;
+    private final String deliveryStreamName;
     private final Properties kinesisClientProperties;
 
     KinesisDataFirehoseSink(
@@ -79,7 +80,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
             Long maxTimeInBufferMS,
             Long maxRecordSizeInBytes,
             boolean failOnError,
-            String streamName,
+            String deliveryStreamName,
             Properties kinesisClientProperties) {
         super(
                 elementConverter,
@@ -89,20 +90,20 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes);
-        this.streamName =
+        this.deliveryStreamName =
                 Preconditions.checkNotNull(
-                        streamName,
-                        "The stream name must not be null when initializing the KDS Sink.");
+                        deliveryStreamName,
+                        "The delivery stream name must not be null when initializing the KDF Sink.");
         Preconditions.checkArgument(
-                !this.streamName.isEmpty(),
-                "The stream name must be set when initializing the KDS Sink.");
+                !this.deliveryStreamName.isEmpty(),
+                "The delivery stream name must be set when initializing the KDF Sink.");
         this.failOnError = failOnError;
         this.kinesisClientProperties = kinesisClientProperties;
     }
 
     /**
      * Create a {@link KinesisDataFirehoseSinkBuilder} to allow the fluent construction of a new
-     * {@code KinesisDataStreamsSink}.
+     * {@code KinesisDataFirehoseSink}.
      *
      * @param <InputT> type of incoming records
      * @return {@link KinesisDataFirehoseSinkBuilder}
@@ -125,7 +126,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
                 getMaxTimeInBufferMS(),
                 getMaxRecordSizeInBytes(),
                 failOnError,
-                streamName,
+                deliveryStreamName,
                 kinesisClientProperties);
     }
 
