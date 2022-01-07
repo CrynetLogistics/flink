@@ -131,8 +131,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
 
     @Experimental
     @Override
-    public Optional<SimpleVersionedSerializer<Collection<Record>>>
-            getWriterStateSerializer() {
+    public Optional<SimpleVersionedSerializer<Collection<Record>>> getWriterStateSerializer() {
         return Optional.empty();
     }
 }

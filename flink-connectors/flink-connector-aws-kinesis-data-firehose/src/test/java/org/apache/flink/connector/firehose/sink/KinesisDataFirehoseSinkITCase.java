@@ -1,37 +1,57 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
-import org.apache.flink.connector.aws.config.AWSConfigConstants;
-import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
+import org.apache.flink.connector.firehose.sink.testutils.LocalstackContainer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.DockerImageVersions;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
 import software.amazon.awssdk.services.firehose.model.Record;
+import software.amazon.awssdk.services.iam.IamAsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
-import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.utils.ImmutableMap;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.HTTP_PROTOCOL_VERSION;
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createDeliveryStream;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIAMRole;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIamClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getConfig;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.listBucketObjects;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeBucket;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeFirehoseClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeS3Client;
+import static org.junit.Assert.assertEquals;
 
 public class KinesisDataFirehoseSinkITCase {
 
@@ -40,81 +60,47 @@ public class KinesisDataFirehoseSinkITCase {
                     .setSerializationSchema(new SimpleStringSchema())
                     .build();
 
-    @BeforeEach
-    public void setup(){
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisDataFirehoseSinkITCase.class);
+
+    @ClassRule
+    public static LocalstackContainer mockFirehoseContainer =
+            new LocalstackContainer(DockerImageName.parse(DockerImageVersions.LOCALSTACK));
+
+    @Before
+    public void setup() {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
     }
 
-    @AfterEach
-    public void teardown(){
+    @After
+    public void teardown() {
         System.clearProperty(SdkSystemSetting.CBOR_ENABLED.property());
-    }
-
-    public static void listBucketObjects(S3AsyncClient s3, String bucketName ) {
-
-        try {
-            ListObjectsRequest listObjects = ListObjectsRequest
-                    .builder()
-                    .bucket(bucketName)
-                    .build();
-
-            CompletableFuture<ListObjectsResponse> resC = s3.listObjects(listObjects);
-            ListObjectsResponse res = resC.get();
-            List<S3Object> objects = res.contents();
-
-            for (S3Object myValue: objects ) {
-                System.out.print("\n The name of the key is " + myValue.key());
-                System.out.print("\n The object is " + calKb(myValue.size()) + " KBs");
-                System.out.print("\n The owner is " + myValue.owner());
-
-            }
-
-        } catch (S3Exception e) {
-            System.err.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
-        } catch (ExecutionException | InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-    //convert bytes to kbs
-    private static long calKb(Long val) {
-        return val/1024;
-    }
-
-    @Test
-    public void test2() throws URISyntaxException {
-        Properties config = new Properties();
-        config.setProperty(AWSConfigConstants.AWS_ACCESS_KEY_ID, "lol");
-        config.setProperty(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "lol");
-        config.setProperty(TRUST_ALL_CERTIFICATES, "true");
-        config.setProperty(HTTP_PROTOCOL_VERSION, "HTTP1_1");
-
-        final SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(config);
-        S3AsyncClient client = S3AsyncClient.builder().httpClient(httpClient)
-                .region(Region.AP_SOUTHEAST_1).endpointOverride(new URI("https://localhost:4566")).build();
-
-        listBucketObjects(client, "s3-firehose");
     }
 
     @Test
     public void test() throws Exception {
+        String ROLE_NAME = "super-role";
+        String ROLE_ARN = "arn:aws:iam::000000000000:role/" + ROLE_NAME;
+        String BUCKET_NAME = "s3-firehose";
+        String STREAM_NAME = "s3-stream";
 
-        Properties config = new Properties();
-        config.setProperty(AWSConfigConstants.AWS_REGION, "ap-southeast-1");
-        config.setProperty(AWSConfigConstants.AWS_ENDPOINT, "https://localhost:4566");
-        config.setProperty(AWSConfigConstants.AWS_ACCESS_KEY_ID, "lol");
-        config.setProperty(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "lol");
-        config.setProperty(TRUST_ALL_CERTIFICATES, "true");
-        config.setProperty(HTTP_PROTOCOL_VERSION, "HTTP1_1");
+        S3AsyncClient s3AsyncClient = makeS3Client(mockFirehoseContainer.getEndpoint());
+        FirehoseAsyncClient firehoseAsyncClient = makeFirehoseClient(mockFirehoseContainer.getEndpoint());
+        IamAsyncClient iamAsyncClient = createIamClient(mockFirehoseContainer.getEndpoint());
 
+        LOG.info("1 - Creating the bucket for Firehose to deliver into...");
+        makeBucket(s3AsyncClient, BUCKET_NAME);
+        LOG.info("2 - Creating the IAM Role for Firehose to write into the s3 bucket...");
+        createIAMRole(iamAsyncClient, ROLE_NAME);
+        LOG.info("3 - Creating the Firehose delivery stream...");
+        createDeliveryStream(STREAM_NAME, BUCKET_NAME, ROLE_ARN, firehoseAsyncClient);
+
+        int NUMBER_OF_ELEMENTS = 92;
 
         ObjectMapper mapper = new ObjectMapper();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.enableCheckpointing(10_000);
 
         DataStream<String> fromGen =
-                env.fromSequence(1, 10_000_000L)
+                env.fromSequence(1, NUMBER_OF_ELEMENTS)
                         .map(Object::toString)
                         .returns(String.class)
                         .map(data -> mapper.writeValueAsString(ImmutableMap.of("data", data)));
@@ -122,14 +108,17 @@ public class KinesisDataFirehoseSinkITCase {
         KinesisDataFirehoseSink<String> kdsSink =
                 KinesisDataFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
-                        .setDeliveryStreamName("s3-stream")
-                        .setMaxBatchSize(20)
-                        .setKinesisClientProperties(config)
+                        .setDeliveryStreamName(STREAM_NAME)
+                        .setMaxBatchSize(1)
+                        .setKinesisClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))
                         .build();
 
         fromGen.sinkTo(kdsSink);
 
-        env.execute("KDF Async Sink Example Program");
+        env.execute("Integration Test");
 
+        List<S3Object> objects = listBucketObjects(s3AsyncClient, BUCKET_NAME);
+
+        assertEquals(NUMBER_OF_ELEMENTS, objects.size());
     }
 }
