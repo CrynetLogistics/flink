@@ -27,19 +27,19 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
+import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
 import software.amazon.awssdk.services.firehose.model.Record;
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClient;
 import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.Properties;
 
 /**
  * An example application demonstrating how to use the {@link KinesisDataFirehoseSink} to sink into
- * KDS.
+ * KDF.
  *
- * <p>The {@link KinesisAsyncClient} used here may be configured in the standard way for the AWS SDK
- * 2.x. e.g. the provision of {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY} through
- * environment variables etc.
+ * <p>The {@link FirehoseAsyncClient} used here may be configured in the standard way for the AWS
+ * SDK 2.x. e.g. the provision of {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY}
+ * through environment variables etc.
  */
 public class SinkIntoFirehose {
 
@@ -53,7 +53,7 @@ public class SinkIntoFirehose {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
 
-        DataStream<String> fromGen =
+        DataStream<String> generator =
                 env.fromSequence(1, 10_000_000L)
                         .map(Object::toString)
                         .returns(String.class)
@@ -62,15 +62,15 @@ public class SinkIntoFirehose {
         Properties sinkProperties = new Properties();
         sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
 
-        KinesisDataFirehoseSink<String> kdsSink =
+        KinesisDataFirehoseSink<String> kdfSink =
                 KinesisDataFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
-                        .setDeliveryStreamName("test-deliv")
+                        .setDeliveryStreamName("delivery-stream")
                         .setMaxBatchSize(20)
                         .setKinesisClientProperties(sinkProperties)
                         .build();
 
-        fromGen.sinkTo(kdsSink);
+        generator.sinkTo(kdfSink);
 
         env.execute("KDF Async Sink Example Program");
     }

@@ -38,7 +38,7 @@ public class KinesisDataStreamsSinkBuilderTest {
         Assertions.assertThatExceptionOfType(NullPointerException.class)
                 .isThrownBy(() -> KinesisDataStreamsSink.builder().setStreamName("stream").build())
                 .withMessageContaining(
-                        "ElementConverter must be not null when initilizing the AsyncSinkBase.");
+                        "ElementConverter must be not null when initializing the AsyncSinkBase.");
     }
 
     @Test

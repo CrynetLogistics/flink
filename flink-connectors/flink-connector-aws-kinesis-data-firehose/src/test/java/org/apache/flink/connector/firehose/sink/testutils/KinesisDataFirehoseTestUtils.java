@@ -52,6 +52,9 @@ import java.util.concurrent.ExecutionException;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.HTTP_PROTOCOL_VERSION;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 
+/**
+ * A set of static methods that can be used to call common AWS services on the Localstack container.
+ */
 public class KinesisDataFirehoseTestUtils {
 
     public static S3AsyncClient makeS3Client(String endpoint) throws URISyntaxException {
@@ -62,12 +65,12 @@ public class KinesisDataFirehoseTestUtils {
                 .build();
     }
 
-    public static FirehoseAsyncClient makeFirehoseClient(String endpoint) throws URISyntaxException {
+    public static FirehoseAsyncClient makeFirehoseClient(String endpoint)
+            throws URISyntaxException {
         return AWSUnifiedSinksUtil.createAwsAsyncClient(
                 getConfig(endpoint),
                 getHttpClient(endpoint),
-                FirehoseAsyncClient.builder()
-                        .endpointOverride(new URI(endpoint)),
+                FirehoseAsyncClient.builder().endpointOverride(new URI(endpoint)),
                 AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT,
                 AWSUnifiedSinksConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX);
     }
@@ -148,5 +151,4 @@ public class KinesisDataFirehoseTestUtils {
         CompletableFuture<ListObjectsResponse> res = s3.listObjects(listObjects);
         return res.get().contents();
     }
-
 }
