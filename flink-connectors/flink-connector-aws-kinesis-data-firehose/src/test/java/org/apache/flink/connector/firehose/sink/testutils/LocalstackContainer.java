@@ -22,6 +22,10 @@ import org.testcontainers.utility.DockerImageName;
 
 import java.util.Collections;
 
+/**
+ * A class wrapping the Localstack container that provides mock implementations of many common AWS
+ * services.
+ */
 public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
 
     private static final int PORT = 4566;

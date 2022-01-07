@@ -67,7 +67,7 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
         return new Builder<>();
     }
 
-    /** A builder for the KinesisDataStreamsSinkElementConverter. */
+    /** A builder for the KinesisDataFirehoseSinkElementConverter. */
     @PublicEvolving
     public static class Builder<InputT> {
 
@@ -84,7 +84,7 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
             Preconditions.checkNotNull(
                     serializationSchema,
                     "No SerializationSchema was supplied to the "
-                            + "KinesisDataStreamsSinkElementConverter builder.");
+                            + "KinesisDataFirehoseSinkElementConverter builder.");
             return new KinesisDataFirehoseSinkElementConverter<>(serializationSchema);
         }
     }

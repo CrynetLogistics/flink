@@ -29,20 +29,24 @@ import java.util.Properties;
  * Builder to construct {@link KinesisDataFirehoseSink}.
  *
  * <p>The following example shows the minimum setup to create a {@link KinesisDataFirehoseSink} that
- * writes String values to a Kinesis Data Streams stream named your_stream_here.
+ * writes String values to a Kinesis Data Firehose delivery stream named delivery-stream-name.
  *
  * <pre>{@code
- * ElementConverter<String, PutRecordsRequestEntry> elementConverter =
- *             KinesisDataStreamsSinkElementConverter.<String>builder()
- *                     .setSerializationSchema(new SimpleStringSchema())
- *                     .setPartitionKeyGenerator(element -> String.valueOf(element.hashCode()))
- *                     .build();
+ * private static final ElementConverter<String, Record> elementConverter =
+ *         KinesisDataFirehoseSinkElementConverter.<String>builder()
+ *                 .setSerializationSchema(new SimpleStringSchema())
+ *                 .build();
  *
- * KinesisDataStreamsSink<String> kdsSink =
- *                 KinesisDataStreamsSink.<String>builder()
- *                         .setElementConverter(elementConverter)
- *                         .setStreamName("your_stream_name")
- *                         .build();
+ * Properties sinkProperties = new Properties();
+ * sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
+ *
+ * KinesisDataFirehoseSink<String> kdfSink =
+ *         KinesisDataFirehoseSink.<String>builder()
+ *                 .setElementConverter(elementConverter)
+ *                 .setDeliveryStreamName("delivery-stream-name")
+ *                 .setMaxBatchSize(20)
+ *                 .setKinesisClientProperties(sinkProperties)
+ *                 .build();
  * }</pre>
  *
  * <p>If the following parameters are not set in this builder, the following defaults will be used:
@@ -78,11 +82,11 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
     KinesisDataFirehoseSinkBuilder() {}
 
     /**
-     * Sets the name of the KDS stream that the sink will connect to. There is no default for this
-     * parameter, therefore, this must be provided at sink creation time otherwise the build will
-     * fail.
+     * Sets the name of the KDF delivery stream that the sink will connect to. There is no default
+     * for this parameter, therefore, this must be provided at sink creation time otherwise the
+     * build will fail.
      *
-     * @param deliveryStreamName the name of the stream
+     * @param deliveryStreamName the name of the delivery stream
      * @return {@link KinesisDataFirehoseSinkBuilder} itself
      */
     public KinesisDataFirehoseSinkBuilder<InputT> setDeliveryStreamName(String deliveryStreamName) {

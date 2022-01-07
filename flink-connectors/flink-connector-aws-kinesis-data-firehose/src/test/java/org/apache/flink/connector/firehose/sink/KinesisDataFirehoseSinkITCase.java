@@ -53,6 +53,7 @@ import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFire
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeS3Client;
 import static org.junit.Assert.assertEquals;
 
+/** Integration test suite for the {@code KinesisDataFirehoseSink} using a localstack container. */
 public class KinesisDataFirehoseSinkITCase {
 
     private static final ElementConverter<String, Record> elementConverter =
@@ -61,14 +62,26 @@ public class KinesisDataFirehoseSinkITCase {
                     .build();
 
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataFirehoseSinkITCase.class);
+    private S3AsyncClient s3AsyncClient;
+    private FirehoseAsyncClient firehoseAsyncClient;
+    private IamAsyncClient iamAsyncClient;
+
+    private static final String ROLE_NAME = "super-role";
+    private static final String ROLE_ARN = "arn:aws:iam::000000000000:role/" + ROLE_NAME;
+    private static final String BUCKET_NAME = "s3-firehose";
+    private static final String STREAM_NAME = "s3-stream";
+    private static final int NUMBER_OF_ELEMENTS = 92;
 
     @ClassRule
     public static LocalstackContainer mockFirehoseContainer =
             new LocalstackContainer(DockerImageName.parse(DockerImageVersions.LOCALSTACK));
 
     @Before
-    public void setup() {
+    public void setup() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
+        s3AsyncClient = makeS3Client(mockFirehoseContainer.getEndpoint());
+        firehoseAsyncClient = makeFirehoseClient(mockFirehoseContainer.getEndpoint());
+        iamAsyncClient = createIamClient(mockFirehoseContainer.getEndpoint());
     }
 
     @After
@@ -78,15 +91,6 @@ public class KinesisDataFirehoseSinkITCase {
 
     @Test
     public void test() throws Exception {
-        String ROLE_NAME = "super-role";
-        String ROLE_ARN = "arn:aws:iam::000000000000:role/" + ROLE_NAME;
-        String BUCKET_NAME = "s3-firehose";
-        String STREAM_NAME = "s3-stream";
-
-        S3AsyncClient s3AsyncClient = makeS3Client(mockFirehoseContainer.getEndpoint());
-        FirehoseAsyncClient firehoseAsyncClient = makeFirehoseClient(mockFirehoseContainer.getEndpoint());
-        IamAsyncClient iamAsyncClient = createIamClient(mockFirehoseContainer.getEndpoint());
-
         LOG.info("1 - Creating the bucket for Firehose to deliver into...");
         makeBucket(s3AsyncClient, BUCKET_NAME);
         LOG.info("2 - Creating the IAM Role for Firehose to write into the s3 bucket...");
@@ -94,12 +98,10 @@ public class KinesisDataFirehoseSinkITCase {
         LOG.info("3 - Creating the Firehose delivery stream...");
         createDeliveryStream(STREAM_NAME, BUCKET_NAME, ROLE_ARN, firehoseAsyncClient);
 
-        int NUMBER_OF_ELEMENTS = 92;
-
         ObjectMapper mapper = new ObjectMapper();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        DataStream<String> fromGen =
+        DataStream<String> generator =
                 env.fromSequence(1, NUMBER_OF_ELEMENTS)
                         .map(Object::toString)
                         .returns(String.class)
@@ -113,12 +115,10 @@ public class KinesisDataFirehoseSinkITCase {
                         .setKinesisClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))
                         .build();
 
-        fromGen.sinkTo(kdsSink);
-
+        generator.sinkTo(kdsSink);
         env.execute("Integration Test");
 
         List<S3Object> objects = listBucketObjects(s3AsyncClient, BUCKET_NAME);
-
         assertEquals(NUMBER_OF_ELEMENTS, objects.size());
     }
 }
