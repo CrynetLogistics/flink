@@ -48,11 +48,11 @@ import java.util.function.Consumer;
 /**
  * Sink writer created by {@link KinesisDataFirehoseSink} to write to Kinesis Data Streams. More
  * details on the operation of this sink writer may be found in the doc for {@link
- * KinesisDataFirehoseSink}. More details on the internals of this sink writer may be found in {@link
- * AsyncSinkWriter}.
+ * KinesisDataFirehoseSink}. More details on the internals of this sink writer may be found in
+ * {@link AsyncSinkWriter}.
  *
- * <p>The {@link FirehoseAsyncClient} used here may be configured in the standard way for the AWS SDK
- * 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
+ * <p>The {@link FirehoseAsyncClient} used here may be configured in the standard way for the AWS
+ * SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> {
@@ -116,11 +116,13 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
 
     @Override
     protected void submitRequestEntries(
-            List<Record> requestEntries,
-            Consumer<Collection<Record>> requestResult) {
+            List<Record> requestEntries, Consumer<Collection<Record>> requestResult) {
 
         PutRecordBatchRequest batchRequest =
-                PutRecordBatchRequest.builder().records(requestEntries).deliveryStreamName(streamName).build();
+                PutRecordBatchRequest.builder()
+                        .records(requestEntries)
+                        .deliveryStreamName(streamName)
+                        .build();
 
         LOG.trace("Request to submit {} entries to KDS using KDS Sink.", requestEntries.size());
 
@@ -171,11 +173,12 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
 
         if (failOnError) {
             getFatalExceptionCons()
-                    .accept(new KinesisDataFirehoseException.KinesisDataFirehoseFailFastException());
+                    .accept(
+                            new KinesisDataFirehoseException
+                                    .KinesisDataFirehoseFailFastException());
             return;
         }
-        List<Record> failedRequestEntries =
-                new ArrayList<>(response.failedPutCount());
+        List<Record> failedRequestEntries = new ArrayList<>(response.failedPutCount());
         List<PutRecordBatchResponseEntry> records = response.requestResponses();
 
         for (int i = 0; i < records.size(); i++) {

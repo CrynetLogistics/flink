@@ -43,20 +43,31 @@ public class KinesisDataFirehoseSinkWriterTest {
                     .build();
 
     @Before
-    public void setup(){
+    public void setup() {
         TestSinkInitContext sinkInitContext = new TestSinkInitContext();
         Properties sinkProperties = new Properties();
         sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
-        sinkWriter = new KinesisDataFirehoseSinkWriter<>(ELEMENT_CONVERTER_PLACEHOLDER, sinkInitContext,
-                50, 16, 10000, 4 * 1024 * 1024,
-                5000, 1000 * 1024, true, "streamName", sinkProperties);
+        sinkWriter =
+                new KinesisDataFirehoseSinkWriter<>(
+                        ELEMENT_CONVERTER_PLACEHOLDER,
+                        sinkInitContext,
+                        50,
+                        16,
+                        10000,
+                        4 * 1024 * 1024,
+                        5000,
+                        1000 * 1024,
+                        true,
+                        "streamName",
+                        sinkProperties);
     }
 
     @Test
     public void getSizeInBytesReturnsSizeOfBlobBeforeBase64Encoding() {
         String testString = "{many hands make light work;";
         Record record = Record.builder().data(SdkBytes.fromUtf8String(testString)).build();
-        assertEquals(testString.getBytes(StandardCharsets.US_ASCII).length, sinkWriter.getSizeInBytes(record));
+        assertEquals(
+                testString.getBytes(StandardCharsets.US_ASCII).length,
+                sinkWriter.getSizeInBytes(record));
     }
-
 }
