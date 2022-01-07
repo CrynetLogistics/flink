@@ -34,7 +34,11 @@ public class KinesisDataFirehoseSinkBuilderTest {
     @Test
     public void elementConverterOfSinkMustBeSetWhenBuilt() {
         Assertions.assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> KinesisDataFirehoseSink.builder().setDeliveryStreamName("deliveryStream").build())
+                .isThrownBy(
+                        () ->
+                                KinesisDataFirehoseSink.builder()
+                                        .setDeliveryStreamName("deliveryStream")
+                                        .build())
                 .withMessageContaining(
                         "ElementConverter must be not null when initilizing the AsyncSinkBase.");
     }
