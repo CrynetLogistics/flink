@@ -27,13 +27,10 @@ import org.apache.flink.util.Preconditions;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.firehose.model.Record;
 
-import java.io.Serializable;
-import java.util.function.Function;
-
 /**
  * An implementation of the {@link ElementConverter} that uses the AWS Kinesis SDK v2. The user only
- * needs to provide a {@link SerializationSchema} of the {@code InputT} and a {@link
- * PartitionKeyGenerator} lambda to transform the input element into a String.
+ * needs to provide a {@link SerializationSchema} of the {@code InputT} to transform it into a
+ * {@link Record} that may be persisted.
  */
 @PublicEvolving
 public class KinesisDataFirehoseSinkElementConverter<InputT>
@@ -54,14 +51,6 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
                 .data(SdkBytes.fromByteArray(serializationSchema.serialize(element)))
                 .build();
     }
-
-    /**
-     * This is a serializable function whose {@code accept()} method specifies how to convert from
-     * an input element to the partition key, a string.
-     */
-    @PublicEvolving
-    @FunctionalInterface
-    public interface PartitionKeyGenerator<InputT> extends Function<InputT, String>, Serializable {}
 
     public static <InputT> Builder<InputT> builder() {
         return new Builder<>();

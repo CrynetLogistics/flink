@@ -22,6 +22,9 @@ import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.waiters.WaiterResponse;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
@@ -49,7 +52,9 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.HTTP_PROTOCOL_VERSION;
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_CREDENTIALS_PROVIDER;
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 
 /**
@@ -57,11 +62,15 @@ import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL
  */
 public class KinesisDataFirehoseTestUtils {
 
+    private static final String ACCESS_KEY_ID = "accessKeyId";
+    private static final String SECRET_ACCESS_KEY = "secretAccessKey";
+
     public static S3AsyncClient makeS3Client(String endpoint) throws URISyntaxException {
         return S3AsyncClient.builder()
                 .httpClient(getHttpClient(endpoint))
                 .region(Region.AP_SOUTHEAST_1)
                 .endpointOverride(new URI(endpoint))
+                .credentialsProvider(getDefaultCredentials())
                 .build();
     }
 
@@ -80,17 +89,23 @@ public class KinesisDataFirehoseTestUtils {
                 .httpClient(getHttpClient(endpoint))
                 .region(Region.AWS_GLOBAL)
                 .endpointOverride(new URI(endpoint))
+                .credentialsProvider(getDefaultCredentials())
                 .build();
+    }
+
+    public static AwsCredentialsProvider getDefaultCredentials() {
+        return StaticCredentialsProvider.create(
+                AwsBasicCredentials.create(ACCESS_KEY_ID, SECRET_ACCESS_KEY));
     }
 
     public static Properties getConfig(String endpoint) {
         Properties config = new Properties();
-        config.setProperty(AWSConfigConstants.AWS_REGION, Region.AP_SOUTHEAST_1.toString());
-        config.setProperty(AWSConfigConstants.AWS_ENDPOINT, endpoint);
-        config.setProperty(AWSConfigConstants.AWS_ACCESS_KEY_ID, "accessKeyId");
-        config.setProperty(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "secretAccessKey");
+        config.setProperty(AWS_REGION, Region.AP_SOUTHEAST_1.toString());
+        config.setProperty(AWS_ENDPOINT, endpoint);
+        config.setProperty(AWSConfigConstants.accessKeyId(AWS_CREDENTIALS_PROVIDER), ACCESS_KEY_ID);
+        config.setProperty(
+                AWSConfigConstants.secretKey(AWS_CREDENTIALS_PROVIDER), SECRET_ACCESS_KEY);
         config.setProperty(TRUST_ALL_CERTIFICATES, "true");
-        config.setProperty(HTTP_PROTOCOL_VERSION, "HTTP1_1");
         return config;
     }
 

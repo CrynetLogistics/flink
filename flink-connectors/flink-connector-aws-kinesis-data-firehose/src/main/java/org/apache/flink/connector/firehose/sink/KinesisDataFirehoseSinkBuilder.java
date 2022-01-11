@@ -20,10 +20,14 @@ package org.apache.flink.connector.firehose.sink;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.sink.AsyncSinkBaseBuilder;
 
+import software.amazon.awssdk.http.Protocol;
 import software.amazon.awssdk.services.firehose.model.Record;
 
 import java.util.Optional;
 import java.util.Properties;
+
+import static org.apache.flink.connector.aws.config.AWSConfigConstants.HTTP_PROTOCOL_VERSION;
+import static software.amazon.awssdk.http.Protocol.HTTP1_1;
 
 /**
  * Builder to construct {@link KinesisDataFirehoseSink}.
@@ -74,6 +78,7 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
     private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1000 * 1024;
     private static final boolean DEFAULT_FAIL_ON_ERROR = false;
+    private static final Protocol DEFAULT_HTTP_PROTOCOL = HTTP1_1;
 
     private Boolean failOnError;
     private String deliveryStreamName;
@@ -105,6 +110,13 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
         return this;
     }
 
+    private Properties getClientPropertiesWithDefaultHttpProtocol() {
+        Properties clientProperties =
+                Optional.ofNullable(kinesisClientProperties).orElse(new Properties());
+        clientProperties.putIfAbsent(HTTP_PROTOCOL_VERSION, DEFAULT_HTTP_PROTOCOL);
+        return clientProperties;
+    }
+
     @Override
     public KinesisDataFirehoseSink<InputT> build() {
         return new KinesisDataFirehoseSink<>(
@@ -118,6 +130,6 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
                 Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
                 Optional.ofNullable(failOnError).orElse(DEFAULT_FAIL_ON_ERROR),
                 deliveryStreamName,
-                Optional.ofNullable(kinesisClientProperties).orElse(new Properties()));
+                getClientPropertiesWithDefaultHttpProtocol());
     }
 }

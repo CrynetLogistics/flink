@@ -17,10 +17,21 @@
 
 package org.apache.flink.connector.firehose.sink.testutils;
 
+import org.rnorth.ducttape.ratelimits.RateLimiter;
+import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
+import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 import org.testcontainers.utility.DockerImageName;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.s3.model.S3Object;
 
-import java.util.Collections;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * A class wrapping the Localstack container that provides mock implementations of many common AWS
@@ -28,15 +39,54 @@ import java.util.Collections;
  */
 public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
 
-    private static final int PORT = 4566;
+    private static final int CONTAINER_PORT = 4566;
 
     public LocalstackContainer(DockerImageName imageName) {
         super(imageName);
-        withExposedPorts(PORT);
-        setPortBindings(Collections.singletonList(String.format("127.0.0.1:%s:%s", PORT, PORT)));
+        withExposedPorts(CONTAINER_PORT);
+        //        setPortBindings(
+        //                Collections.singletonList(String.format("%s:%s",
+        // getMappedPort(CONTAINER_PORT), CONTAINER_PORT)));
+        waitingFor(new ListStreamsWaitStrategy());
     }
 
     public String getEndpoint() {
-        return String.format("https://localhost:%s", PORT);
+        return String.format("https://%s:%s", getHost(), getMappedPort(CONTAINER_PORT));
+    }
+
+    private class ListStreamsWaitStrategy extends AbstractWaitStrategy {
+        private static final int TRANSACTIONS_PER_SECOND = 1;
+
+        private final RateLimiter rateLimiter =
+                RateLimiterBuilder.newBuilder()
+                        .withRate(TRANSACTIONS_PER_SECOND, SECONDS)
+                        .withConstantThroughput()
+                        .build();
+
+        @Override
+        protected void waitUntilReady() {
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            retryUntilSuccessRunner(this::list);
+        }
+
+        protected <T> void retryUntilSuccessRunner(final Callable<T> lambda) {
+            Unreliables.retryUntilSuccess(
+                    (int) startupTimeout.getSeconds(),
+                    SECONDS,
+                    () -> rateLimiter.getWhenReady(lambda));
+        }
+
+        private List<S3Object> list()
+                throws ExecutionException, InterruptedException, URISyntaxException {
+            String bucketName = "bucket-name-not-to-be-used";
+            S3AsyncClient client = KinesisDataFirehoseTestUtils.makeS3Client(getEndpoint());
+            KinesisDataFirehoseTestUtils.makeBucket(client, bucketName);
+            return KinesisDataFirehoseTestUtils.listBucketObjects(client, bucketName);
+        }
     }
 }
