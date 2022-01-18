@@ -44,9 +44,6 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
     public LocalstackContainer(DockerImageName imageName) {
         super(imageName);
         withExposedPorts(CONTAINER_PORT);
-        //        setPortBindings(
-        //                Collections.singletonList(String.format("%s:%s",
-        // getMappedPort(CONTAINER_PORT), CONTAINER_PORT)));
         waitingFor(new ListStreamsWaitStrategy());
     }
 

@@ -62,6 +62,7 @@ under the License.
 			<groupId>software.amazon.awssdk</groupId>
 			<artifactId>kinesis</artifactId>
 			<version>${aws.sdk.version}</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 

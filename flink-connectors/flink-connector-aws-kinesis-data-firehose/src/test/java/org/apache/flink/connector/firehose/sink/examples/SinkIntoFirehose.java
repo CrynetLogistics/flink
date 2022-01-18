@@ -19,7 +19,6 @@ package org.apache.flink.connector.firehose.sink.examples;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
-import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSink;
 import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSinkElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -28,7 +27,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 
 import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
-import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.Properties;
@@ -43,7 +41,7 @@ import java.util.Properties;
  */
 public class SinkIntoFirehose {
 
-    private static final ElementConverter<String, Record> elementConverter =
+    private static final KinesisDataFirehoseSinkElementConverter<String> elementConverter =
             KinesisDataFirehoseSinkElementConverter.<String>builder()
                     .setSerializationSchema(new SimpleStringSchema())
                     .build();
