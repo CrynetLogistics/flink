@@ -19,7 +19,6 @@ package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink.Sink;
-import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;

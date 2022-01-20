@@ -18,7 +18,6 @@
 package org.apache.flink.connector.kinesis.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
-import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
 /** Defaults for {@link KinesisDataStreamsSinkWriter}. */
 @PublicEvolving
