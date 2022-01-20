@@ -36,7 +36,7 @@ import static software.amazon.awssdk.http.Protocol.HTTP1_1;
  * writes String values to a Kinesis Data Firehose delivery stream named delivery-stream-name.
  *
  * <pre>{@code
- * private static final ElementConverter<String, Record> elementConverter =
+ * private static final KinesisDataFirehoseSinkElementConverter<String> elementConverter =
  *         KinesisDataFirehoseSinkElementConverter.<String>builder()
  *                 .setSerializationSchema(new SimpleStringSchema())
  *                 .build();
