@@ -39,26 +39,6 @@ import java.util.Properties;
  * software.amazon.awssdk.services.firehose.FirehoseAsyncClient} to communicate with the AWS
  * endpoint.
  *
- * <p>The behaviour of the buffering may be specified by providing configuration during the sink
- * build time.
- *
- * <ul>
- *   <li>{@code maxBatchSize}: the maximum size of a batch of entries that may be sent to KDF
- *   <li>{@code maxInFlightRequests}: the maximum number of in flight requests that may exist, if
- *       any more in flight requests need to be initiated once the maximum has been reached, then it
- *       will be blocked until some have completed
- *   <li>{@code maxBufferedRequests}: the maximum number of elements held in the buffer, requests to
- *       add elements will be blocked while the number of elements in the buffer is at the maximum
- *   <li>{@code maxBatchSizeInBytes}: the maximum size of a batch of entries that may be sent to KDF
- *       measured in bytes
- *   <li>{@code maxTimeInBufferMS}: the maximum amount of time an entry is allowed to live in the
- *       buffer, if any element reaches this age, the entire buffer will be flushed immediately
- *   <li>{@code maxRecordSizeInBytes}: the maximum size of a record the sink will accept into the
- *       buffer, a record of size larger than this will be rejected when passed to the sink
- *   <li>{@code failOnError}: when an exception is encountered while persisting to Kinesis Data
- *       Firehose, the job will fail immediately if failOnError is set
- * </ul>
- *
  * <p>Please see the writer implementation in {@link KinesisDataFirehoseSinkWriter}
  *
  * @param <InputT> Type of the elements handled by this sink
