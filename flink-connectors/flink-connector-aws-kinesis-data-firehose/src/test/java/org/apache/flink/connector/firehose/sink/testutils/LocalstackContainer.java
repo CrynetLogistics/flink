@@ -62,20 +62,10 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
 
         @Override
         protected void waitUntilReady() {
-            try {
-                Thread.sleep(10000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            retryUntilSuccessRunner(this::list);
-        }
-
-        protected <T> void retryUntilSuccessRunner(final Callable<T> lambda) {
             Unreliables.retryUntilSuccess(
                     (int) startupTimeout.getSeconds(),
                     SECONDS,
-                    () -> rateLimiter.getWhenReady(lambda));
+                    () -> rateLimiter.getWhenReady(this::list));
         }
 
         private List<S3Object> list()
