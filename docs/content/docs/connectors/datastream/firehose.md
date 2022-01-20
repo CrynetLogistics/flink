@@ -59,9 +59,9 @@ KinesisDataFirehoseSink<String> kdfSink =
         .setMaxBatchSize(500)                          // Optional
         .setMaxInFlightRequests(16)                    // Optional
         .setMaxBufferedRequests(10_000)                // Optional
-        .setMaxBatchSizeInBytes(5 * 1024 * 1024)       // Optional
+        .setMaxBatchSizeInBytes(4 * 1024 * 1024)       // Optional
         .setMaxTimeInBufferMS(5000)                    // Optional
-        .setMaxRecordSizeInBytes(1 * 1024 * 1024)      // Optional
+        .setMaxRecordSizeInBytes(1000 * 1024)      // Optional
         .build();
 
 flinkStream.sinkTo(kdfSink);
@@ -90,9 +90,9 @@ val kdfSink =
         .setMaxBatchSize(500)                          // Optional
         .setMaxInFlightRequests(16)                    // Optional
         .setMaxBufferedRequests(10_000)                // Optional
-        .setMaxBatchSizeInBytes(5 * 1024 * 1024)       // Optional
+        .setMaxBatchSizeInBytes(4 * 1024 * 1024)       // Optional
         .setMaxTimeInBufferMS(5000)                    // Optional
-        .setMaxRecordSizeInBytes(1 * 1024 * 1024)      // Optional
+        .setMaxRecordSizeInBytes(1000 * 1024)      // Optional
         .build()
 
 flinkStream.sinkTo(kdfSink)
