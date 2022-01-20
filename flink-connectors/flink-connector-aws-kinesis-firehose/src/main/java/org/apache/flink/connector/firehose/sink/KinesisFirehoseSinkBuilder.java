@@ -101,7 +101,7 @@ public class KinesisFirehoseSinkBuilder<InputT>
 
     /**
      * If writing to Kinesis Data Firehose results in a partial or full failure being returned, the
-     * job will fail immediately with a {@link KinesisFirehoseException} if failOnError is set
+     * job will fail immediately with a {@link KinesisFirehoseException} if failOnError is set.
      *
      * @param failOnError whether to fail on error
      * @return {@link KinesisFirehoseSinkBuilder} itself
