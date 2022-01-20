@@ -57,7 +57,7 @@ KinesisFirehoseSink<String> kdfSink =
         .setDeliveryStreamName("your-stream-name")     // Required
         .setFailOnError(false)                         // Optional
         .setMaxBatchSize(500)                          // Optional
-        .setMaxInFlightRequests(16)                    // Optional
+        .setMaxInFlightRequests(50)                    // Optional
         .setMaxBufferedRequests(10_000)                // Optional
         .setMaxBatchSizeInBytes(4 * 1024 * 1024)       // Optional
         .setMaxTimeInBufferMS(5000)                    // Optional
@@ -88,7 +88,7 @@ val kdfSink =
         .setDeliveryStreamName("your-stream-name")     // Required
         .setFailOnError(false)                         // Optional
         .setMaxBatchSize(500)                          // Optional
-        .setMaxInFlightRequests(16)                    // Optional
+        .setMaxInFlightRequests(50)                    // Optional
         .setMaxBufferedRequests(10_000)                // Optional
         .setMaxBatchSizeInBytes(4 * 1024 * 1024)       // Optional
         .setMaxTimeInBufferMS(5000)                    // Optional
@@ -120,7 +120,7 @@ Flink's Cassandra sink is created by using the static builder `KinesisFirehoseSi
     * Optional. Default: `500`.
     * Maximum size of a batch to write to Firehose.
 6. _setMaxInFlightRequests(int maxInFlightRequests)_
-    * Optional. Default: `16`.
+    * Optional. Default: `50`.
     * The maximum number of in flight requests allowed before the sink applies backpressure.
 7. _setMaxBufferedRequests(int maxBufferedRequests)_
     * Optional. Default: `10_000`.

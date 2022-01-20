@@ -57,7 +57,7 @@ import static software.amazon.awssdk.http.Protocol.HTTP1_1;
  *
  * <ul>
  *   <li>{@code maxBatchSize} will be 500
- *   <li>{@code maxInFlightRequests} will be 16
+ *   <li>{@code maxInFlightRequests} will be 50
  *   <li>{@code maxBufferedRequests} will be 10000
  *   <li>{@code maxBatchSizeInBytes} will be 4 MB i.e. {@code 4 * 1024 * 1024}
  *   <li>{@code maxTimeInBufferMS} will be 5000ms
@@ -72,7 +72,7 @@ public class KinesisFirehoseSinkBuilder<InputT>
         extends AsyncSinkBaseBuilder<InputT, Record, KinesisFirehoseSinkBuilder<InputT>> {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 500;
-    private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
+    private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 50;
     private static final int DEFAULT_MAX_BUFFERED_REQUESTS = 10000;
     private static final long DEFAULT_MAX_BATCH_SIZE_IN_B = 4 * 1024 * 1024;
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
