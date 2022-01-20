@@ -19,7 +19,7 @@ package org.apache.flink.connector.firehose.sink.testutils;
 
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
+import org.apache.flink.connector.aws.util.AWSAsyncSinksUtil;
 import org.apache.flink.connector.firehose.sink.KinesisFirehoseConfigConstants;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -75,7 +75,7 @@ public class KinesisDataFirehoseTestUtils {
     }
 
     public static FirehoseAsyncClient getFirehoseClient(String endpoint) throws URISyntaxException {
-        return AWSUnifiedSinksUtil.createAwsAsyncClient(
+        return AWSAsyncSinksUtil.createAwsAsyncClient(
                 getConfig(endpoint),
                 getHttpClient(endpoint),
                 FirehoseAsyncClient.builder().endpointOverride(new URI(endpoint)),

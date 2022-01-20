@@ -19,7 +19,7 @@ package org.apache.flink.streaming.connectors.kinesis.proxy;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
-import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
+import org.apache.flink.connector.aws.util.AWSAsyncSinksUtil;
 import org.apache.flink.connector.kinesis.sink.KinesisDataStreamsConfigConstants;
 import org.apache.flink.streaming.connectors.kinesis.internals.publisher.fanout.FanOutRecordPublisherConfiguration;
 import org.apache.flink.streaming.connectors.kinesis.util.AwsV2Util;
@@ -64,11 +64,11 @@ public class KinesisProxyV2Factory {
         Properties legacyConfigProps = new Properties(configProps);
         legacyConfigProps.setProperty(
                 KinesisDataStreamsConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX,
-                AWSUnifiedSinksUtil.formatFlinkUserAgentPrefix(
+                AWSAsyncSinksUtil.formatFlinkUserAgentPrefix(
                         KinesisDataStreamsConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT));
 
         final KinesisAsyncClient client =
-                AWSUnifiedSinksUtil.createAwsAsyncClient(
+                AWSAsyncSinksUtil.createAwsAsyncClient(
                         legacyConfigProps,
                         httpClient,
                         KinesisAsyncClient.builder(),
