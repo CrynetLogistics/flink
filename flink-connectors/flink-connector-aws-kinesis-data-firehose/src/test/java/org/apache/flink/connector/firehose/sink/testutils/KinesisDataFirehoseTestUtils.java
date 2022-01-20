@@ -74,8 +74,7 @@ public class KinesisDataFirehoseTestUtils {
                 .build();
     }
 
-    public static FirehoseAsyncClient getFirehoseClient(String endpoint)
-            throws URISyntaxException {
+    public static FirehoseAsyncClient getFirehoseClient(String endpoint) throws URISyntaxException {
         return AWSUnifiedSinksUtil.createAwsAsyncClient(
                 getConfig(endpoint),
                 getHttpClient(endpoint),

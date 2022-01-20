@@ -46,11 +46,11 @@ import java.util.List;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createBucket;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createDeliveryStream;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIAMRole;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getIamClient;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getConfig;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.listBucketObjects;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getFirehoseClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getIamClient;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getS3Client;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.listBucketObjects;
 import static org.junit.Assert.assertEquals;
 
 /** Integration test suite for the {@code KinesisDataFirehoseSink} using a localstack container. */

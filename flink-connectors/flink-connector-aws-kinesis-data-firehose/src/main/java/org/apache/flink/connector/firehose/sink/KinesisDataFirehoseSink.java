@@ -17,7 +17,6 @@
 
 package org.apache.flink.connector.firehose.sink;
 
-import org.apache.flink.annotation.Experimental;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.sink.SinkWriter;
 import org.apache.flink.connector.base.sink.AsyncSinkBase;
