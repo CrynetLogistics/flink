@@ -17,6 +17,7 @@
 
 package org.apache.flink.connector.firehose.sink;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
@@ -55,6 +56,7 @@ import java.util.function.Consumer;
  * SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
+@Internal
 class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> {
     private static final Logger LOG = LoggerFactory.getLogger(KinesisDataFirehoseSinkWriter.class);
 
