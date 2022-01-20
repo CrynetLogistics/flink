@@ -44,14 +44,14 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
     public LocalstackContainer(DockerImageName imageName) {
         super(imageName);
         withExposedPorts(CONTAINER_PORT);
-        waitingFor(new ListStreamsWaitStrategy());
+        waitingFor(new ListBucketObjectsWaitStrategy());
     }
 
     public String getEndpoint() {
         return String.format("https://%s:%s", getHost(), getMappedPort(CONTAINER_PORT));
     }
 
-    private class ListStreamsWaitStrategy extends AbstractWaitStrategy {
+    private class ListBucketObjectsWaitStrategy extends AbstractWaitStrategy {
         private static final int TRANSACTIONS_PER_SECOND = 1;
 
         private final RateLimiter rateLimiter =
