@@ -18,7 +18,12 @@
 package org.apache.flink.connector.aws.util;
 
 import org.junit.Test;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.awscore.client.builder.AwsAsyncClientBuilder;
+import software.amazon.awssdk.awscore.client.builder.AwsClientBuilder;
+import software.amazon.awssdk.core.SdkClient;
+import software.amazon.awssdk.core.client.config.ClientAsyncConfiguration;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
 import software.amazon.awssdk.core.client.config.SdkAdvancedClientOption;
 import software.amazon.awssdk.core.client.config.SdkClientConfiguration;
@@ -26,7 +31,6 @@ import software.amazon.awssdk.core.client.config.SdkClientOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.kinesis.KinesisAsyncClientBuilder;
 
 import java.net.URI;
 import java.time.Duration;
@@ -53,7 +57,7 @@ public class AWSUnifiedSinksTest {
     @Test
     public void testCreateKinesisAsyncClient() {
         Properties properties = TestUtil.properties(AWS_REGION, "eu-west-2");
-        KinesisAsyncClientBuilder builder = mockKinesisAsyncClientBuilder();
+        MockAsyncClientBuilder builder = mockKinesisAsyncClientBuilder();
         ClientOverrideConfiguration clientOverrideConfiguration =
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
@@ -74,7 +78,7 @@ public class AWSUnifiedSinksTest {
         Properties properties = TestUtil.properties(AWS_REGION, "eu-west-2");
         properties.setProperty(AWS_ENDPOINT, "https://localhost");
 
-        KinesisAsyncClientBuilder builder = mockKinesisAsyncClientBuilder();
+        MockAsyncClientBuilder builder = mockKinesisAsyncClientBuilder();
         ClientOverrideConfiguration clientOverrideConfiguration =
                 ClientOverrideConfiguration.builder().build();
         SdkAsyncHttpClient httpClient = NettyNioAsyncHttpClient.builder().build();
@@ -165,8 +169,8 @@ public class AWSUnifiedSinksTest {
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
     }
 
-    private KinesisAsyncClientBuilder mockKinesisAsyncClientBuilder() {
-        KinesisAsyncClientBuilder builder = mock(KinesisAsyncClientBuilder.class);
+    private MockAsyncClientBuilder mockKinesisAsyncClientBuilder() {
+        MockAsyncClientBuilder builder = mock(MockAsyncClientBuilder.class);
         when(builder.overrideConfiguration(any(ClientOverrideConfiguration.class)))
                 .thenReturn(builder);
         when(builder.httpClient(any())).thenReturn(builder);
@@ -184,5 +188,53 @@ public class AWSUnifiedSinksTest {
         when(builder.apiCallTimeout(any())).thenReturn(builder);
 
         return builder;
+    }
+
+    private static class MockAsyncClientBuilder
+            implements AwsAsyncClientBuilder<MockAsyncClientBuilder, SdkClient>,
+                    AwsClientBuilder<MockAsyncClientBuilder, SdkClient> {
+
+        @Override
+        public MockAsyncClientBuilder asyncConfiguration(
+                ClientAsyncConfiguration clientAsyncConfiguration) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder httpClient(SdkAsyncHttpClient sdkAsyncHttpClient) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder httpClientBuilder(SdkAsyncHttpClient.Builder builder) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder credentialsProvider(
+                AwsCredentialsProvider awsCredentialsProvider) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder region(Region region) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder overrideConfiguration(
+                ClientOverrideConfiguration clientOverrideConfiguration) {
+            return null;
+        }
+
+        @Override
+        public MockAsyncClientBuilder endpointOverride(URI uri) {
+            return null;
+        }
+
+        @Override
+        public SdkClient build() {
+            return null;
+        }
     }
 }
