@@ -17,8 +17,6 @@
 
 package org.apache.flink.connector.aws.util;
 
-import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
-
 import org.junit.Test;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.client.config.ClientOverrideConfiguration;
@@ -46,8 +44,11 @@ import static org.mockito.Mockito.when;
 
 /** Tests for {@link AWSUnifiedSinksUtil}. */
 public class AWSUnifiedSinksTest {
+
     private static final String DEFAULT_USER_AGENT_PREFIX_FORMAT =
-            AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT + " V2";
+            "Apache Flink %s (%s) *Destination* Connector";
+    private static final String DEFAULT_USER_AGENT_PREFIX_FORMAT_V2 =
+            "Apache Flink %s (%s) *Destination* Connector V2";
 
     @Test
     public void testCreateKinesisAsyncClient() {
@@ -94,14 +95,14 @@ public class AWSUnifiedSinksTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT
                                 + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).build();
         verify(builder)
                 .putAdvancedOption(
                         SdkAdvancedClientOption.USER_AGENT_PREFIX,
-                        formatFlinkUserAgentPrefix(DEFAULT_USER_AGENT_PREFIX_FORMAT));
+                        formatFlinkUserAgentPrefix(DEFAULT_USER_AGENT_PREFIX_FORMAT_V2));
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, null);
         verify(builder, never()).apiCallAttemptTimeout(any());
         verify(builder, never()).apiCallTimeout(any());
@@ -120,7 +121,7 @@ public class AWSUnifiedSinksTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT
                                 + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, "suffix");
@@ -139,7 +140,7 @@ public class AWSUnifiedSinksTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT_V2
                                 + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).apiCallAttemptTimeout(Duration.ofMillis(500));
@@ -158,7 +159,7 @@ public class AWSUnifiedSinksTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT_V2
                                 + AWSUnifiedSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).apiCallTimeout(Duration.ofMillis(600));
