@@ -99,8 +99,7 @@ public class AWSAsyncSinksUtilTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        DEFAULT_USER_AGENT_PREFIX_FORMAT
-                                + AWSAsyncSinksUtil.V2_USER_AGENT_SUFFIX));
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT + AWSAsyncSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).build();
         verify(builder)
@@ -125,8 +124,7 @@ public class AWSAsyncSinksUtilTest {
                 clientConfiguration,
                 builder,
                 formatFlinkUserAgentPrefix(
-                        DEFAULT_USER_AGENT_PREFIX_FORMAT
-                                + AWSAsyncSinksUtil.V2_USER_AGENT_SUFFIX));
+                        DEFAULT_USER_AGENT_PREFIX_FORMAT + AWSAsyncSinksUtil.V2_USER_AGENT_SUFFIX));
 
         verify(builder).putAdvancedOption(SdkAdvancedClientOption.USER_AGENT_SUFFIX, "suffix");
     }

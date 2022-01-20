@@ -18,8 +18,8 @@
 package org.apache.flink.connector.firehose.sink.testutils;
 
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
-import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.aws.util.AWSAsyncSinksUtil;
+import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.firehose.sink.KinesisFirehoseConfigConstants;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
