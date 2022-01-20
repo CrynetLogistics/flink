@@ -65,7 +65,7 @@ public class SinkIntoFirehose {
                         .setElementConverter(elementConverter)
                         .setDeliveryStreamName("delivery-stream")
                         .setMaxBatchSize(20)
-                        .setKinesisClientProperties(sinkProperties)
+                        .setFirehoseClientProperties(sinkProperties)
                         .build();
 
         generator.sinkTo(kdfSink);

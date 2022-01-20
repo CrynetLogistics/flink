@@ -112,7 +112,7 @@ public class KinesisDataFirehoseSinkITCase {
                         .setElementConverter(elementConverter)
                         .setDeliveryStreamName(STREAM_NAME)
                         .setMaxBatchSize(1)
-                        .setKinesisClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))
+                        .setFirehoseClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))
                         .build();
 
         generator.sinkTo(kdsSink);

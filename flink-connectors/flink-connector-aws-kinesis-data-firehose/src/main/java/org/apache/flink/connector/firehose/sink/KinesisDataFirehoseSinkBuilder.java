@@ -49,7 +49,7 @@ import static software.amazon.awssdk.http.Protocol.HTTP1_1;
  *                 .setElementConverter(elementConverter)
  *                 .setDeliveryStreamName("delivery-stream-name")
  *                 .setMaxBatchSize(20)
- *                 .setKinesisClientProperties(sinkProperties)
+ *                 .setFirehoseClientProperties(sinkProperties)
  *                 .build();
  * }</pre>
  *
@@ -82,7 +82,7 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
 
     private Boolean failOnError;
     private String deliveryStreamName;
-    private Properties kinesisClientProperties;
+    private Properties firehoseClientProperties;
 
     KinesisDataFirehoseSinkBuilder() {}
 
@@ -111,15 +111,22 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
         return this;
     }
 
-    public KinesisDataFirehoseSinkBuilder<InputT> setKinesisClientProperties(
-            Properties kinesisClientProperties) {
-        this.kinesisClientProperties = kinesisClientProperties;
+    /**
+     * A set of properties used by the sink to create the firehose client. This may be used to set
+     * the aws region, credentials etc. See the docs for usage and syntax.
+     *
+     * @param firehoseClientProperties Firehose client properties
+     * @return {@link KinesisDataFirehoseSinkBuilder} itself
+     */
+    public KinesisDataFirehoseSinkBuilder<InputT> setFirehoseClientProperties(
+            Properties firehoseClientProperties) {
+        this.firehoseClientProperties = firehoseClientProperties;
         return this;
     }
 
     private Properties getClientPropertiesWithDefaultHttpProtocol() {
         Properties clientProperties =
-                Optional.ofNullable(kinesisClientProperties).orElse(new Properties());
+                Optional.ofNullable(firehoseClientProperties).orElse(new Properties());
         clientProperties.putIfAbsent(HTTP_PROTOCOL_VERSION, DEFAULT_HTTP_PROTOCOL);
         return clientProperties;
     }

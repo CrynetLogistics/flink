@@ -68,7 +68,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
     /* The sink writer metric group */
     private final SinkWriterMetricGroup metrics;
 
-    /* The asynchronous Kinesis client - construction is by kinesisClientProperties */
+    /* The asynchronous Firehose client - construction is by firehoseClientProperties */
     private final FirehoseAsyncClient client;
 
     /* Flag to whether fatally fail any time we encounter an exception when persisting records */
@@ -85,7 +85,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
             long maxRecordSizeInBytes,
             boolean failOnError,
             String deliveryStreamName,
-            Properties kinesisClientProperties) {
+            Properties firehoseClientProperties) {
         super(
                 elementConverter,
                 context,
@@ -99,15 +99,15 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
         this.deliveryStreamName = deliveryStreamName;
         this.metrics = context.metricGroup();
         this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
-        this.client = buildClient(kinesisClientProperties);
+        this.client = buildClient(firehoseClientProperties);
     }
 
-    private FirehoseAsyncClient buildClient(Properties kinesisClientProperties) {
+    private FirehoseAsyncClient buildClient(Properties firehoseClientProperties) {
         final SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(kinesisClientProperties);
+                AWSGeneralUtil.createAsyncHttpClient(firehoseClientProperties);
 
         return AWSAsyncSinksUtil.createAwsAsyncClient(
-                kinesisClientProperties,
+                firehoseClientProperties,
                 httpClient,
                 FirehoseAsyncClient.builder(),
                 KinesisFirehoseConfigConstants.BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT,

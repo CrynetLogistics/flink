@@ -48,7 +48,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
 
     private final boolean failOnError;
     private final String deliveryStreamName;
-    private final Properties kinesisClientProperties;
+    private final Properties firehoseClientProperties;
 
     KinesisDataFirehoseSink(
             ElementConverter<InputT, Record> elementConverter,
@@ -60,7 +60,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
             Long maxRecordSizeInBytes,
             boolean failOnError,
             String deliveryStreamName,
-            Properties kinesisClientProperties) {
+            Properties firehoseClientProperties) {
         super(
                 elementConverter,
                 maxBatchSize,
@@ -77,7 +77,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
                 !this.deliveryStreamName.isEmpty(),
                 "The delivery stream name must be set when initializing the KDF Sink.");
         this.failOnError = failOnError;
-        this.kinesisClientProperties = kinesisClientProperties;
+        this.firehoseClientProperties = firehoseClientProperties;
     }
 
     /**
@@ -105,7 +105,7 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
                 getMaxRecordSizeInBytes(),
                 failOnError,
                 deliveryStreamName,
-                kinesisClientProperties);
+                firehoseClientProperties);
     }
 
     @Override
