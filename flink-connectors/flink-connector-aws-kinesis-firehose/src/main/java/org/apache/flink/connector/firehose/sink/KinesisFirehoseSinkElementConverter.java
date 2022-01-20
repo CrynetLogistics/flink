@@ -32,14 +32,13 @@ import software.amazon.awssdk.services.firehose.model.Record;
  * {@link Record} that may be persisted.
  */
 @PublicEvolving
-public class KinesisDataFirehoseSinkElementConverter<InputT>
+public class KinesisFirehoseSinkElementConverter<InputT>
         implements ElementConverter<InputT, Record> {
 
     /** A serialization schema to specify how the input element should be serialized. */
     private final SerializationSchema<InputT> serializationSchema;
 
-    private KinesisDataFirehoseSinkElementConverter(
-            SerializationSchema<InputT> serializationSchema) {
+    private KinesisFirehoseSinkElementConverter(SerializationSchema<InputT> serializationSchema) {
         this.serializationSchema = serializationSchema;
     }
 
@@ -54,7 +53,7 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
         return new Builder<>();
     }
 
-    /** A builder for the KinesisDataFirehoseSinkElementConverter. */
+    /** A builder for the KinesisFirehoseSinkElementConverter. */
     @PublicEvolving
     public static class Builder<InputT> {
 
@@ -66,12 +65,12 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
             return this;
         }
 
-        public KinesisDataFirehoseSinkElementConverter<InputT> build() {
+        public KinesisFirehoseSinkElementConverter<InputT> build() {
             Preconditions.checkNotNull(
                     serializationSchema,
                     "No SerializationSchema was supplied to the "
-                            + "KinesisDataFirehoseSinkElementConverter builder.");
-            return new KinesisDataFirehoseSinkElementConverter<>(serializationSchema);
+                            + "KinesisFirehoseSinkElementConverter builder.");
+            return new KinesisFirehoseSinkElementConverter<>(serializationSchema);
         }
     }
 }

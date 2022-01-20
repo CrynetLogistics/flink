@@ -31,15 +31,15 @@ to setup a Kinesis Data Firehose delivery stream.
 
 To use the connector, add the following Maven dependency to your project:
 
-{{< artifact flink-connector-aws-kinesis-data-firehose >}}
+{{< artifact flink-connector-aws-kinesis-firehose >}}
 
-The `KinesisDataFirehoseSink` uses [AWS v2 SDK for Java](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html) to write data from a Flink stream into a Firehose delivery stream.
+The `KinesisFirehoseSink` uses [AWS v2 SDK for Java](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/home.html) to write data from a Flink stream into a Firehose delivery stream.
 
 {{< tabs "42vs28vdth5-nm76-6dz1-5m7s-5y345bu56se5u66je" >}}
 {{< tab "Java" >}}
 ```java
-KinesisDataFirehoseSinkElementConverter<String> elementConverter =
-    KinesisDataFirehoseSinkElementConverter.<String>builder()
+KinesisFirehoseSinkElementConverter<String> elementConverter =
+    KinesisFirehoseSinkElementConverter.<String>builder()
         .setSerializationSchema(new SimpleStringSchema())
         .build();
 
@@ -50,8 +50,8 @@ sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
 sinkProperties.put(AWSConfigConstants.AWS_ACCESS_KEY_ID, "aws_access_key_id");
 sinkProperties.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_key");
 
-KinesisDataFirehoseSink<String> kdfSink =
-    KinesisDataFirehoseSink.<String>builder()
+KinesisFirehoseSink<String> kdfSink =
+    KinesisFirehoseSink.<String>builder()
         .setKinesisClientProperties(sinkProperties)    // Required
         .setElementConverter(elementConverter)         // Required
         .setDeliveryStreamName("your-stream-name")     // Required
@@ -70,7 +70,7 @@ flinkStream.sinkTo(kdfSink);
 {{< tab "Scala" >}}
 ```scala
 val elementConverter =
-    KinesisDataFirehoseSinkElementConverter.<String>builder()
+    KinesisFirehoseSinkElementConverter.<String>builder()
         .setSerializationSchema(new SimpleStringSchema())
         .build()
 
@@ -82,7 +82,7 @@ sinkProperties.put(AWSConfigConstants.AWS_ACCESS_KEY_ID, "aws_access_key_id")
 sinkProperties.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_key")
 
 val kdfSink =
-    KinesisDataFirehoseSink.<String>builder()
+    KinesisFirehoseSink.<String>builder()
         .setKinesisClientProperties(sinkProperties)    // Required
         .setElementConverter(elementConverter)         // Required
         .setDeliveryStreamName("your-stream-name")     // Required
@@ -102,14 +102,14 @@ flinkStream.sinkTo(kdfSink)
 
 ## Configurations
 
-Flink's Cassandra sink is created by using the static builder `KinesisDataFirehoseSink.<String>builder()`.
+Flink's Cassandra sink is created by using the static builder `KinesisFirehoseSink.<String>builder()`.
 
 1. __setKinesisClientProperties(Properties sinkProperties)__
     * Required.
     * Supplies credentials, region and other parameter to the firehose client.
-2. __setElementConverter(KinesisDataFirehoseSinkElementConverter elementConverter)__
+2. __setElementConverter(KinesisFirehoseSinkElementConverter elementConverter)__
     * Required.
-    * Supplies a serialization schema to the output. May be built using the following builder `KinesisDataFirehoseSinkElementConverter.<String>builder()` as per the example.
+    * Supplies a serialization schema to the output. May be built using the following builder `KinesisFirehoseSinkElementConverter.<String>builder()` as per the example.
 3. __setDeliveryStreamName(String deliveryStreamName)__
     * Required.
     * Name of the delivery stream to sink to.

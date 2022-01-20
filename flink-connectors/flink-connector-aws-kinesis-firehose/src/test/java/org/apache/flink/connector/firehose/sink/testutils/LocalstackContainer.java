@@ -28,7 +28,6 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,9 +70,9 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
         private List<S3Object> list()
                 throws ExecutionException, InterruptedException, URISyntaxException {
             String bucketName = "bucket-name-not-to-be-used";
-            S3AsyncClient client = KinesisDataFirehoseTestUtils.getS3Client(getEndpoint());
-            KinesisDataFirehoseTestUtils.createBucket(client, bucketName);
-            return KinesisDataFirehoseTestUtils.listBucketObjects(client, bucketName);
+            S3AsyncClient client = KinesisFirehoseTestUtils.getS3Client(getEndpoint());
+            KinesisFirehoseTestUtils.createBucket(client, bucketName);
+            return KinesisFirehoseTestUtils.listBucketObjects(client, bucketName);
         }
     }
 }

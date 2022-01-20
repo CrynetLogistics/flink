@@ -43,25 +43,25 @@ import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.List;
 
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createBucket;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createDeliveryStream;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIAMRole;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getConfig;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getFirehoseClient;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getIamClient;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getS3Client;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.listBucketObjects;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createBucket;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createDeliveryStream;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createIAMRole;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getConfig;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getFirehoseClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getIamClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getS3Client;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.listBucketObjects;
 import static org.junit.Assert.assertEquals;
 
-/** Integration test suite for the {@code KinesisDataFirehoseSink} using a localstack container. */
-public class KinesisDataFirehoseSinkITCase {
+/** Integration test suite for the {@code KinesisFirehoseSink} using a localstack container. */
+public class KinesisFirehoseSinkITCase {
 
     private static final ElementConverter<String, Record> elementConverter =
-            KinesisDataFirehoseSinkElementConverter.<String>builder()
+            KinesisFirehoseSinkElementConverter.<String>builder()
                     .setSerializationSchema(new SimpleStringSchema())
                     .build();
 
-    private static final Logger LOG = LoggerFactory.getLogger(KinesisDataFirehoseSinkITCase.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisFirehoseSinkITCase.class);
     private S3AsyncClient s3AsyncClient;
     private FirehoseAsyncClient firehoseAsyncClient;
     private IamAsyncClient iamAsyncClient;
@@ -107,8 +107,8 @@ public class KinesisDataFirehoseSinkITCase {
                         .returns(String.class)
                         .map(data -> mapper.writeValueAsString(ImmutableMap.of("data", data)));
 
-        KinesisDataFirehoseSink<String> kdsSink =
-                KinesisDataFirehoseSink.<String>builder()
+        KinesisFirehoseSink<String> kdsSink =
+                KinesisFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setDeliveryStreamName(STREAM_NAME)
                         .setMaxBatchSize(1)

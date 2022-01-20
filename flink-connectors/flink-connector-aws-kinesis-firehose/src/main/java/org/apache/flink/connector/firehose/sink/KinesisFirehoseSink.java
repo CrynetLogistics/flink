@@ -39,18 +39,18 @@ import java.util.Properties;
  * software.amazon.awssdk.services.firehose.FirehoseAsyncClient} to communicate with the AWS
  * endpoint.
  *
- * <p>Please see the writer implementation in {@link KinesisDataFirehoseSinkWriter}
+ * <p>Please see the writer implementation in {@link KinesisFirehoseSinkWriter}
  *
  * @param <InputT> Type of the elements handled by this sink
  */
 @PublicEvolving
-public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Record> {
+public class KinesisFirehoseSink<InputT> extends AsyncSinkBase<InputT, Record> {
 
     private final boolean failOnError;
     private final String deliveryStreamName;
     private final Properties firehoseClientProperties;
 
-    KinesisDataFirehoseSink(
+    KinesisFirehoseSink(
             ElementConverter<InputT, Record> elementConverter,
             Integer maxBatchSize,
             Integer maxInFlightRequests,
@@ -81,20 +81,20 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
     }
 
     /**
-     * Create a {@link KinesisDataFirehoseSinkBuilder} to allow the fluent construction of a new
-     * {@code KinesisDataFirehoseSink}.
+     * Create a {@link KinesisFirehoseSinkBuilder} to allow the fluent construction of a new {@code
+     * KinesisFirehoseSink}.
      *
      * @param <InputT> type of incoming records
-     * @return {@link KinesisDataFirehoseSinkBuilder}
+     * @return {@link KinesisFirehoseSinkBuilder}
      */
-    public static <InputT> KinesisDataFirehoseSinkBuilder<InputT> builder() {
-        return new KinesisDataFirehoseSinkBuilder<>();
+    public static <InputT> KinesisFirehoseSinkBuilder<InputT> builder() {
+        return new KinesisFirehoseSinkBuilder<>();
     }
 
     @Override
     public SinkWriter<InputT, Void, Collection<Record>> createWriter(
             InitContext context, List<Collection<Record>> states) {
-        return new KinesisDataFirehoseSinkWriter<>(
+        return new KinesisFirehoseSinkWriter<>(
                 getElementConverter(),
                 context,
                 getMaxBatchSize(),

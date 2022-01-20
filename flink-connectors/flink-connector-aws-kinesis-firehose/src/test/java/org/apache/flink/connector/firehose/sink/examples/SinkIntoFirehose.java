@@ -19,8 +19,8 @@ package org.apache.flink.connector.firehose.sink.examples;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
-import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSink;
-import org.apache.flink.connector.firehose.sink.KinesisDataFirehoseSinkElementConverter;
+import org.apache.flink.connector.firehose.sink.KinesisFirehoseSink;
+import org.apache.flink.connector.firehose.sink.KinesisFirehoseSinkElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -32,8 +32,7 @@ import software.amazon.awssdk.utils.ImmutableMap;
 import java.util.Properties;
 
 /**
- * An example application demonstrating how to use the {@link KinesisDataFirehoseSink} to sink into
- * KDF.
+ * An example application demonstrating how to use the {@link KinesisFirehoseSink} to sink into KDF.
  *
  * <p>The {@link FirehoseAsyncClient} used here may be configured in the standard way for the AWS
  * SDK 2.x. e.g. the provision of {@code AWS_ACCESS_KEY_ID} and {@code AWS_SECRET_ACCESS_KEY}
@@ -41,8 +40,8 @@ import java.util.Properties;
  */
 public class SinkIntoFirehose {
 
-    private static final KinesisDataFirehoseSinkElementConverter<String> elementConverter =
-            KinesisDataFirehoseSinkElementConverter.<String>builder()
+    private static final KinesisFirehoseSinkElementConverter<String> elementConverter =
+            KinesisFirehoseSinkElementConverter.<String>builder()
                     .setSerializationSchema(new SimpleStringSchema())
                     .build();
 
@@ -60,8 +59,8 @@ public class SinkIntoFirehose {
         Properties sinkProperties = new Properties();
         sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
 
-        KinesisDataFirehoseSink<String> kdfSink =
-                KinesisDataFirehoseSink.<String>builder()
+        KinesisFirehoseSink<String> kdfSink =
+                KinesisFirehoseSink.<String>builder()
                         .setElementConverter(elementConverter)
                         .setDeliveryStreamName("delivery-stream")
                         .setMaxBatchSize(20)

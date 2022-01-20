@@ -38,13 +38,13 @@ import java.util.Properties;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/** Covers construction, defaults and sanity checking of {@code KinesisDataFirehoseSinkWriter}. */
-public class KinesisDataFirehoseSinkWriterTest {
+/** Covers construction, defaults and sanity checking of {@link KinesisFirehoseSinkWriter}. */
+public class KinesisFirehoseSinkWriterTest {
 
-    private KinesisDataFirehoseSinkWriter<String> sinkWriter;
+    private KinesisFirehoseSinkWriter<String> sinkWriter;
 
     private static final ElementConverter<String, Record> ELEMENT_CONVERTER_PLACEHOLDER =
-            KinesisDataFirehoseSinkElementConverter.<String>builder()
+            KinesisFirehoseSinkElementConverter.<String>builder()
                     .setSerializationSchema(new SimpleStringSchema())
                     .build();
 
@@ -54,7 +54,7 @@ public class KinesisDataFirehoseSinkWriterTest {
         Properties sinkProperties = new Properties();
         sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
         sinkWriter =
-                new KinesisDataFirehoseSinkWriter<>(
+                new KinesisFirehoseSinkWriter<>(
                         ELEMENT_CONVERTER_PLACEHOLDER,
                         sinkInitContext,
                         50,
@@ -84,8 +84,8 @@ public class KinesisDataFirehoseSinkWriterTest {
         prop.setProperty(AWSConfigConstants.AWS_REGION, Region.EU_WEST_1.toString());
         prop.setProperty(AWS_ENDPOINT, "https://fake_aws_endpoint");
         TestSinkInitContext ctx = new TestSinkInitContext();
-        KinesisDataFirehoseSink<String> kinesisDataFirehoseSink =
-                new KinesisDataFirehoseSink<>(
+        KinesisFirehoseSink<String> kinesisFirehoseSink =
+                new KinesisFirehoseSink<>(
                         ELEMENT_CONVERTER_PLACEHOLDER,
                         6,
                         16,
@@ -97,7 +97,7 @@ public class KinesisDataFirehoseSinkWriterTest {
                         "test-stream",
                         prop);
         SinkWriter<String, Void, Collection<Record>> writer =
-                kinesisDataFirehoseSink.createWriter(ctx, new ArrayList<>());
+                kinesisFirehoseSink.createWriter(ctx, new ArrayList<>());
 
         for (int i = 0; i < 12; i++) {
             writer.write("data_bytes", null);

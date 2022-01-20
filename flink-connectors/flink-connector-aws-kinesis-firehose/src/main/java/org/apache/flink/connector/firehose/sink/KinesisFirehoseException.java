@@ -24,28 +24,28 @@ import org.apache.flink.annotation.Internal;
  * Firehose Sink.
  */
 @Internal
-class KinesisDataFirehoseException extends RuntimeException {
+class KinesisFirehoseException extends RuntimeException {
 
-    public KinesisDataFirehoseException(final String message) {
+    public KinesisFirehoseException(final String message) {
         super(message);
     }
 
-    public KinesisDataFirehoseException(final String message, final Throwable cause) {
+    public KinesisFirehoseException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
     /**
-     * When the flag {@code failOnError} is set in {@link KinesisDataFirehoseSinkWriter}, this
-     * exception is raised as soon as any exception occurs when writing to KDF.
+     * When the flag {@code failOnError} is set in {@link KinesisFirehoseSinkWriter}, this exception
+     * is raised as soon as any exception occurs when writing to KDF.
      */
-    static class KinesisDataFirehoseFailFastException extends KinesisDataFirehoseException {
+    static class KinesisFirehoseFailFastException extends KinesisFirehoseException {
 
-        public KinesisDataFirehoseFailFastException() {
+        public KinesisFirehoseFailFastException() {
             super(
                     "Encountered an exception while persisting records, not retrying due to {failOnError} being set.");
         }
 
-        public KinesisDataFirehoseFailFastException(final Throwable cause) {
+        public KinesisFirehoseFailFastException(final Throwable cause) {
             super(
                     "Encountered an exception while persisting records, not retrying due to {failOnError} being set.",
                     cause);

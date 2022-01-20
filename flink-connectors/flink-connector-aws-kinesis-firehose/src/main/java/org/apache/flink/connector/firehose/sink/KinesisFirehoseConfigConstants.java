@@ -19,7 +19,7 @@ package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 
-/** Defaults for {@link KinesisDataFirehoseSinkWriter}. */
+/** Defaults for {@link KinesisFirehoseSinkWriter}. */
 @PublicEvolving
 public class KinesisFirehoseConfigConstants {
 

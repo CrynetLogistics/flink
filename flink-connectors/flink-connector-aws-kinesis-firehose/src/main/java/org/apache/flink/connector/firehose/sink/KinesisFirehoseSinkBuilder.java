@@ -30,22 +30,22 @@ import static org.apache.flink.connector.aws.config.AWSConfigConstants.HTTP_PROT
 import static software.amazon.awssdk.http.Protocol.HTTP1_1;
 
 /**
- * Builder to construct {@link KinesisDataFirehoseSink}.
+ * Builder to construct {@link KinesisFirehoseSink}.
  *
- * <p>The following example shows the minimum setup to create a {@link KinesisDataFirehoseSink} that
+ * <p>The following example shows the minimum setup to create a {@link KinesisFirehoseSink} that
  * writes String values to a Kinesis Data Firehose delivery stream named delivery-stream-name.
  *
  * <pre>{@code
- * private static final KinesisDataFirehoseSinkElementConverter<String> elementConverter =
- *         KinesisDataFirehoseSinkElementConverter.<String>builder()
+ * private static final KinesisFirehoseSinkElementConverter<String> elementConverter =
+ *         KinesisFirehoseSinkElementConverter.<String>builder()
  *                 .setSerializationSchema(new SimpleStringSchema())
  *                 .build();
  *
  * Properties sinkProperties = new Properties();
  * sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
  *
- * KinesisDataFirehoseSink<String> kdfSink =
- *         KinesisDataFirehoseSink.<String>builder()
+ * KinesisFirehoseSink<String> kdfSink =
+ *         KinesisFirehoseSink.<String>builder()
  *                 .setElementConverter(elementConverter)
  *                 .setDeliveryStreamName("delivery-stream-name")
  *                 .setMaxBatchSize(20)
@@ -68,8 +68,8 @@ import static software.amazon.awssdk.http.Protocol.HTTP1_1;
  * @param <InputT> type of elements that should be persisted in the destination
  */
 @PublicEvolving
-public class KinesisDataFirehoseSinkBuilder<InputT>
-        extends AsyncSinkBaseBuilder<InputT, Record, KinesisDataFirehoseSinkBuilder<InputT>> {
+public class KinesisFirehoseSinkBuilder<InputT>
+        extends AsyncSinkBaseBuilder<InputT, Record, KinesisFirehoseSinkBuilder<InputT>> {
 
     private static final int DEFAULT_MAX_BATCH_SIZE = 500;
     private static final int DEFAULT_MAX_IN_FLIGHT_REQUESTS = 16;
@@ -84,7 +84,7 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
     private String deliveryStreamName;
     private Properties firehoseClientProperties;
 
-    KinesisDataFirehoseSinkBuilder() {}
+    KinesisFirehoseSinkBuilder() {}
 
     /**
      * Sets the name of the KDF delivery stream that the sink will connect to. There is no default
@@ -92,21 +92,21 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
      * build will fail.
      *
      * @param deliveryStreamName the name of the delivery stream
-     * @return {@link KinesisDataFirehoseSinkBuilder} itself
+     * @return {@link KinesisFirehoseSinkBuilder} itself
      */
-    public KinesisDataFirehoseSinkBuilder<InputT> setDeliveryStreamName(String deliveryStreamName) {
+    public KinesisFirehoseSinkBuilder<InputT> setDeliveryStreamName(String deliveryStreamName) {
         this.deliveryStreamName = deliveryStreamName;
         return this;
     }
 
     /**
      * If writing to Kinesis Data Firehose results in a partial or full failure being returned, the
-     * job will fail immediately with a {@link KinesisDataFirehoseException} if failOnError is set
+     * job will fail immediately with a {@link KinesisFirehoseException} if failOnError is set
      *
      * @param failOnError whether to fail on error
-     * @return {@link KinesisDataFirehoseSinkBuilder} itself
+     * @return {@link KinesisFirehoseSinkBuilder} itself
      */
-    public KinesisDataFirehoseSinkBuilder<InputT> setFailOnError(boolean failOnError) {
+    public KinesisFirehoseSinkBuilder<InputT> setFailOnError(boolean failOnError) {
         this.failOnError = failOnError;
         return this;
     }
@@ -116,9 +116,9 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
      * the aws region, credentials etc. See the docs for usage and syntax.
      *
      * @param firehoseClientProperties Firehose client properties
-     * @return {@link KinesisDataFirehoseSinkBuilder} itself
+     * @return {@link KinesisFirehoseSinkBuilder} itself
      */
-    public KinesisDataFirehoseSinkBuilder<InputT> setFirehoseClientProperties(
+    public KinesisFirehoseSinkBuilder<InputT> setFirehoseClientProperties(
             Properties firehoseClientProperties) {
         this.firehoseClientProperties = firehoseClientProperties;
         return this;
@@ -132,8 +132,8 @@ public class KinesisDataFirehoseSinkBuilder<InputT>
     }
 
     @Override
-    public KinesisDataFirehoseSink<InputT> build() {
-        return new KinesisDataFirehoseSink<>(
+    public KinesisFirehoseSink<InputT> build() {
+        return new KinesisFirehoseSink<>(
                 getElementConverter(),
                 Optional.ofNullable(getMaxBatchSize()).orElse(DEFAULT_MAX_BATCH_SIZE),
                 Optional.ofNullable(getMaxInFlightRequests())

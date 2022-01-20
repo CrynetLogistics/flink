@@ -60,7 +60,7 @@ import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL
 /**
  * A set of static methods that can be used to call common AWS services on the Localstack container.
  */
-public class KinesisDataFirehoseTestUtils {
+public class KinesisFirehoseTestUtils {
 
     private static final String ACCESS_KEY_ID = "accessKeyId";
     private static final String SECRET_ACCESS_KEY = "secretAccessKey";

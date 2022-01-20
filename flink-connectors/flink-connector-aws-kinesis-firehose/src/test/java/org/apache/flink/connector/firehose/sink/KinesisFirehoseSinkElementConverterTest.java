@@ -27,21 +27,21 @@ import software.amazon.awssdk.services.firehose.model.Record;
 
 import static org.junit.Assert.assertEquals;
 
-/** Covers construction and sanity checking of {@code KinesisDataFirehoseSinkElementConverter}. */
-public class KinesisDataFirehoseSinkElementConverterTest {
+/** Covers construction and sanity checking of {@link KinesisFirehoseSinkElementConverter}. */
+public class KinesisFirehoseSinkElementConverterTest {
 
     @Test
     public void elementConverterWillComplainASerializationSchemaIsNotSetIfBuildIsCalledWithoutIt() {
         Assertions.assertThatExceptionOfType(NullPointerException.class)
-                .isThrownBy(() -> KinesisDataFirehoseSinkElementConverter.<String>builder().build())
+                .isThrownBy(() -> KinesisFirehoseSinkElementConverter.<String>builder().build())
                 .withMessageContaining(
-                        "No SerializationSchema was supplied to the KinesisDataFirehoseSinkElementConverter builder.");
+                        "No SerializationSchema was supplied to the KinesisFirehoseSinkElementConverter builder.");
     }
 
     @Test
     public void elementConverterUsesProvidedSchemaToSerializeRecord() {
         ElementConverter<String, Record> elementConverter =
-                KinesisDataFirehoseSinkElementConverter.<String>builder()
+                KinesisFirehoseSinkElementConverter.<String>builder()
                         .setSerializationSchema(new SimpleStringSchema())
                         .build();
 

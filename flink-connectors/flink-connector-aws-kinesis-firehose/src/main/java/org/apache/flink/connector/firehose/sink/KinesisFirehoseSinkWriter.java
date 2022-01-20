@@ -46,18 +46,18 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 /**
- * Sink writer created by {@link KinesisDataFirehoseSink} to write to Kinesis Data Firehose. More
+ * Sink writer created by {@link KinesisFirehoseSink} to write to Kinesis Data Firehose. More
  * details on the operation of this sink writer may be found in the doc for {@link
- * KinesisDataFirehoseSink}. More details on the internals of this sink writer may be found in
- * {@link AsyncSinkWriter}.
+ * KinesisFirehoseSink}. More details on the internals of this sink writer may be found in {@link
+ * AsyncSinkWriter}.
  *
  * <p>The {@link FirehoseAsyncClient} used here may be configured in the standard way for the AWS
  * SDK 2.x. e.g. the provision of {@code AWS_REGION}, {@code AWS_ACCESS_KEY_ID} and {@code
  * AWS_SECRET_ACCESS_KEY} through environment variables etc.
  */
 @Internal
-class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> {
-    private static final Logger LOG = LoggerFactory.getLogger(KinesisDataFirehoseSinkWriter.class);
+class KinesisFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> {
+    private static final Logger LOG = LoggerFactory.getLogger(KinesisFirehoseSinkWriter.class);
 
     /* A counter for the total number of records that have encountered an error during put */
     private final Counter numRecordsOutErrorsCounter;
@@ -74,7 +74,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
     /* Flag to whether fatally fail any time we encounter an exception when persisting records */
     private final boolean failOnError;
 
-    KinesisDataFirehoseSinkWriter(
+    KinesisFirehoseSinkWriter(
             ElementConverter<InputT, Record> elementConverter,
             Sink.InitContext context,
             int maxBatchSize,
@@ -173,9 +173,7 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
 
         if (failOnError) {
             getFatalExceptionCons()
-                    .accept(
-                            new KinesisDataFirehoseException
-                                    .KinesisDataFirehoseFailFastException());
+                    .accept(new KinesisFirehoseException.KinesisFirehoseFailFastException());
             return;
         }
         List<Record> failedRequestEntries = new ArrayList<>(response.failedPutCount());
@@ -195,15 +193,13 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
                 && err.getCause() instanceof ResourceNotFoundException) {
             getFatalExceptionCons()
                     .accept(
-                            new KinesisDataFirehoseException(
+                            new KinesisFirehoseException(
                                     "Encountered non-recoverable exception", err));
             return false;
         }
         if (failOnError) {
             getFatalExceptionCons()
-                    .accept(
-                            new KinesisDataFirehoseException.KinesisDataFirehoseFailFastException(
-                                    err));
+                    .accept(new KinesisFirehoseException.KinesisFirehoseFailFastException(err));
             return false;
         }
 
