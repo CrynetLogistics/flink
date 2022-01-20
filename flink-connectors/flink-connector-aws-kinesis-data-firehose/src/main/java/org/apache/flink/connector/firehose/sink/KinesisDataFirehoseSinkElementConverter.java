@@ -44,7 +44,6 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
         this.serializationSchema = serializationSchema;
     }
 
-    @Experimental
     @Override
     public Record apply(InputT element, SinkWriter.Context context) {
         return Record.builder()
@@ -68,7 +67,6 @@ public class KinesisDataFirehoseSinkElementConverter<InputT>
             return this;
         }
 
-        @Experimental
         public KinesisDataFirehoseSinkElementConverter<InputT> build() {
             Preconditions.checkNotNull(
                     serializationSchema,

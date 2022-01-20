@@ -112,7 +112,6 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
         return new KinesisDataFirehoseSinkBuilder<>();
     }
 
-    @Experimental
     @Override
     public SinkWriter<InputT, Void, Collection<Record>> createWriter(
             InitContext context, List<Collection<Record>> states) {
@@ -130,7 +129,6 @@ public class KinesisDataFirehoseSink<InputT> extends AsyncSinkBase<InputT, Recor
                 kinesisClientProperties);
     }
 
-    @Experimental
     @Override
     public Optional<SimpleVersionedSerializer<Collection<Record>>> getWriterStateSerializer() {
         return Optional.empty();
