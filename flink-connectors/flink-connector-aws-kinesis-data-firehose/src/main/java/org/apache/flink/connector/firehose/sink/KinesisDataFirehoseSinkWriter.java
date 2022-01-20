@@ -111,8 +111,8 @@ class KinesisDataFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Reco
                 kinesisClientProperties,
                 httpClient,
                 FirehoseAsyncClient.builder(),
-                AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT,
-                AWSUnifiedSinksConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX);
+                KinesisFirehoseConfigConstants.BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT,
+                KinesisFirehoseConfigConstants.FIREHOSE_CLIENT_USER_AGENT_PREFIX);
     }
 
     @Override

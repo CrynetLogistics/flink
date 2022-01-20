@@ -22,6 +22,8 @@ import org.apache.flink.connector.aws.config.AWSUnifiedSinksConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
+import org.apache.flink.connector.firehose.sink.KinesisFirehoseConfigConstants;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -80,8 +82,8 @@ public class KinesisDataFirehoseTestUtils {
                 getConfig(endpoint),
                 getHttpClient(endpoint),
                 FirehoseAsyncClient.builder().endpointOverride(new URI(endpoint)),
-                AWSUnifiedSinksConfigConstants.BASE_KINESIS_USER_AGENT_PREFIX_FORMAT,
-                AWSUnifiedSinksConfigConstants.KINESIS_CLIENT_USER_AGENT_PREFIX);
+                KinesisFirehoseConfigConstants.BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT,
+                KinesisFirehoseConfigConstants.FIREHOSE_CLIENT_USER_AGENT_PREFIX);
     }
 
     public static IamAsyncClient createIamClient(String endpoint) throws URISyntaxException {

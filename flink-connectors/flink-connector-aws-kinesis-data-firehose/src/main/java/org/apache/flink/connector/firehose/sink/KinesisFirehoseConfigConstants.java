@@ -15,21 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.aws.config;
+package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.aws.util.AWSUnifiedSinksUtil;
 
-/** Defaults for {@link AWSUnifiedSinksUtil}. */
+/** Defaults for {@link KinesisDataFirehoseSinkWriter}. */
 @PublicEvolving
-public class AWSUnifiedSinksConfigConstants {
-
-    public static final String BASE_KINESIS_USER_AGENT_PREFIX_FORMAT =
-            "Apache Flink %s (%s) Kinesis Connector";
-
-    /** Kinesis identifier for user agent prefix. */
-    public static final String KINESIS_CLIENT_USER_AGENT_PREFIX =
-            "aws.kinesis.client.user-agent-prefix";
+public class KinesisFirehoseConfigConstants {
 
     public static final String BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT =
             "Apache Flink %s (%s) Firehose Connector";
