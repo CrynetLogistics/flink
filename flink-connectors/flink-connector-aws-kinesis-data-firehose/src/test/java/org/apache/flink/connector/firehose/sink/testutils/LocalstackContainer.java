@@ -81,8 +81,8 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
         private List<S3Object> list()
                 throws ExecutionException, InterruptedException, URISyntaxException {
             String bucketName = "bucket-name-not-to-be-used";
-            S3AsyncClient client = KinesisDataFirehoseTestUtils.makeS3Client(getEndpoint());
-            KinesisDataFirehoseTestUtils.makeBucket(client, bucketName);
+            S3AsyncClient client = KinesisDataFirehoseTestUtils.getS3Client(getEndpoint());
+            KinesisDataFirehoseTestUtils.createBucket(client, bucketName);
             return KinesisDataFirehoseTestUtils.listBucketObjects(client, bucketName);
         }
     }

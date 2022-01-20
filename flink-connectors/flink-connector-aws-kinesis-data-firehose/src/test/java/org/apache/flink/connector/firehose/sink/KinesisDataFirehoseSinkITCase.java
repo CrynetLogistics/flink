@@ -43,14 +43,14 @@ import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.List;
 
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createBucket;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createDeliveryStream;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIAMRole;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.createIamClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getIamClient;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getConfig;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.listBucketObjects;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeBucket;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeFirehoseClient;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.makeS3Client;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getFirehoseClient;
+import static org.apache.flink.connector.firehose.sink.testutils.KinesisDataFirehoseTestUtils.getS3Client;
 import static org.junit.Assert.assertEquals;
 
 /** Integration test suite for the {@code KinesisDataFirehoseSink} using a localstack container. */
@@ -79,9 +79,9 @@ public class KinesisDataFirehoseSinkITCase {
     @Before
     public void setup() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        s3AsyncClient = makeS3Client(mockFirehoseContainer.getEndpoint());
-        firehoseAsyncClient = makeFirehoseClient(mockFirehoseContainer.getEndpoint());
-        iamAsyncClient = createIamClient(mockFirehoseContainer.getEndpoint());
+        s3AsyncClient = getS3Client(mockFirehoseContainer.getEndpoint());
+        firehoseAsyncClient = getFirehoseClient(mockFirehoseContainer.getEndpoint());
+        iamAsyncClient = getIamClient(mockFirehoseContainer.getEndpoint());
     }
 
     @After
@@ -92,7 +92,7 @@ public class KinesisDataFirehoseSinkITCase {
     @Test
     public void test() throws Exception {
         LOG.info("1 - Creating the bucket for Firehose to deliver into...");
-        makeBucket(s3AsyncClient, BUCKET_NAME);
+        createBucket(s3AsyncClient, BUCKET_NAME);
         LOG.info("2 - Creating the IAM Role for Firehose to write into the s3 bucket...");
         createIAMRole(iamAsyncClient, ROLE_NAME);
         LOG.info("3 - Creating the Firehose delivery stream...");

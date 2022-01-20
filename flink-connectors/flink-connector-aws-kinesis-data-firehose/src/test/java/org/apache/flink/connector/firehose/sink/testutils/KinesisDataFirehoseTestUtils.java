@@ -65,7 +65,7 @@ public class KinesisDataFirehoseTestUtils {
     private static final String ACCESS_KEY_ID = "accessKeyId";
     private static final String SECRET_ACCESS_KEY = "secretAccessKey";
 
-    public static S3AsyncClient makeS3Client(String endpoint) throws URISyntaxException {
+    public static S3AsyncClient getS3Client(String endpoint) throws URISyntaxException {
         return S3AsyncClient.builder()
                 .httpClient(getHttpClient(endpoint))
                 .region(Region.AP_SOUTHEAST_1)
@@ -74,7 +74,7 @@ public class KinesisDataFirehoseTestUtils {
                 .build();
     }
 
-    public static FirehoseAsyncClient makeFirehoseClient(String endpoint)
+    public static FirehoseAsyncClient getFirehoseClient(String endpoint)
             throws URISyntaxException {
         return AWSUnifiedSinksUtil.createAwsAsyncClient(
                 getConfig(endpoint),
@@ -84,7 +84,7 @@ public class KinesisDataFirehoseTestUtils {
                 KinesisFirehoseConfigConstants.FIREHOSE_CLIENT_USER_AGENT_PREFIX);
     }
 
-    public static IamAsyncClient createIamClient(String endpoint) throws URISyntaxException {
+    public static IamAsyncClient getIamClient(String endpoint) throws URISyntaxException {
         return IamAsyncClient.builder()
                 .httpClient(getHttpClient(endpoint))
                 .region(Region.AWS_GLOBAL)
@@ -113,7 +113,7 @@ public class KinesisDataFirehoseTestUtils {
         return AWSGeneralUtil.createAsyncHttpClient(getConfig(endpoint));
     }
 
-    public static void makeBucket(S3AsyncClient s3Client, String bucketName)
+    public static void createBucket(S3AsyncClient s3Client, String bucketName)
             throws ExecutionException, InterruptedException {
         CreateBucketRequest bucketRequest =
                 CreateBucketRequest.builder().bucket(bucketName).build();
