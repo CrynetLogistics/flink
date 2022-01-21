@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.firehose.sink.testutils;
+package org.apache.flink.connector.aws.testutils;
 
 import org.rnorth.ducttape.ratelimits.RateLimiter;
 import org.rnorth.ducttape.ratelimits.RateLimiterBuilder;
@@ -70,9 +70,9 @@ public class LocalstackContainer extends GenericContainer<LocalstackContainer> {
         private List<S3Object> list()
                 throws ExecutionException, InterruptedException, URISyntaxException {
             String bucketName = "bucket-name-not-to-be-used";
-            S3AsyncClient client = KinesisFirehoseTestUtils.getS3Client(getEndpoint());
-            KinesisFirehoseTestUtils.createBucket(client, bucketName);
-            return KinesisFirehoseTestUtils.listBucketObjects(client, bucketName);
+            S3AsyncClient client = AWSServicesTestUtils.getS3Client(getEndpoint());
+            AWSServicesTestUtils.createBucket(client, bucketName);
+            return AWSServicesTestUtils.listBucketObjects(client, bucketName);
         }
     }
 }

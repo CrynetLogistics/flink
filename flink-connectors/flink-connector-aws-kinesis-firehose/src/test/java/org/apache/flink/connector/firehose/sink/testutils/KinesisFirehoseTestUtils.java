@@ -17,62 +17,27 @@
 
 package org.apache.flink.connector.firehose.sink.testutils;
 
-import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSAsyncSinksUtil;
-import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.firehose.sink.KinesisFirehoseConfigConstants;
 
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
-import software.amazon.awssdk.core.waiters.WaiterResponse;
-import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
 import software.amazon.awssdk.services.firehose.model.CreateDeliveryStreamRequest;
 import software.amazon.awssdk.services.firehose.model.CreateDeliveryStreamResponse;
 import software.amazon.awssdk.services.firehose.model.DeliveryStreamType;
 import software.amazon.awssdk.services.firehose.model.ExtendedS3DestinationConfiguration;
-import software.amazon.awssdk.services.iam.IamAsyncClient;
-import software.amazon.awssdk.services.iam.model.CreateRoleRequest;
-import software.amazon.awssdk.services.iam.model.CreateRoleResponse;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
-import software.amazon.awssdk.services.s3.model.HeadBucketRequest;
-import software.amazon.awssdk.services.s3.model.HeadBucketResponse;
-import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
-import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
-import software.amazon.awssdk.services.s3.model.S3Object;
-import software.amazon.awssdk.services.s3.waiters.S3AsyncWaiter;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_CREDENTIALS_PROVIDER;
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
-import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getConfig;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getHttpClient;
 
 /**
  * A set of static methods that can be used to call common AWS services on the Localstack container.
  */
 public class KinesisFirehoseTestUtils {
-
-    private static final String ACCESS_KEY_ID = "accessKeyId";
-    private static final String SECRET_ACCESS_KEY = "secretAccessKey";
-
-    public static S3AsyncClient getS3Client(String endpoint) throws URISyntaxException {
-        return S3AsyncClient.builder()
-                .httpClient(getHttpClient(endpoint))
-                .region(Region.AP_SOUTHEAST_1)
-                .endpointOverride(new URI(endpoint))
-                .credentialsProvider(getDefaultCredentials())
-                .build();
-    }
 
     public static FirehoseAsyncClient getFirehoseClient(String endpoint) throws URISyntaxException {
         return AWSAsyncSinksUtil.createAwsAsyncClient(
@@ -81,59 +46,6 @@ public class KinesisFirehoseTestUtils {
                 FirehoseAsyncClient.builder().endpointOverride(new URI(endpoint)),
                 KinesisFirehoseConfigConstants.BASE_FIREHOSE_USER_AGENT_PREFIX_FORMAT,
                 KinesisFirehoseConfigConstants.FIREHOSE_CLIENT_USER_AGENT_PREFIX);
-    }
-
-    public static IamAsyncClient getIamClient(String endpoint) throws URISyntaxException {
-        return IamAsyncClient.builder()
-                .httpClient(getHttpClient(endpoint))
-                .region(Region.AWS_GLOBAL)
-                .endpointOverride(new URI(endpoint))
-                .credentialsProvider(getDefaultCredentials())
-                .build();
-    }
-
-    public static AwsCredentialsProvider getDefaultCredentials() {
-        return StaticCredentialsProvider.create(
-                AwsBasicCredentials.create(ACCESS_KEY_ID, SECRET_ACCESS_KEY));
-    }
-
-    public static Properties getConfig(String endpoint) {
-        Properties config = new Properties();
-        config.setProperty(AWS_REGION, Region.AP_SOUTHEAST_1.toString());
-        config.setProperty(AWS_ENDPOINT, endpoint);
-        config.setProperty(AWSConfigConstants.accessKeyId(AWS_CREDENTIALS_PROVIDER), ACCESS_KEY_ID);
-        config.setProperty(
-                AWSConfigConstants.secretKey(AWS_CREDENTIALS_PROVIDER), SECRET_ACCESS_KEY);
-        config.setProperty(TRUST_ALL_CERTIFICATES, "true");
-        return config;
-    }
-
-    public static SdkAsyncHttpClient getHttpClient(String endpoint) {
-        return AWSGeneralUtil.createAsyncHttpClient(getConfig(endpoint));
-    }
-
-    public static void createBucket(S3AsyncClient s3Client, String bucketName)
-            throws ExecutionException, InterruptedException {
-        CreateBucketRequest bucketRequest =
-                CreateBucketRequest.builder().bucket(bucketName).build();
-        s3Client.createBucket(bucketRequest);
-
-        HeadBucketRequest bucketRequestWait =
-                HeadBucketRequest.builder().bucket(bucketName).build();
-
-        S3AsyncWaiter s3Waiter = s3Client.waiter();
-        CompletableFuture<WaiterResponse<HeadBucketResponse>> waiterResponseFuture =
-                s3Waiter.waitUntilBucketExists(bucketRequestWait);
-
-        waiterResponseFuture.get();
-    }
-
-    public static void createIAMRole(IamAsyncClient iam, String roleName)
-            throws ExecutionException, InterruptedException {
-        CreateRoleRequest request = CreateRoleRequest.builder().roleName(roleName).build();
-
-        CompletableFuture<CreateRoleResponse> responseFuture = iam.createRole(request);
-        responseFuture.get();
     }
 
     public static void createDeliveryStream(
@@ -157,12 +69,5 @@ public class KinesisFirehoseTestUtils {
         CompletableFuture<CreateDeliveryStreamResponse> deliveryStream =
                 firehoseAsyncClient.createDeliveryStream(request);
         deliveryStream.get();
-    }
-
-    public static List<S3Object> listBucketObjects(S3AsyncClient s3, String bucketName)
-            throws ExecutionException, InterruptedException {
-        ListObjectsRequest listObjects = ListObjectsRequest.builder().bucket(bucketName).build();
-        CompletableFuture<ListObjectsResponse> res = s3.listObjects(listObjects);
-        return res.get().contents();
     }
 }

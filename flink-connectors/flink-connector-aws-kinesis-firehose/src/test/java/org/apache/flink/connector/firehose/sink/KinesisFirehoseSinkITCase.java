@@ -18,8 +18,8 @@
 package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.connector.aws.testutils.LocalstackContainer;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
-import org.apache.flink.connector.firehose.sink.testutils.LocalstackContainer;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.DockerImageVersions;
@@ -43,14 +43,14 @@ import software.amazon.awssdk.utils.ImmutableMap;
 
 import java.util.List;
 
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createBucket;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createBucket;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createIAMRole;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getConfig;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getIamClient;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getS3Client;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.listBucketObjects;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createDeliveryStream;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createIAMRole;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getConfig;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getFirehoseClient;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getIamClient;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getS3Client;
-import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.listBucketObjects;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Integration test suite for the {@code KinesisFirehoseSink} using a localstack container. */
