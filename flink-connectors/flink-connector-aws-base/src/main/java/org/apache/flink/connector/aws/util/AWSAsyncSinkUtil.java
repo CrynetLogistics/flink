@@ -37,7 +37,7 @@ import java.util.Properties;
 
 /** Some utilities specific to Amazon Web Service. */
 @Internal
-public class AWSAsyncSinksUtil extends AWSGeneralUtil {
+public class AWSAsyncSinkUtil extends AWSGeneralUtil {
 
     /** V2 suffix to denote the unified sinks. V1 sinks are based on KPL etc. */
     static final String V2_USER_AGENT_SUFFIX = " V2";
