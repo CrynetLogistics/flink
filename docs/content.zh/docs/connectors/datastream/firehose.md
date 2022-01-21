@@ -22,11 +22,11 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-# Amazon Kinesis Firehose Sink
+# Amazon Kinesis Data Firehose Sink
 
-The Firehose sink writes to [Amazon AWS Kinesis Firehose](https://aws.amazon.com/kinesis/data-firehose/).
+The Firehose sink writes to [Amazon Kinesis Data Firehose](https://aws.amazon.com/kinesis/data-firehose/).
 
-Follow the instructions from the [Amazon Kinesis Firehose Developer Guide](https://docs.aws.amazon.com/firehose/latest/dev/basic-create.html)
+Follow the instructions from the [Amazon Kinesis Data Firehose Developer Guide](https://docs.aws.amazon.com/firehose/latest/dev/basic-create.html)
 to setup a Kinesis Data Firehose delivery stream.
 
 To use the connector, add the following Maven dependency to your project:
@@ -52,7 +52,7 @@ sinkProperties.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_
 
 KinesisFirehoseSink<String> kdfSink =
     KinesisFirehoseSink.<String>builder()
-        .setKinesisClientProperties(sinkProperties)    // Required
+        .setFirehoseClientProperties(sinkProperties)    // Required
         .setElementConverter(elementConverter)         // Required
         .setDeliveryStreamName("your-stream-name")     // Required
         .setFailOnError(false)                         // Optional
@@ -83,7 +83,7 @@ sinkProperties.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_
 
 val kdfSink =
     KinesisFirehoseSink.<String>builder()
-        .setKinesisClientProperties(sinkProperties)    // Required
+        .setFirehoseClientProperties(sinkProperties)    // Required
         .setElementConverter(elementConverter)         // Required
         .setDeliveryStreamName("your-stream-name")     // Required
         .setFailOnError(false)                         // Optional
@@ -102,11 +102,11 @@ flinkStream.sinkTo(kdfSink)
 
 ## Configurations
 
-Flink's Cassandra sink is created by using the static builder `KinesisFirehoseSink.<String>builder()`.
+Flink's Firehose sink is created by using the static builder `KinesisFirehoseSink.<String>builder()`.
 
-1. __setKinesisClientProperties(Properties sinkProperties)__
+1. __setFirehoseClientProperties(Properties sinkProperties)__
     * Required.
-    * Supplies credentials, region and other parameter to the firehose client.
+    * Supplies credentials, region and other parameters to the Firehose client.
 2. __setElementConverter(KinesisFirehoseSinkElementConverter elementConverter)__
     * Required.
     * Supplies a serialization schema to the output. May be built using the following builder `KinesisFirehoseSinkElementConverter.<String>builder()` as per the example.
@@ -124,7 +124,7 @@ Flink's Cassandra sink is created by using the static builder `KinesisFirehoseSi
     * The maximum number of in flight requests allowed before the sink applies backpressure.
 7. _setMaxBufferedRequests(int maxBufferedRequests)_
     * Optional. Default: `10_000`.
-    * The maximum number of records that may be buffered in the sink before backpressure is applied. 
+    * The maximum number of records that may be buffered in the sink before backpressure is applied.
 8. _setMaxBatchSizeInBytes(int maxBatchSizeInBytes)_
     * Optional. Default: `4 * 1024 * 1024`.
     * The maximum size (in bytes) a batch may become. All batches sent will be smaller than or equal to this size.
@@ -138,9 +138,9 @@ Flink's Cassandra sink is created by using the static builder `KinesisFirehoseSi
     * Constructs and returns the Firehose sink.
 
 
-## Using Custom Kinesis Endpoints
+## Using Custom Firehose Endpoints
 
-It is sometimes desirable to have Flink operate as a consumer or producer against a Kinesis VPC endpoint or a non-AWS
+It is sometimes desirable to have Flink operate as a consumer or producer against a Firehose VPC endpoint or a non-AWS
 Firehose endpoint such as [Localstack](https://localstack.cloud/); this is especially useful when performing
 functional testing of a Flink application. The AWS endpoint that would normally be inferred by the AWS region set in the
 Flink configuration must be overridden via a configuration property.
@@ -151,10 +151,10 @@ To override the AWS endpoint, set the `AWSConfigConstants.AWS_ENDPOINT` and `AWS
 {{< tab "Java" >}}
 ```java
 Properties producerConfig = new Properties();
-producerConfig.put(AWSConfigConstants.AWS_REGION, "us-east-1");
-producerConfig.put(AWSConfigConstants.AWS_ACCESS_KEY_ID, "aws_access_key_id");
-producerConfig.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_key");
-producerConfig.put(AWSConfigConstants.AWS_ENDPOINT, "http://localhost:4566");
+        producerConfig.put(AWSConfigConstants.AWS_REGION, "us-east-1");
+        producerConfig.put(AWSConfigConstants.AWS_ACCESS_KEY_ID, "aws_access_key_id");
+        producerConfig.put(AWSConfigConstants.AWS_SECRET_ACCESS_KEY, "aws_secret_access_key");
+        producerConfig.put(AWSConfigConstants.AWS_ENDPOINT, "http://localhost:4566");
 ```
 {{< /tab >}}
 {{< tab "Scala" >}}
