@@ -17,13 +17,13 @@
 
 package org.apache.flink.connector.firehose.sink;
 
-import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.PublicEvolving;
 
 /**
  * A {@link RuntimeException} wrapper indicating the exception was thrown from the Kinesis Data
  * Firehose Sink.
  */
-@Internal
+@PublicEvolving
 class KinesisFirehoseException extends RuntimeException {
 
     public KinesisFirehoseException(final String message) {
