@@ -25,7 +25,7 @@ import org.junit.Test;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.firehose.model.Record;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Covers construction and sanity checking of {@link KinesisFirehoseSinkElementConverter}. */
 public class KinesisFirehoseSinkElementConverterTest {
@@ -49,6 +49,6 @@ public class KinesisFirehoseSinkElementConverterTest {
 
         Record serializedRecord = elementConverter.apply(testString, null);
         byte[] serializedString = (new SimpleStringSchema()).serialize(testString);
-        assertEquals(SdkBytes.fromByteArray(serializedString), serializedRecord.data());
+        assertThat(serializedRecord.data()).isEqualTo(SdkBytes.fromByteArray(serializedString));
     }
 }

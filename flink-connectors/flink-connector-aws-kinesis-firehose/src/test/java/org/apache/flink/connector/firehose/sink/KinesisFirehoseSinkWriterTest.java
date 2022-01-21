@@ -36,7 +36,7 @@ import java.util.Collection;
 import java.util.Properties;
 
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_ENDPOINT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Covers construction, defaults and sanity checking of {@link KinesisFirehoseSinkWriter}. */
 public class KinesisFirehoseSinkWriterTest {
@@ -72,9 +72,8 @@ public class KinesisFirehoseSinkWriterTest {
     public void getSizeInBytesReturnsSizeOfBlobBeforeBase64Encoding() {
         String testString = "{many hands make light work;";
         Record record = Record.builder().data(SdkBytes.fromUtf8String(testString)).build();
-        assertEquals(
-                testString.getBytes(StandardCharsets.US_ASCII).length,
-                sinkWriter.getSizeInBytes(record));
+        assertThat(sinkWriter.getSizeInBytes(record))
+                .isEqualTo(testString.getBytes(StandardCharsets.US_ASCII).length);
     }
 
     @Test
@@ -103,6 +102,6 @@ public class KinesisFirehoseSinkWriterTest {
             writer.write("data_bytes", null);
         }
 
-        assertEquals(12, ctx.metricGroup().getNumRecordsOutErrorsCounter().getCount());
+        assertThat(ctx.metricGroup().getNumRecordsOutErrorsCounter().getCount()).isEqualTo(12);
     }
 }

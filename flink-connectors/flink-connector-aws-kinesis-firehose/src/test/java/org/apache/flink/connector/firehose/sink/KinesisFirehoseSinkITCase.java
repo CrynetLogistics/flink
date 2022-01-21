@@ -51,7 +51,7 @@ import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehose
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getIamClient;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.getS3Client;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.listBucketObjects;
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /** Integration test suite for the {@code KinesisFirehoseSink} using a localstack container. */
 public class KinesisFirehoseSinkITCase {
@@ -119,6 +119,6 @@ public class KinesisFirehoseSinkITCase {
         env.execute("Integration Test");
 
         List<S3Object> objects = listBucketObjects(s3AsyncClient, BUCKET_NAME);
-        assertEquals(NUMBER_OF_ELEMENTS, objects.size());
+        assertThat(objects.size()).isEqualTo(NUMBER_OF_ELEMENTS);
     }
 }
