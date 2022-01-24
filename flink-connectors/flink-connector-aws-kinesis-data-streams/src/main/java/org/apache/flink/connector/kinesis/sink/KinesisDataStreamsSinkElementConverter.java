@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.kinesis.sink;
 
-import org.apache.flink.annotation.Experimental;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 import org.apache.flink.api.connector.sink.SinkWriter;
@@ -54,7 +54,7 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
         this.partitionKeyGenerator = partitionKeyGenerator;
     }
 
-    @Experimental
+    @Internal
     @Override
     public PutRecordsRequestEntry apply(InputT element, SinkWriter.Context context) {
         return PutRecordsRequestEntry.builder()
@@ -71,12 +71,13 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
     @FunctionalInterface
     public interface PartitionKeyGenerator<InputT> extends Function<InputT, String>, Serializable {}
 
+    @Internal
     public static <InputT> Builder<InputT> builder() {
         return new Builder<>();
     }
 
     /** A builder for the KinesisDataStreamsSinkElementConverter. */
-    @PublicEvolving
+    @Internal
     public static class Builder<InputT> {
 
         private SerializationSchema<InputT> serializationSchema;
@@ -94,7 +95,6 @@ public class KinesisDataStreamsSinkElementConverter<InputT>
             return this;
         }
 
-        @Experimental
         public KinesisDataStreamsSinkElementConverter<InputT> build() {
             Preconditions.checkNotNull(
                     serializationSchema,
