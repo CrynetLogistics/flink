@@ -68,8 +68,7 @@ public class KinesisFirehoseSinkElementConverter<InputT>
         public KinesisFirehoseSinkElementConverter<InputT> build() {
             Preconditions.checkNotNull(
                     serializationSchema,
-                    "No SerializationSchema was supplied to the "
-                            + "KinesisFirehoseSinkElementConverter builder.");
+                    "No SerializationSchema was supplied to the " + "KinesisFirehoseSink builder.");
             return new KinesisFirehoseSinkElementConverter<>(serializationSchema);
         }
     }

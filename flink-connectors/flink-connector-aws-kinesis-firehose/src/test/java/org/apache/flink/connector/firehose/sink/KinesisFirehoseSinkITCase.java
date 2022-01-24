@@ -19,7 +19,6 @@ package org.apache.flink.connector.firehose.sink;
 
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.testutils.LocalstackContainer;
-import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.DockerImageVersions;
@@ -35,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
 import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
-import software.amazon.awssdk.services.firehose.model.Record;
 import software.amazon.awssdk.services.iam.IamAsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -55,11 +53,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Integration test suite for the {@code KinesisFirehoseSink} using a localstack container. */
 public class KinesisFirehoseSinkITCase {
-
-    private static final ElementConverter<String, Record> elementConverter =
-            KinesisFirehoseSinkElementConverter.<String>builder()
-                    .setSerializationSchema(new SimpleStringSchema())
-                    .build();
 
     private static final Logger LOG = LoggerFactory.getLogger(KinesisFirehoseSinkITCase.class);
     private S3AsyncClient s3AsyncClient;
@@ -109,7 +102,7 @@ public class KinesisFirehoseSinkITCase {
 
         KinesisFirehoseSink<String> kdsSink =
                 KinesisFirehoseSink.<String>builder()
-                        .setElementConverter(elementConverter)
+                        .setSerializationSchema(new SimpleStringSchema())
                         .setDeliveryStreamName(STREAM_NAME)
                         .setMaxBatchSize(1)
                         .setFirehoseClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))

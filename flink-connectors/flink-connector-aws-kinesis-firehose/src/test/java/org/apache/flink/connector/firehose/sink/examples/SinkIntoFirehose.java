@@ -20,7 +20,6 @@ package org.apache.flink.connector.firehose.sink.examples;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.firehose.sink.KinesisFirehoseSink;
-import org.apache.flink.connector.firehose.sink.KinesisFirehoseSinkElementConverter;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -40,11 +39,6 @@ import java.util.Properties;
  */
 public class SinkIntoFirehose {
 
-    private static final KinesisFirehoseSinkElementConverter<String> elementConverter =
-            KinesisFirehoseSinkElementConverter.<String>builder()
-                    .setSerializationSchema(new SimpleStringSchema())
-                    .build();
-
     public static void main(String[] args) throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -61,7 +55,7 @@ public class SinkIntoFirehose {
 
         KinesisFirehoseSink<String> kdfSink =
                 KinesisFirehoseSink.<String>builder()
-                        .setElementConverter(elementConverter)
+                        .setSerializationSchema(new SimpleStringSchema())
                         .setDeliveryStreamName("delivery-stream")
                         .setMaxBatchSize(20)
                         .setFirehoseClientProperties(sinkProperties)
