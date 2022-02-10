@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.utility.DockerImageName;
 import software.amazon.awssdk.core.SdkSystemSetting;
+import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.services.firehose.FirehoseAsyncClient;
 import software.amazon.awssdk.services.iam.IamAsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -51,10 +52,11 @@ import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_CREDE
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.AWS_REGION;
 import static org.apache.flink.connector.aws.config.AWSConfigConstants.TRUST_ALL_CERTIFICATES;
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createBucket;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createConfig;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createHttpClient;
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createIAMRole;
-import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getConfig;
-import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getIamClient;
-import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.getS3Client;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createIamClient;
+import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createS3Client;
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.listBucketObjects;
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.readObjectsFromS3Bucket;
 import static org.apache.flink.connector.firehose.sink.testutils.KinesisFirehoseTestUtils.createDeliveryStream;
@@ -84,9 +86,10 @@ public class KinesisFirehoseSinkITCase {
     @Before
     public void setup() throws Exception {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        s3AsyncClient = getS3Client(mockFirehoseContainer.getEndpoint());
-        firehoseAsyncClient = getFirehoseClient(mockFirehoseContainer.getEndpoint());
-        iamAsyncClient = getIamClient(mockFirehoseContainer.getEndpoint());
+        SdkAsyncHttpClient httpClient = createHttpClient(mockFirehoseContainer.getEndpoint());
+        s3AsyncClient = createS3Client(mockFirehoseContainer.getEndpoint(), httpClient);
+        firehoseAsyncClient = getFirehoseClient(mockFirehoseContainer.getEndpoint(), httpClient);
+        iamAsyncClient = createIamClient(mockFirehoseContainer.getEndpoint(), httpClient);
         env = StreamExecutionEnvironment.getExecutionEnvironment();
     }
 
@@ -109,14 +112,18 @@ public class KinesisFirehoseSinkITCase {
                         .setSerializationSchema(new SimpleStringSchema())
                         .setDeliveryStreamName(STREAM_NAME)
                         .setMaxBatchSize(1)
-                        .setFirehoseClientProperties(getConfig(mockFirehoseContainer.getEndpoint()))
+                        .setFirehoseClientProperties(
+                                createConfig(mockFirehoseContainer.getEndpoint()))
                         .build();
 
         getSampleDataGenerator().sinkTo(kdsSink);
         env.execute("Integration Test");
 
+        SdkAsyncHttpClient httpClient = createHttpClient(mockFirehoseContainer.getEndpoint());
         List<S3Object> objects =
-                listBucketObjects(getS3Client(mockFirehoseContainer.getEndpoint()), BUCKET_NAME);
+                listBucketObjects(
+                        createS3Client(mockFirehoseContainer.getEndpoint(), httpClient),
+                        BUCKET_NAME);
         assertThat(objects.size()).isEqualTo(NUMBER_OF_ELEMENTS);
         assertThat(
                         readObjectsFromS3Bucket(
@@ -129,7 +136,7 @@ public class KinesisFirehoseSinkITCase {
 
     @Test
     public void firehoseSinkFailsWhenAccessKeyIdIsNotProvided() {
-        Properties properties = getConfig(mockFirehoseContainer.getEndpoint());
+        Properties properties = createConfig(mockFirehoseContainer.getEndpoint());
         properties.setProperty(
                 AWS_CREDENTIALS_PROVIDER, AWSConfigConstants.CredentialProvider.BASIC.toString());
         properties.remove(AWSConfigConstants.accessKeyId(AWS_CREDENTIALS_PROVIDER));
@@ -139,7 +146,7 @@ public class KinesisFirehoseSinkITCase {
 
     @Test
     public void firehoseSinkFailsWhenRegionIsNotProvided() {
-        Properties properties = getConfig(mockFirehoseContainer.getEndpoint());
+        Properties properties = createConfig(mockFirehoseContainer.getEndpoint());
         properties.remove(AWS_REGION);
         firehoseSinkFailsWithAppropriateMessageWhenInitialConditionsAreMisconfigured(
                 properties, "region must not be null.");
@@ -147,7 +154,7 @@ public class KinesisFirehoseSinkITCase {
 
     @Test
     public void firehoseSinkFailsWhenUnableToConnectToRemoteService() {
-        Properties properties = getConfig(mockFirehoseContainer.getEndpoint());
+        Properties properties = createConfig(mockFirehoseContainer.getEndpoint());
         properties.remove(TRUST_ALL_CERTIFICATES);
         firehoseSinkFailsWithAppropriateMessageWhenInitialConditionsAreMisconfigured(
                 properties,

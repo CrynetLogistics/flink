@@ -22,7 +22,6 @@ import org.apache.flink.api.connector.sink.Sink;
 import org.apache.flink.connector.aws.util.AWSAsyncSinkUtil;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 import org.apache.flink.connector.base.sink.util.RetryableExceptionClassifier;
-import org.apache.flink.connector.base.sink.util.RetryableExceptionClassifier;
 import org.apache.flink.connector.base.sink.writer.AsyncSinkWriter;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.metrics.Counter;
@@ -44,11 +43,6 @@ import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-
-import static org.apache.flink.connector.aws.util.AWSCredentialRetryableExceptionClassifiers.getInvalidCredentialsExceptionClassifier;
-import static org.apache.flink.connector.aws.util.AWSCredentialRetryableExceptionClassifiers.getSdkClientMisconfiguredExceptionClassifier;
-import static org.apache.flink.connector.base.sink.writer.AsyncSinkRetryableExceptionClassifiers.getGeneralExceptionClassifier;
-import static org.apache.flink.connector.base.sink.writer.AsyncSinkRetryableExceptionClassifiers.getInterruptedExceptionClassifier;
 
 import static org.apache.flink.connector.aws.util.AWSCredentialRetryableExceptionClassifiers.getInvalidCredentialsExceptionClassifier;
 import static org.apache.flink.connector.aws.util.AWSCredentialRetryableExceptionClassifiers.getSdkClientMisconfiguredExceptionClassifier;

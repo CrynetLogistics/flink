@@ -368,7 +368,6 @@ public class AWSGeneralUtil {
         }
     }
 
-
     public static void validateWebIdentityTokenFileCredentialsProvider(Properties config) {
         validateCredentialProvider(config);
         try {
