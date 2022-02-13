@@ -25,6 +25,9 @@ import org.apache.flink.metrics.Counter;
 import org.apache.flink.metrics.groups.SinkWriterMetricGroup;
 import org.apache.flink.util.Preconditions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayDeque;
@@ -50,6 +53,8 @@ import java.util.function.Consumer;
 @PublicEvolving
 public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable>
         implements SinkWriter<InputT, Void, BufferedRequestState<RequestEntryT>> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AsyncSinkWriter.class);
 
     private final MailboxExecutor mailboxExecutor;
     private final Sink.ProcessingTimeService timeService;
@@ -115,6 +120,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * fail, which could then lead to data loss.
      */
     private int inFlightRequestsCount;
+
+    private int inFlightMessages;
+    private int maxInFlightMessages = 10;
 
     /**
      * Tracks the cumulative size of all elements in {@code bufferedRequestEntries} to facilitate
@@ -310,7 +318,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>The method blocks if too many async requests are in flight.
      */
     private void flush() {
-        while (inFlightRequestsCount >= maxInFlightRequests) {
+        while (inFlightRequestsCount >= maxInFlightRequests && inFlightMessages >= maxInFlightMessages) {
             mailboxExecutor.tryYield();
         }
 
@@ -324,11 +332,12 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         Consumer<List<RequestEntryT>> requestResult =
                 failedRequestEntries ->
                         mailboxExecutor.execute(
-                                () -> completeRequest(failedRequestEntries, timestampOfRequest),
+                                () -> completeRequest(failedRequestEntries, batch.size(), timestampOfRequest),
                                 "Mark in-flight request as completed and requeue %d request entries",
                                 failedRequestEntries.size());
 
         inFlightRequestsCount++;
+        inFlightMessages+=batch.size();
         submitRequestEntries(batch, requestResult);
     }
 
@@ -337,7 +346,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * {@code maxBatchSizeInBytes}. Also adds these to the metrics counters.
      */
     private List<RequestEntryT> createNextAvailableBatch() {
-        int batchSize = Math.min(maxBatchSize, bufferedRequestEntries.size());
+        int batchSize = Math.min(Math.min(maxBatchSize, bufferedRequestEntries.size()), maxInFlightMessages);
         List<RequestEntryT> batch = new ArrayList<>(batchSize);
 
         int batchSizeBytes = 0;
@@ -364,10 +373,25 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      *
      * @param failedRequestEntries requestEntries that need to be retried
      */
-    private void completeRequest(List<RequestEntryT> failedRequestEntries, long requestStartTime) {
+    private void completeRequest(
+                List<RequestEntryT> failedRequestEntries, int messages, long requestStartTime) {
         lastSendTimestamp = requestStartTime;
         ackTime = System.currentTimeMillis();
         inFlightRequestsCount--;
+        inFlightMessages-=messages;
+
+        // https://en.wikipedia.org/wiki/Additive_increase/multiplicative_decrease
+        int a = 10;
+        double b = 0.5;
+
+        if (failedRequestEntries.isEmpty()) {
+            maxInFlightMessages += a;
+            LOG.warn("send {} messages, increased max messages: {}", messages, maxInFlightMessages);
+        } else {
+            maxInFlightMessages = (int) Math.round(maxInFlightMessages*b);
+            LOG.warn("{} failed requests, decreased max messages: {}", failedRequestEntries.size(), maxInFlightMessages);
+        }
+
         ListIterator<RequestEntryT> iterator =
                 failedRequestEntries.listIterator(failedRequestEntries.size());
         while (iterator.hasPrevious()) {

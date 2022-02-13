@@ -44,6 +44,7 @@ public class SinkIntoKinesis {
         ObjectMapper mapper = new ObjectMapper();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
+//        env.setParallelism(1);
 
         DataStream<String> fromGen =
                 env.fromSequence(1, 10_000_000L)
@@ -52,14 +53,14 @@ public class SinkIntoKinesis {
                         .map(data -> mapper.writeValueAsString(ImmutableMap.of("data", data)));
 
         Properties sinkProperties = new Properties();
-        sinkProperties.put(AWSConfigConstants.AWS_REGION, "your-region-here");
+        sinkProperties.put(AWSConfigConstants.AWS_REGION, "eu-west-1");
 
         KinesisDataStreamsSink<String> kdsSink =
                 KinesisDataStreamsSink.<String>builder()
                         .setSerializationSchema(new SimpleStringSchema())
                         .setPartitionKeyGenerator(element -> String.valueOf(element.hashCode()))
-                        .setStreamName("your-stream-name")
-                        .setMaxBatchSize(20)
+                        .setStreamName("async-in")
+                        .setMaxBatchSize(200)
                         .setKinesisClientProperties(sinkProperties)
                         .build();
 
