@@ -44,7 +44,7 @@ public class SinkIntoKinesis {
         ObjectMapper mapper = new ObjectMapper();
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(10_000);
-//        env.setParallelism(1);
+        //        env.setParallelism(1);
 
         DataStream<String> fromGen =
                 env.fromSequence(1, 10_000_000L)

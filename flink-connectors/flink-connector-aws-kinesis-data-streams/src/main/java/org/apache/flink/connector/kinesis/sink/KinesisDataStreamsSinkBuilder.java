@@ -68,6 +68,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
     private static final long DEFAULT_MAX_TIME_IN_BUFFER_MS = 5000;
     private static final long DEFAULT_MAX_RECORD_SIZE_IN_B = 1 * 1024 * 1024;
     private static final boolean DEFAULT_FAIL_ON_ERROR = false;
+    private static final boolean DEFAULT_THROTTLE_ON_FAILURE = false;
 
     private Boolean failOnError;
     private String streamName;
@@ -129,6 +130,7 @@ public class KinesisDataStreamsSinkBuilder<InputT>
                 Optional.ofNullable(getMaxRecordSizeInBytes()).orElse(DEFAULT_MAX_RECORD_SIZE_IN_B),
                 Optional.ofNullable(failOnError).orElse(DEFAULT_FAIL_ON_ERROR),
                 streamName,
+                Optional.ofNullable(getThrottleOnFailure()).orElse(DEFAULT_THROTTLE_ON_FAILURE),
                 Optional.ofNullable(kinesisClientProperties).orElse(new Properties()));
     }
 }

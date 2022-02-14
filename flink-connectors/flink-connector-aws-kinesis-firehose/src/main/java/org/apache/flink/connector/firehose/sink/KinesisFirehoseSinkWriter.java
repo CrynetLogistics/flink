@@ -141,6 +141,7 @@ class KinesisFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> 
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
+                false,
                 initialStates);
         this.failOnError = failOnError;
         this.deliveryStreamName = deliveryStreamName;

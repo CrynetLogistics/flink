@@ -81,6 +81,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
+            boolean throttleOnFailure,
             boolean failOnError,
             String streamName,
             Properties kinesisClientProperties) {
@@ -93,6 +94,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
+                throttleOnFailure,
                 failOnError,
                 streamName,
                 kinesisClientProperties,
@@ -108,6 +110,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
+            boolean throttleOnFailure,
             boolean failOnError,
             String streamName,
             Properties kinesisClientProperties,
@@ -121,6 +124,7 @@ class KinesisDataStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRe
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
+                throttleOnFailure,
                 states);
         this.failOnError = failOnError;
         this.streamName = streamName;

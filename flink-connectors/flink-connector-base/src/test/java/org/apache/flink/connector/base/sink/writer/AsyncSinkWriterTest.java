@@ -983,6 +983,7 @@ public class AsyncSinkWriterTest {
                     maxBatchSizeInBytes,
                     maxTimeInBufferMS,
                     maxRecordSizeInBytes,
+                    false,
                     bufferedState);
             this.simulateFailures = simulateFailures;
             this.delay = delay;

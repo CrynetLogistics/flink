@@ -68,7 +68,8 @@ public class KinesisFirehoseSink<InputT> extends AsyncSinkBase<InputT, Record> {
                 maxBufferedRequests,
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
-                maxRecordSizeInBytes);
+                maxRecordSizeInBytes,
+                false);
         this.deliveryStreamName =
                 Preconditions.checkNotNull(
                         deliveryStreamName,

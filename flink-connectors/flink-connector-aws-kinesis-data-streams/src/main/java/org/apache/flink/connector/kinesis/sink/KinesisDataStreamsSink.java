@@ -80,6 +80,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
             Long maxRecordSizeInBytes,
             boolean failOnError,
             String streamName,
+            boolean throttleOnFailure,
             Properties kinesisClientProperties) {
         super(
                 elementConverter,
@@ -88,7 +89,8 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 maxBufferedRequests,
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
-                maxRecordSizeInBytes);
+                maxRecordSizeInBytes,
+                throttleOnFailure);
         this.streamName =
                 Preconditions.checkNotNull(
                         streamName,
@@ -124,6 +126,7 @@ public class KinesisDataStreamsSink<InputT> extends AsyncSinkBase<InputT, PutRec
                 getMaxBatchSizeInBytes(),
                 getMaxTimeInBufferMS(),
                 getMaxRecordSizeInBytes(),
+                getThrottleOnFailure(),
                 failOnError,
                 streamName,
                 kinesisClientProperties,

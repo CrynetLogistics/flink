@@ -58,6 +58,7 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
     private final long maxBatchSizeInBytes;
     private final long maxTimeInBufferMS;
     private final long maxRecordSizeInBytes;
+    private final boolean throttleOnFailure;
 
     protected AsyncSinkBase(
             ElementConverter<InputT, RequestEntryT> elementConverter,
@@ -66,7 +67,8 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
             int maxBufferedRequests,
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
-            long maxRecordSizeInBytes) {
+            long maxRecordSizeInBytes,
+            boolean throttleOnFailure) {
         this.elementConverter =
                 Preconditions.checkNotNull(
                         elementConverter,
@@ -77,6 +79,7 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
         this.maxBatchSizeInBytes = maxBatchSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
         this.maxRecordSizeInBytes = maxRecordSizeInBytes;
+        this.throttleOnFailure = throttleOnFailure;
     }
 
     @Override
@@ -125,5 +128,9 @@ public abstract class AsyncSinkBase<InputT, RequestEntryT extends Serializable>
 
     protected long getMaxRecordSizeInBytes() {
         return maxRecordSizeInBytes;
+    }
+
+    protected boolean getThrottleOnFailure() {
+        return throttleOnFailure;
     }
 }

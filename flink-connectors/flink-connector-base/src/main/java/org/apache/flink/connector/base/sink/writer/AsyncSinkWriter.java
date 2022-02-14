@@ -80,6 +80,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private final long maxBatchSizeInBytes;
     private final long maxTimeInBufferMS;
     private final long maxRecordSizeInBytes;
+    private final boolean throttleOnFailure;
 
     /**
      * The ElementConverter provides a mapping between for the elements of a stream to request
@@ -213,7 +214,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             int maxBufferedRequests,
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
-            long maxRecordSizeInBytes) {
+            long maxRecordSizeInBytes,
+            boolean throttleOnFailure) {
         this(
                 elementConverter,
                 context,
@@ -223,6 +225,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
                 maxBatchSizeInBytes,
                 maxTimeInBufferMS,
                 maxRecordSizeInBytes,
+                throttleOnFailure,
                 Collections.emptyList());
     }
 
@@ -235,6 +238,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             long maxBatchSizeInBytes,
             long maxTimeInBufferMS,
             long maxRecordSizeInBytes,
+            boolean throttleOnFailure,
             List<BufferedRequestState<RequestEntryT>> states) {
         this.elementConverter = elementConverter;
         this.mailboxExecutor = context.getMailboxExecutor();
@@ -261,6 +265,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.maxBatchSizeInBytes = maxBatchSizeInBytes;
         this.maxTimeInBufferMS = maxTimeInBufferMS;
         this.maxRecordSizeInBytes = maxRecordSizeInBytes;
+        this.throttleOnFailure = throttleOnFailure;
 
         this.inFlightRequestsCount = 0;
         this.bufferedRequestEntriesTotalSizeInBytes = 0;
@@ -318,7 +323,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * <p>The method blocks if too many async requests are in flight.
      */
     private void flush() {
-        while (inFlightRequestsCount >= maxInFlightRequests && inFlightMessages >= maxInFlightMessages) {
+        while (inFlightRequestsCount >= maxInFlightRequests
+                && inFlightMessages >= maxInFlightMessages) {
             mailboxExecutor.tryYield();
         }
 
@@ -332,12 +338,16 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         Consumer<List<RequestEntryT>> requestResult =
                 failedRequestEntries ->
                         mailboxExecutor.execute(
-                                () -> completeRequest(failedRequestEntries, batch.size(), timestampOfRequest),
+                                () ->
+                                        completeRequest(
+                                                failedRequestEntries,
+                                                batch.size(),
+                                                timestampOfRequest),
                                 "Mark in-flight request as completed and requeue %d request entries",
                                 failedRequestEntries.size());
 
         inFlightRequestsCount++;
-        inFlightMessages+=batch.size();
+        inFlightMessages += batch.size();
         submitRequestEntries(batch, requestResult);
     }
 
@@ -346,7 +356,9 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * {@code maxBatchSizeInBytes}. Also adds these to the metrics counters.
      */
     private List<RequestEntryT> createNextAvailableBatch() {
-        int batchSize = Math.min(Math.min(maxBatchSize, bufferedRequestEntries.size()), maxInFlightMessages);
+        int batchSize =
+                Math.min(
+                        Math.min(maxBatchSize, bufferedRequestEntries.size()), maxInFlightMessages);
         List<RequestEntryT> batch = new ArrayList<>(batchSize);
 
         int batchSizeBytes = 0;
@@ -374,11 +386,11 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * @param failedRequestEntries requestEntries that need to be retried
      */
     private void completeRequest(
-                List<RequestEntryT> failedRequestEntries, int messages, long requestStartTime) {
+            List<RequestEntryT> failedRequestEntries, int messages, long requestStartTime) {
         lastSendTimestamp = requestStartTime;
         ackTime = System.currentTimeMillis();
         inFlightRequestsCount--;
-        inFlightMessages-=messages;
+        inFlightMessages -= messages;
 
         // https://en.wikipedia.org/wiki/Additive_increase/multiplicative_decrease
         int a = 10;
@@ -388,8 +400,11 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
             maxInFlightMessages += a;
             LOG.warn("send {} messages, increased max messages: {}", messages, maxInFlightMessages);
         } else {
-            maxInFlightMessages = (int) Math.round(maxInFlightMessages*b);
-            LOG.warn("{} failed requests, decreased max messages: {}", failedRequestEntries.size(), maxInFlightMessages);
+            maxInFlightMessages = (int) Math.round(maxInFlightMessages * b);
+            LOG.warn(
+                    "{} failed requests, decreased max messages: {}",
+                    failedRequestEntries.size(),
+                    maxInFlightMessages);
         }
 
         ListIterator<RequestEntryT> iterator =

@@ -41,6 +41,7 @@ public abstract class AsyncSinkBaseBuilder<
     private Long maxBatchSizeInBytes;
     private Long maxTimeInBufferMS;
     private Long maxRecordSizeInBytes;
+    private Boolean throttleOnFailure;
 
     /**
      * @param maxBatchSize maximum number of elements that may be passed in a list to be written
@@ -112,6 +113,16 @@ public abstract class AsyncSinkBaseBuilder<
         return (ConcreteBuilderT) this;
     }
 
+    /**
+     * @param throttleOnFailure whether to use an AIMD scheme to throttle outgoing requests based on
+     *     number of failures.
+     * @return {@link ConcreteBuilderT} itself
+     */
+    public ConcreteBuilderT setThrottleOnFailure(boolean throttleOnFailure) {
+        this.throttleOnFailure = throttleOnFailure;
+        return (ConcreteBuilderT) this;
+    }
+
     /** Builds the Sink with the settings applied to this builder. */
     public abstract AsyncSinkBase<InputT, RequestEntryT> build();
 
@@ -137,5 +148,9 @@ public abstract class AsyncSinkBaseBuilder<
 
     protected Long getMaxRecordSizeInBytes() {
         return maxRecordSizeInBytes;
+    }
+
+    protected Boolean getThrottleOnFailure() {
+        return throttleOnFailure;
     }
 }
