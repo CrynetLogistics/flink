@@ -123,7 +123,6 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private int inFlightRequestsCount;
 
     private int inFlightMessages;
-    private int maxInFlightMessages = 10;
 
     /**
      * Tracks the cumulative size of all elements in {@code bufferedRequestEntries} to facilitate
@@ -206,6 +205,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     protected abstract long getSizeInBytes(RequestEntryT requestEntry);
 
+    private FlowStrategy flowStrategy;
+
     public AsyncSinkWriter(
             ElementConverter<InputT, RequestEntryT> elementConverter,
             Sink.InitContext context,
@@ -266,7 +267,10 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         this.maxTimeInBufferMS = maxTimeInBufferMS;
         this.maxRecordSizeInBytes = maxRecordSizeInBytes;
         this.throttleOnFailure = throttleOnFailure;
-
+        this.flowStrategy =
+                (throttleOnFailure)
+                        ? new AIMDFlowStrategy(10, 0.5, 10)
+                        : new FixedFlowStrategy(maxInFlightRequests * maxBatchSize);
         this.inFlightRequestsCount = 0;
         this.bufferedRequestEntriesTotalSizeInBytes = 0;
 
@@ -324,7 +328,7 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      */
     private void flush() {
         while (inFlightRequestsCount >= maxInFlightRequests
-                && inFlightMessages >= maxInFlightMessages) {
+                && inFlightMessages >= this.flowStrategy.getMaxInFlightMessages()) {
             mailboxExecutor.tryYield();
         }
 
@@ -358,7 +362,8 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
     private List<RequestEntryT> createNextAvailableBatch() {
         int batchSize =
                 Math.min(
-                        Math.min(maxBatchSize, bufferedRequestEntries.size()), maxInFlightMessages);
+                        Math.min(maxBatchSize, bufferedRequestEntries.size()),
+                        this.flowStrategy.getMaxInFlightMessages());
         List<RequestEntryT> batch = new ArrayList<>(batchSize);
 
         int batchSizeBytes = 0;
@@ -397,14 +402,17 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
         double b = 0.5;
 
         if (failedRequestEntries.isEmpty()) {
-            maxInFlightMessages += a;
-            LOG.warn("send {} messages, increased max messages: {}", messages, maxInFlightMessages);
+            this.flowStrategy.updateWithAcknowledgedRequests(1);
+            LOG.warn(
+                    "send {} messages, increased max messages: {}",
+                    messages,
+                    this.flowStrategy.getMaxInFlightMessages());
         } else {
-            maxInFlightMessages = (int) Math.round(maxInFlightMessages * b);
+            this.flowStrategy.updateWithFailedRequests(failedRequestEntries.size());
             LOG.warn(
                     "{} failed requests, decreased max messages: {}",
                     failedRequestEntries.size(),
-                    maxInFlightMessages);
+                    this.flowStrategy.getMaxInFlightMessages());
         }
 
         ListIterator<RequestEntryT> iterator =
@@ -499,5 +507,66 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
 
     protected Consumer<Exception> getFatalExceptionCons() {
         return fatalExceptionCons;
+    }
+
+    private interface FlowStrategy {
+        int getMaxInFlightMessages();
+
+        void updateWithAcknowledgedRequests(int numOfAckReq);
+
+        void updateWithFailedRequests(int numOfFailedReq);
+    }
+
+    private class AIMDFlowStrategy implements FlowStrategy {
+        private final int a;
+        private final double d;
+
+        private int maxInFlightMessages;
+
+        public AIMDFlowStrategy(int a, double d, int maxInFlightMessages) {
+            this.a = a;
+            this.d = d;
+            this.maxInFlightMessages = maxInFlightMessages;
+        }
+
+        @Override
+        public int getMaxInFlightMessages() {
+            return maxInFlightMessages;
+        }
+
+        @Override
+        public void updateWithAcknowledgedRequests(int numOfAckReq) {
+            maxInFlightMessages += a;
+        }
+
+        @Override
+        public void updateWithFailedRequests(int numOfFailedReq) {
+            maxInFlightMessages = (int) Math.round(maxInFlightMessages * d);
+        }
+    }
+
+    private class FixedFlowStrategy implements FlowStrategy {
+
+        private int maxInFlightMessages;
+
+        private FixedFlowStrategy(int maxInFlightMessages) {
+
+            this.maxInFlightMessages = maxInFlightMessages;
+        }
+
+        @Override
+        public int getMaxInFlightMessages() {
+            return maxInFlightMessages;
+        }
+
+        @Override
+        public void updateWithAcknowledgedRequests(int numOfAckReq) {
+            return;
+        }
+
+        @Override
+        public void updateWithFailedRequests(int numOfFailedReq) {
+            return;
+        }
     }
 }
