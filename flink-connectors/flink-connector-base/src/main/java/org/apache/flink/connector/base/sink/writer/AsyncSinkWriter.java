@@ -356,9 +356,15 @@ public abstract class AsyncSinkWriter<InputT, RequestEntryT extends Serializable
      * {@code maxBatchSizeInBytes}. Also adds these to the metrics counters.
      */
     private List<RequestEntryT> createNextAvailableBatch() {
-        int batchSize =
-                Math.min(
-                        Math.min(maxBatchSize, bufferedRequestEntries.size()), maxInFlightMessages);
+        int batchSize;
+        if(throttleOnFailure) {
+            batchSize =
+                    Math.min(
+                            Math.min(maxBatchSize, bufferedRequestEntries.size()),
+                            maxInFlightMessages);
+        }else{
+            batchSize = Math.min(maxBatchSize, bufferedRequestEntries.size());
+        }
         List<RequestEntryT> batch = new ArrayList<>(batchSize);
 
         int batchSizeBytes = 0;
