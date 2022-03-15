@@ -17,6 +17,8 @@
 
 package org.apache.flink.connector.aws.util;
 
+import io.netty.channel.EventLoopGroup;
+
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
@@ -35,6 +37,7 @@ import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.Http2Configuration;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -45,6 +48,7 @@ import software.amazon.awssdk.utils.SdkAutoCloseable;
 
 import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -232,6 +236,13 @@ public class AWSGeneralUtil {
                 .ifPresent(webIdentityBuilder::webIdentityTokenFile);
 
         return webIdentityBuilder.build();
+    }
+
+    private static Map<Integer, SdkEventLoopGroup.Builder> eventLoopGroupMap = new HashMap<>();
+
+    public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties, int classloaderHash) {
+        eventLoopGroupMap.putIfAbsent(classloaderHash, SdkEventLoopGroup.builder());
+        return createAsyncHttpClient(configProperties, NettyNioAsyncHttpClient.builder().eventLoopGroupBuilder(eventLoopGroupMap.get(classloaderHash)));
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties) {
