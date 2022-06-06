@@ -22,6 +22,7 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.config.AWSConfigConstants.CredentialProvider;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.UserCodeClassLoader;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -35,6 +36,7 @@ import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.Http2Configuration;
 import software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient;
+import software.amazon.awssdk.http.nio.netty.SdkEventLoopGroup;
 import software.amazon.awssdk.profiles.ProfileFile;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.sts.StsClient;
@@ -48,6 +50,9 @@ import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /** Some general utilities specific to Amazon Web Service. */
 @Internal
@@ -67,6 +72,8 @@ public class AWSGeneralUtil {
                     .put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, TRUST_ALL_CERTIFICATES)
                     .put(SdkHttpConfigurationOption.PROTOCOL, HTTP_PROTOCOL)
                     .build();
+    private static final ConcurrentMap<String, SdkEventLoopGroup> JOB_TO_ELG =
+            new ConcurrentHashMap<>();
 
     /**
      * Determines and returns the credential provider type from the given properties.
@@ -232,6 +239,23 @@ public class AWSGeneralUtil {
                 .ifPresent(webIdentityBuilder::webIdentityTokenFile);
 
         return webIdentityBuilder.build();
+    }
+
+    @VisibleForTesting
+    static Set<String> getRegisteredClassloaderNames() {
+        return JOB_TO_ELG.keySet();
+    }
+
+    public static SdkAsyncHttpClient createAsyncHttpClient(
+            final Properties configProperties, UserCodeClassLoader userCodeClassLoader) {
+        String jobIdUniqueIdentifier = userCodeClassLoader.asClassLoader().toString();
+        SdkEventLoopGroup eventLoopGroup =
+                JOB_TO_ELG.compute(
+                        jobIdUniqueIdentifier,
+                        (k, maybeV) ->
+                                (maybeV == null) ? SdkEventLoopGroup.builder().build() : maybeV);
+        return createAsyncHttpClient(
+                configProperties, NettyNioAsyncHttpClient.builder().eventLoopGroup(eventLoopGroup));
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties) {
