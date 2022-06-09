@@ -20,6 +20,8 @@ package org.apache.flink.connector.aws.testutils;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.util.AWSGeneralUtil;
 
+import org.apache.flink.connector.aws.util.TestUtil;
+
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
@@ -100,8 +102,8 @@ public class AWSServicesTestUtils {
     public static SdkAsyncHttpClient createHttpClient(String endpoint) {
         return AWSGeneralUtil.createAsyncHttpClient(
                 createConfig(endpoint),
-                NettyNioAsyncHttpClient.builder()
-                        .eventLoopGroupBuilder(SdkEventLoopGroup.builder()));
+                NettyNioAsyncHttpClient.builder(),
+                new TestUtil.MockUserCodeClassLoader());
     }
 
     public static void createBucket(S3AsyncClient s3Client, String bucketName)

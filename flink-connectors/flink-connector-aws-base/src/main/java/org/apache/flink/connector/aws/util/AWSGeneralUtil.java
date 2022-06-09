@@ -246,25 +246,15 @@ public class AWSGeneralUtil {
         return JOB_TO_ELG.keySet();
     }
 
-    public static SdkAsyncHttpClient createAsyncHttpClient(
-            final Properties configProperties, UserCodeClassLoader userCodeClassLoader) {
-        String jobIdUniqueIdentifier = userCodeClassLoader.asClassLoader().toString();
-        SdkEventLoopGroup eventLoopGroup =
-                JOB_TO_ELG.compute(
-                        jobIdUniqueIdentifier,
-                        (k, maybeV) ->
-                                (maybeV == null) ? SdkEventLoopGroup.builder().build() : maybeV);
-        return createAsyncHttpClient(
-                configProperties, NettyNioAsyncHttpClient.builder().eventLoopGroup(eventLoopGroup));
-    }
-
-    public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties) {
-        return createAsyncHttpClient(configProperties, NettyNioAsyncHttpClient.builder());
+    public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties,
+                                                           final UserCodeClassLoader userCodeClassLoader) {
+        return createAsyncHttpClient(configProperties, NettyNioAsyncHttpClient.builder(), userCodeClassLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
             final Properties configProperties,
-            final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
+            final NettyNioAsyncHttpClient.Builder httpClientBuilder,
+            final UserCodeClassLoader userCodeClassLoader) {
         final AttributeMap.Builder clientConfiguration =
                 AttributeMap.builder().put(SdkHttpConfigurationOption.TCP_KEEPALIVE, true);
 
@@ -300,17 +290,26 @@ public class AWSGeneralUtil {
                         protocol ->
                                 clientConfiguration.put(
                                         SdkHttpConfigurationOption.PROTOCOL, protocol));
-        return createAsyncHttpClient(clientConfiguration.build(), httpClientBuilder);
+        return createAsyncHttpClient(clientConfiguration.build(), httpClientBuilder, userCodeClassLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
-            final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
-        return createAsyncHttpClient(AttributeMap.empty(), httpClientBuilder);
+            final NettyNioAsyncHttpClient.Builder httpClientBuilder,
+            final UserCodeClassLoader userCodeClassLoader) {
+        return createAsyncHttpClient(AttributeMap.empty(), httpClientBuilder, userCodeClassLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
-            final AttributeMap config, final NettyNioAsyncHttpClient.Builder httpClientBuilder) {
+            final AttributeMap config, final NettyNioAsyncHttpClient.Builder httpClientBuilder,
+            final UserCodeClassLoader userCodeClassLoader) {
+        String jobIdUniqueIdentifier = userCodeClassLoader.asClassLoader().toString();
+        SdkEventLoopGroup eventLoopGroup =
+                JOB_TO_ELG.compute(
+                        jobIdUniqueIdentifier,
+                        (k, maybeV) ->
+                                (maybeV == null) ? SdkEventLoopGroup.builder().build() : maybeV);
         httpClientBuilder
+                .eventLoopGroup(eventLoopGroup)
                 .connectionAcquisitionTimeout(CONNECTION_ACQUISITION_TIMEOUT)
                 .http2Configuration(
                         Http2Configuration.builder()

@@ -19,6 +19,8 @@ package org.apache.flink.connector.aws.util;
 
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 
+import org.apache.flink.util.UserCodeClassLoader;
+
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
 import software.amazon.awssdk.http.nio.netty.internal.NettyConfiguration;
 
@@ -50,5 +52,18 @@ public class TestUtil {
         Field field = obj.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         return (T) field.get(obj);
+    }
+
+    public static class MockUserCodeClassLoader implements UserCodeClassLoader {
+
+        @Override
+        public ClassLoader asClassLoader() {
+            return Thread.currentThread().getContextClassLoader();
+        }
+
+        @Override
+        public void registerReleaseHookIfAbsent(String s, Runnable runnable) {
+
+        }
     }
 }

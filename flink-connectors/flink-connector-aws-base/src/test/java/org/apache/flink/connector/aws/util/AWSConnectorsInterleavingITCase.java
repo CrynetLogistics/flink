@@ -24,12 +24,16 @@ import org.apache.flink.connector.aws.testutils.DelayedStartSource;
 import org.apache.flink.connector.aws.testutils.IamSink;
 import org.apache.flink.connector.aws.testutils.LocalstackContainer;
 import org.apache.flink.core.execution.JobClient;
+import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.test.junit5.MiniClusterExtension;
+import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.util.DockerImageVersions;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.junit.jupiter.Container;
@@ -52,6 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Integration test suite for the {@code KinesisFirehoseSink} using a localstack container. */
 @Testcontainers
+@ExtendWith(MiniClusterExtension.class)
 class AWSConnectorsInterleavingITCase {
 
     private static final Logger LOG =
@@ -66,8 +71,8 @@ class AWSConnectorsInterleavingITCase {
     @BeforeEach
     void setup() {
         System.setProperty(SdkSystemSetting.CBOR_ENABLED.property(), "false");
-        env1 = StreamExecutionEnvironment.createLocalEnvironment();
-        env2 = StreamExecutionEnvironment.createLocalEnvironment();
+        env1 = StreamExecutionEnvironment.getExecutionEnvironment();
+        env2 = StreamExecutionEnvironment.getExecutionEnvironment();
     }
 
     @AfterEach
@@ -77,7 +82,6 @@ class AWSConnectorsInterleavingITCase {
 
     @Test
     void firehoseSinkWritesCorrectDataToMockAWSServices() throws Exception {
-
         IamSink<String> kdsSink1 = new IamSink<>(mockFirehoseContainer.getEndpoint());
         IamSink<String> kdsSink2 = new IamSink<>(mockFirehoseContainer.getEndpoint());
 
@@ -120,6 +124,7 @@ class AWSConnectorsInterleavingITCase {
         assertThat(retrievedRoleNames).containsAll(expectedList);
 
         Set<String> classloaderNames = AWSGeneralUtil.getRegisteredClassloaderNames();
-        assertThat(classloaderNames.size()).isEqualTo(2);
+        assertThat(classloaderNames.size()).isEqualTo(3);
+        assertThat(classloaderNames).contains(Thread.currentThread().getContextClassLoader().toString());
     }
 }
