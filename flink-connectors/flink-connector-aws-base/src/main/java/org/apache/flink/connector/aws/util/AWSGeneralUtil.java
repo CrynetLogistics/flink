@@ -22,7 +22,6 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
 import org.apache.flink.connector.aws.config.AWSConfigConstants.CredentialProvider;
 import org.apache.flink.util.ExceptionUtils;
-import org.apache.flink.util.UserCodeClassLoader;
 
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
@@ -247,15 +246,15 @@ public class AWSGeneralUtil {
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
-            final Properties configProperties, final UserCodeClassLoader userCodeClassLoader) {
+            final Properties configProperties, final ClassLoader classLoader) {
         return createAsyncHttpClient(
-                configProperties, NettyNioAsyncHttpClient.builder(), userCodeClassLoader);
+                configProperties, NettyNioAsyncHttpClient.builder(), classLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
             final Properties configProperties,
             final NettyNioAsyncHttpClient.Builder httpClientBuilder,
-            final UserCodeClassLoader userCodeClassLoader) {
+            final ClassLoader classLoader) {
         final AttributeMap.Builder clientConfiguration =
                 AttributeMap.builder().put(SdkHttpConfigurationOption.TCP_KEEPALIVE, true);
 
@@ -291,21 +290,20 @@ public class AWSGeneralUtil {
                         protocol ->
                                 clientConfiguration.put(
                                         SdkHttpConfigurationOption.PROTOCOL, protocol));
-        return createAsyncHttpClient(
-                clientConfiguration.build(), httpClientBuilder, userCodeClassLoader);
+        return createAsyncHttpClient(clientConfiguration.build(), httpClientBuilder, classLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
             final NettyNioAsyncHttpClient.Builder httpClientBuilder,
-            final UserCodeClassLoader userCodeClassLoader) {
-        return createAsyncHttpClient(AttributeMap.empty(), httpClientBuilder, userCodeClassLoader);
+            final ClassLoader classLoader) {
+        return createAsyncHttpClient(AttributeMap.empty(), httpClientBuilder, classLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
             final AttributeMap config,
             final NettyNioAsyncHttpClient.Builder httpClientBuilder,
-            final UserCodeClassLoader userCodeClassLoader) {
-        String jobIdUniqueIdentifier = userCodeClassLoader.asClassLoader().toString();
+            final ClassLoader classLoader) {
+        String jobIdUniqueIdentifier = classLoader.toString();
         SdkEventLoopGroup eventLoopGroup =
                 JOB_TO_ELG.compute(
                         jobIdUniqueIdentifier,

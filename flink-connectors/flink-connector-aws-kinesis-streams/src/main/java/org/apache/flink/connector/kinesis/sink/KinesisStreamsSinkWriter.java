@@ -154,7 +154,7 @@ class KinesisStreamsSinkWriter<InputT> extends AsyncSinkWriter<InputT, PutRecord
         this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
         this.httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        kinesisClientProperties, context.getUserCodeClassLoader());
+                        kinesisClientProperties, context.getUserCodeClassLoader().asClassLoader());
         this.kinesisClient = buildClient(kinesisClientProperties, this.httpClient);
     }
 

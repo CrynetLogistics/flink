@@ -264,7 +264,8 @@ class AWSGeneralUtilTest {
     @Test
     void testCreateNettyAsyncHttpClientWithPropertyTcpKeepAlive() throws Exception {
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(new Properties(), userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(
+                        new Properties(), userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.tcpKeepAlive()).isTrue();
@@ -278,7 +279,8 @@ class AWSGeneralUtilTest {
                 AWSConfigConstants.HTTP_CLIENT_MAX_CONCURRENCY, String.valueOf(maxConnections));
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(properties, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(
+                        properties, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.maxConnections()).isEqualTo(maxConnections);
@@ -293,7 +295,8 @@ class AWSGeneralUtilTest {
                 String.valueOf(readTimeoutMillis));
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(properties, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(
+                        properties, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.readTimeoutMillis()).isEqualTo(readTimeoutMillis);
@@ -307,7 +310,8 @@ class AWSGeneralUtilTest {
                 AWSConfigConstants.TRUST_ALL_CERTIFICATES, String.valueOf(trustAllCerts));
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(properties, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(
+                        properties, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.trustAllCertificates()).isEqualTo(trustAllCerts);
@@ -321,7 +325,8 @@ class AWSGeneralUtilTest {
                 AWSConfigConstants.HTTP_PROTOCOL_VERSION, String.valueOf(httpVersion));
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(properties, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(
+                        properties, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.attribute(SdkHttpConfigurationOption.PROTOCOL))
@@ -333,7 +338,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.connectionAcquireTimeoutMillis()).isEqualTo(60_000);
@@ -344,7 +349,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -360,7 +365,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -376,7 +381,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -392,7 +397,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.maxConnections()).isEqualTo(10_000);
@@ -403,7 +408,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -419,7 +424,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.readTimeoutMillis()).isEqualTo(360_000);
@@ -430,7 +435,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -446,7 +451,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -462,7 +467,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -478,7 +483,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -494,7 +499,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.trustAllCertificates()).isFalse();
@@ -505,7 +510,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         SdkAsyncHttpClient httpDefaultClient = NettyNioAsyncHttpClient.create();
@@ -521,7 +526,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
 
         SdkAsyncHttpClient httpClient =
-                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader);
+                AWSGeneralUtil.createAsyncHttpClient(builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.attribute(SdkHttpConfigurationOption.PROTOCOL))
@@ -540,7 +545,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.readTimeoutMillis()).isEqualTo(readTimeout.toMillis());
@@ -558,7 +563,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.tcpKeepAlive()).isEqualTo(tcpKeepAlive);
@@ -576,7 +581,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.connectTimeoutMillis())
@@ -595,7 +600,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.maxConnections()).isEqualTo(maxConnections);
@@ -613,7 +618,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.writeTimeoutMillis()).isEqualTo(writeTimeout.toMillis());
@@ -631,7 +636,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.idleTimeoutMillis()).isEqualTo(maxIdleTime.toMillis());
@@ -649,7 +654,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.reapIdleConnections()).isEqualTo(reapIdleConnections);
@@ -667,7 +672,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.connectionTtlMillis()).isEqualTo(connectionTtl.toMillis());
@@ -687,7 +692,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.trustAllCertificates()).isEqualTo(trustAllCertificates);
@@ -705,7 +710,7 @@ class AWSGeneralUtilTest {
         NettyNioAsyncHttpClient.Builder builder = NettyNioAsyncHttpClient.builder();
         SdkAsyncHttpClient httpClient =
                 AWSGeneralUtil.createAsyncHttpClient(
-                        clientConfiguration, builder, userCodeClassLoader);
+                        clientConfiguration, builder, userCodeClassLoader.asClassLoader());
         NettyConfiguration nettyConfiguration = TestUtil.getNettyConfiguration(httpClient);
 
         assertThat(nettyConfiguration.attribute(SdkHttpConfigurationOption.PROTOCOL))

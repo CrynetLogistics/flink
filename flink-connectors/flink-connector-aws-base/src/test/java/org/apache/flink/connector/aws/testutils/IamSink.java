@@ -104,7 +104,8 @@ public class IamSink<InputT> extends AsyncSinkBase<InputT, String> {
                     maxRecordSizeInBytes);
             SdkAsyncHttpClient httpClient =
                     AWSGeneralUtil.createAsyncHttpClient(
-                            createConfig(customEndpoint), context.getUserCodeClassLoader());
+                            createConfig(customEndpoint),
+                            context.getUserCodeClassLoader().asClassLoader());
             iamAsyncClient = createIamClient(customEndpoint, httpClient);
         }
 

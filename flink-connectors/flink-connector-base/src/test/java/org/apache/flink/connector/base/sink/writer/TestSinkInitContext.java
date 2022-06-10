@@ -154,7 +154,7 @@ public class TestSinkInitContext implements Sink.InitContext {
         return metricGroup.getNumBytesSendCounter();
     }
 
-    public void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader){
+    public void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader) {
         this.userCodeClassLoader = userCodeClassLoader;
     }
 }

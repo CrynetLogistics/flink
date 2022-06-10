@@ -102,7 +102,9 @@ public class KinesisFirehoseSinkWriterTest {
                 .withCauseInstanceOf(SdkClientException.class)
                 .withMessageContaining(
                         "Unable to execute HTTP request: Connection refused: localhost/127.0.0.1:443");
-        assertThat(sinkInitContext.metricGroup().getNumRecordsOutErrorsCounter().getCount()).isEqualTo(12);
-        assertThat(sinkInitContext.metricGroup().getNumRecordsSendErrorsCounter().getCount()).isEqualTo(12);
+        assertThat(sinkInitContext.metricGroup().getNumRecordsOutErrorsCounter().getCount())
+                .isEqualTo(12);
+        assertThat(sinkInitContext.metricGroup().getNumRecordsSendErrorsCounter().getCount())
+                .isEqualTo(12);
     }
 }
