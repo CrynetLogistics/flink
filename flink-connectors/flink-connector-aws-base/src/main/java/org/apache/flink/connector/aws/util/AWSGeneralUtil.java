@@ -308,7 +308,7 @@ public class AWSGeneralUtil {
                 JOB_TO_ELG.compute(
                         jobIdUniqueIdentifier,
                         (k, maybeV) ->
-                                (maybeV == null) ? SdkEventLoopGroup.builder().build() : maybeV);
+                                Optional.ofNullable(maybeV).orElse(SdkEventLoopGroup.builder().build()));
         httpClientBuilder
                 .eventLoopGroup(eventLoopGroup)
                 .connectionAcquisitionTimeout(CONNECTION_ACQUISITION_TIMEOUT)
