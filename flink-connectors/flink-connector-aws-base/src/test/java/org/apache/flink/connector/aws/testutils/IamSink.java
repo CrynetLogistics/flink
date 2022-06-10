@@ -25,6 +25,10 @@ import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.crea
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createIAMRole;
 import static org.apache.flink.connector.aws.testutils.AWSServicesTestUtils.createIamClient;
 
+/**
+ * A dummy sink that calls {@code .toString()} and writes the string to IAM to create a role of that
+ * name.
+ */
 public class IamSink<InputT> extends AsyncSinkBase<InputT, String> {
 
     private final String customEndpoint;

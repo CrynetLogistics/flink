@@ -18,7 +18,6 @@
 package org.apache.flink.connector.aws.util;
 
 import org.apache.flink.connector.aws.config.AWSConfigConstants;
-
 import org.apache.flink.util.UserCodeClassLoader;
 
 import software.amazon.awssdk.http.async.SdkAsyncHttpClient;
@@ -54,6 +53,7 @@ public class TestUtil {
         return (T) field.get(obj);
     }
 
+    /** A mock for UserCodeClassLoader that wraps the current context classloader. */
     public static class MockUserCodeClassLoader implements UserCodeClassLoader {
 
         @Override
@@ -62,8 +62,6 @@ public class TestUtil {
         }
 
         @Override
-        public void registerReleaseHookIfAbsent(String s, Runnable runnable) {
-
-        }
+        public void registerReleaseHookIfAbsent(String s, Runnable runnable) {}
     }
 }

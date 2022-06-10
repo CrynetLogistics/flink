@@ -6,6 +6,7 @@ import org.apache.flink.streaming.api.watermark.Watermark;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** A source that does not begin writing until {@code start()} is called. */
 public class DelayedStartSource extends RichParallelSourceFunction<Integer> {
 
     private volatile boolean cancelled = false;

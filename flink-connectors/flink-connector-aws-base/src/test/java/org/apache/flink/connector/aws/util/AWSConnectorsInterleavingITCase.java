@@ -24,10 +24,8 @@ import org.apache.flink.connector.aws.testutils.DelayedStartSource;
 import org.apache.flink.connector.aws.testutils.IamSink;
 import org.apache.flink.connector.aws.testutils.LocalstackContainer;
 import org.apache.flink.core.execution.JobClient;
-import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.test.junit5.MiniClusterExtension;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.util.DockerImageVersions;
 
 import org.junit.jupiter.api.AfterEach;
@@ -125,6 +123,7 @@ class AWSConnectorsInterleavingITCase {
 
         Set<String> classloaderNames = AWSGeneralUtil.getRegisteredClassloaderNames();
         assertThat(classloaderNames.size()).isEqualTo(3);
-        assertThat(classloaderNames).contains(Thread.currentThread().getContextClassLoader().toString());
+        assertThat(classloaderNames)
+                .contains(Thread.currentThread().getContextClassLoader().toString());
     }
 }

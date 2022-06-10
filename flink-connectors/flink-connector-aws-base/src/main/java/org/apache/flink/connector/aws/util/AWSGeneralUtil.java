@@ -246,9 +246,10 @@ public class AWSGeneralUtil {
         return JOB_TO_ELG.keySet();
     }
 
-    public static SdkAsyncHttpClient createAsyncHttpClient(final Properties configProperties,
-                                                           final UserCodeClassLoader userCodeClassLoader) {
-        return createAsyncHttpClient(configProperties, NettyNioAsyncHttpClient.builder(), userCodeClassLoader);
+    public static SdkAsyncHttpClient createAsyncHttpClient(
+            final Properties configProperties, final UserCodeClassLoader userCodeClassLoader) {
+        return createAsyncHttpClient(
+                configProperties, NettyNioAsyncHttpClient.builder(), userCodeClassLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
@@ -290,7 +291,8 @@ public class AWSGeneralUtil {
                         protocol ->
                                 clientConfiguration.put(
                                         SdkHttpConfigurationOption.PROTOCOL, protocol));
-        return createAsyncHttpClient(clientConfiguration.build(), httpClientBuilder, userCodeClassLoader);
+        return createAsyncHttpClient(
+                clientConfiguration.build(), httpClientBuilder, userCodeClassLoader);
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
@@ -300,7 +302,8 @@ public class AWSGeneralUtil {
     }
 
     public static SdkAsyncHttpClient createAsyncHttpClient(
-            final AttributeMap config, final NettyNioAsyncHttpClient.Builder httpClientBuilder,
+            final AttributeMap config,
+            final NettyNioAsyncHttpClient.Builder httpClientBuilder,
             final UserCodeClassLoader userCodeClassLoader) {
         String jobIdUniqueIdentifier = userCodeClassLoader.asClassLoader().toString();
         SdkEventLoopGroup eventLoopGroup =
