@@ -20,6 +20,7 @@ package org.apache.flink.connector.firehose.sink;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.api.connector.sink2.SinkWriter;
 import org.apache.flink.connector.aws.testutils.AWSServicesTestUtils;
+import org.apache.flink.connector.aws.util.TestUtil;
 import org.apache.flink.connector.base.sink.writer.ElementConverter;
 import org.apache.flink.connector.base.sink.writer.TestSinkInitContext;
 
@@ -41,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 public class KinesisFirehoseSinkWriterTest {
 
     private KinesisFirehoseSinkWriter<String> sinkWriter;
+    private TestSinkInitContext sinkInitContext;
 
     private static final ElementConverter<String, Record> ELEMENT_CONVERTER_PLACEHOLDER =
             KinesisFirehoseSinkElementConverter.<String>builder()
@@ -49,7 +51,8 @@ public class KinesisFirehoseSinkWriterTest {
 
     @BeforeEach
     void setup() {
-        TestSinkInitContext sinkInitContext = new TestSinkInitContext();
+        sinkInitContext = new TestSinkInitContext();
+        sinkInitContext.setUserCodeClassLoader(new TestUtil.MockUserCodeClassLoader());
         Properties sinkProperties = AWSServicesTestUtils.createConfig("https://fake_aws_endpoint");
         sinkWriter =
                 new KinesisFirehoseSinkWriter<>(
@@ -77,7 +80,6 @@ public class KinesisFirehoseSinkWriterTest {
     @Test
     void getNumRecordsOutErrorsCounterRecordsCorrectNumberOfFailures()
             throws IOException, InterruptedException {
-        TestSinkInitContext ctx = new TestSinkInitContext();
         KinesisFirehoseSink<String> kinesisFirehoseSink =
                 new KinesisFirehoseSink<>(
                         ELEMENT_CONVERTER_PLACEHOLDER,
@@ -90,7 +92,7 @@ public class KinesisFirehoseSinkWriterTest {
                         true,
                         "test-stream",
                         AWSServicesTestUtils.createConfig("https://localhost"));
-        SinkWriter<String> writer = kinesisFirehoseSink.createWriter(ctx);
+        SinkWriter<String> writer = kinesisFirehoseSink.createWriter(sinkInitContext);
 
         for (int i = 0; i < 12; i++) {
             writer.write("data_bytes", null);
@@ -100,7 +102,7 @@ public class KinesisFirehoseSinkWriterTest {
                 .withCauseInstanceOf(SdkClientException.class)
                 .withMessageContaining(
                         "Unable to execute HTTP request: Connection refused: localhost/127.0.0.1:443");
-        assertThat(ctx.metricGroup().getNumRecordsOutErrorsCounter().getCount()).isEqualTo(12);
-        assertThat(ctx.metricGroup().getNumRecordsSendErrorsCounter().getCount()).isEqualTo(12);
+        assertThat(sinkInitContext.metricGroup().getNumRecordsOutErrorsCounter().getCount()).isEqualTo(12);
+        assertThat(sinkInitContext.metricGroup().getNumRecordsSendErrorsCounter().getCount()).isEqualTo(12);
     }
 }

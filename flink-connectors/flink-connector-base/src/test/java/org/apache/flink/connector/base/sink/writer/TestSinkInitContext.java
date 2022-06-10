@@ -52,6 +52,7 @@ public class TestSinkInitContext implements Sink.InitContext {
             InternalSinkWriterMetricGroup.mock(
                     metricListener.getMetricGroup(), operatorIOMetricGroup);
     private final MailboxExecutor mailboxExecutor;
+    private UserCodeClassLoader userCodeClassLoader;
 
     StreamTaskActionExecutor streamTaskActionExecutor =
             new StreamTaskActionExecutor() {
@@ -86,7 +87,7 @@ public class TestSinkInitContext implements Sink.InitContext {
 
     @Override
     public UserCodeClassLoader getUserCodeClassLoader() {
-        return null;
+        return userCodeClassLoader;
     }
 
     @Override
@@ -151,5 +152,9 @@ public class TestSinkInitContext implements Sink.InitContext {
 
     public Counter getNumBytesOutCounter() {
         return metricGroup.getNumBytesSendCounter();
+    }
+
+    public void setUserCodeClassLoader(UserCodeClassLoader userCodeClassLoader){
+        this.userCodeClassLoader = userCodeClassLoader;
     }
 }

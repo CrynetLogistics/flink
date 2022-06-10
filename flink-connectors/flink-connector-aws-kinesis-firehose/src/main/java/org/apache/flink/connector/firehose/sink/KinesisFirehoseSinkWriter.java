@@ -65,8 +65,10 @@ class KinesisFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> 
 
     private static final Logger LOG = LoggerFactory.getLogger(KinesisFirehoseSinkWriter.class);
 
-    private static SdkAsyncHttpClient createHttpClient(Properties firehoseClientProperties) {
-        return AWSGeneralUtil.createAsyncHttpClient(firehoseClientProperties);
+    private static SdkAsyncHttpClient createHttpClient(
+            Properties firehoseClientProperties, Sink.InitContext context) {
+        return AWSGeneralUtil.createAsyncHttpClient(
+                firehoseClientProperties, context.getUserCodeClassLoader());
     }
 
     private static FirehoseAsyncClient createFirehoseClient(
@@ -171,7 +173,7 @@ class KinesisFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> 
         this.metrics = context.metricGroup();
         this.numRecordsOutErrorsCounter = metrics.getNumRecordsOutErrorsCounter();
         this.numRecordsSendErrorsCounter = metrics.getNumRecordsSendErrorsCounter();
-        this.httpClient = createHttpClient(firehoseClientProperties);
+        this.httpClient = createHttpClient(firehoseClientProperties, context);
         this.firehoseClient = createFirehoseClient(firehoseClientProperties, httpClient);
     }
 
