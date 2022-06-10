@@ -101,7 +101,7 @@ public class AWSServicesTestUtils {
         return AWSGeneralUtil.createAsyncHttpClient(
                 createConfig(endpoint),
                 NettyNioAsyncHttpClient.builder(),
-                new TestUtil.MockUserCodeClassLoader());
+                new TestUtil.MockUserCodeClassLoader().asClassLoader());
     }
 
     public static void createBucket(S3AsyncClient s3Client, String bucketName)

@@ -68,7 +68,7 @@ class KinesisFirehoseSinkWriter<InputT> extends AsyncSinkWriter<InputT, Record> 
     private static SdkAsyncHttpClient createHttpClient(
             Properties firehoseClientProperties, Sink.InitContext context) {
         return AWSGeneralUtil.createAsyncHttpClient(
-                firehoseClientProperties, context.getUserCodeClassLoader());
+                firehoseClientProperties, context.getUserCodeClassLoader().asClassLoader());
     }
 
     private static FirehoseAsyncClient createFirehoseClient(
